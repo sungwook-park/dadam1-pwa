@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>작업지시표 - 다담TV</title>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#2c3e50" />
@@ -19,7 +19,7 @@
     .section.active { display: block; }
     .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
     .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
-    #logoutBtn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; margin: 10px 0; float: right; }
+    .logout-btn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; float: right; margin-bottom: 10px; }
   </style>
   <script>
     if ('serviceWorker' in navigator) {
@@ -39,7 +39,8 @@
   </div>
 
   <div id="mainApp" style="display:none">
-    <button id="logoutBtn">로그아웃</button>
+    <button id="logoutBtn" class="logout-btn">로그아웃</button>
+
     <div class="tab">
       <button id="tabInput" class="active">작업 입력</button>
       <button id="tabList">목록 보기</button>
@@ -47,7 +48,7 @@
 
     <div id="sectionInput" class="section active box">
       <input type="date" id="date" />
-      <input type="text" id="staff" placeholder="작업자 (쉼표로 여러명 입력 가능)" />
+      <input type="text" id="staff" placeholder="작업자 이름 (여러명일 경우 ,로 구분)" />
       <input type="text" id="client" placeholder="거래처명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
       <input type="text" id="installAddr" placeholder="설치주소" />
@@ -61,9 +62,7 @@
     </div>
 
     <div id="sectionList" class="section box">
-      <input type="text" id="staffName" placeholder="작업자 이름 입력" />
-      <button id="viewMyTasksBtn">내 작업 보기</button>
-      <div id="taskList" style="margin-top: 10px;"></div>
+      <div id="taskList"></div>
     </div>
   </div>
 
@@ -85,6 +84,8 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    let currentUserData = null;
+
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -95,10 +96,18 @@
       }
     };
 
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
       if (user) {
+        const userSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
+        if (userSnap.empty) {
+          alert("사용자 정보가 없습니다.");
+          return;
+        }
+        currentUserData = userSnap.docs[0].data();
+
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
+        loadTasks(user);
       }
     });
 
@@ -108,7 +117,11 @@
     };
 
     document.getElementById('tabInput').onclick = () => setTab(true);
-    document.getElementById('tabList').onclick = () => setTab(false);
+    document.getElementById('tabList').onclick = () => {
+      setTab(false);
+      const user = auth.currentUser;
+      if (user) loadTasks(user);
+    };
 
     function setTab(inputActive) {
       document.getElementById('tabInput').classList.toggle('active', inputActive);
@@ -120,12 +133,13 @@
     document.getElementById('saveBtn').onclick = async () => {
       const user = auth.currentUser;
       if (!user) return;
-      const rawNames = document.getElementById('staff').value.trim();
-      const staffNames = rawNames.split(',').map(n => n.trim()).filter(n => n);
+
+      const staffInput = document.getElementById('staff').value;
+      const staffNames = staffInput.split(',').map(s => s.trim()).filter(Boolean);
 
       const task = {
         uid: user.uid,
-        staffNames: staffNames,
+        staffNames,
         date: document.getElementById('date').value,
         client: document.getElementById('client').value,
         removeAddr: document.getElementById('removeAddr').value,
@@ -138,20 +152,31 @@
         memo: document.getElementById('memo').value,
         createdAt: new Date()
       };
+
       await addDoc(collection(db, 'tasks'), task);
       alert("작업이 저장되었습니다.");
     };
 
-    document.getElementById('viewMyTasksBtn').onclick = () => {
-      const staffName = document.getElementById('staffName').value.trim();
-      if (staffName) loadTasksByStaffName(staffName);
-    };
+    async function loadTasks(user) {
+      const usersRef = collection(db, 'users');
+      const userSnap = await getDocs(query(usersRef, where('email', '==', user.email)));
+      if (userSnap.empty) return alert("사용자 정보가 없습니다.");
 
-    async function loadTasksByStaffName(name) {
-      const q = query(collection(db, 'tasks'), where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
+      const userData = userSnap.docs[0].data();
+      const role = userData.role;
+      const name = userData.name;
+
+      let q;
+      if (role === 'admin') {
+        q = query(collection(db, 'tasks'), orderBy('date', 'desc'));
+      } else {
+        q = query(collection(db, 'tasks'), where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
+      }
+
       const snap = await getDocs(q);
       const list = document.getElementById('taskList');
       list.innerHTML = '';
+
       snap.forEach(doc => {
         const d = doc.data();
         const div = document.createElement('div');
