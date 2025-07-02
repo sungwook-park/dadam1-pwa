@@ -106,16 +106,13 @@
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
 
-        // 관리자만 입력 탭 보이기
-        if (currentUserData.role === 'admin') {
-          document.getElementById('tabInput').style.display = 'block';
-          document.getElementById('sectionInput').style.display = 'block';
-        } else {
-          document.getElementById('tabInput').style.display = 'none';
-          document.getElementById('sectionInput').style.display = 'none';
-        }
+        const isAdmin = currentUserData.role === 'admin';
 
-        setTab(false); // 목록 탭 기본
+        // 관리자만 입력 탭 보이기
+        document.getElementById('tabInput').style.display = isAdmin ? 'block' : 'none';
+
+        // 목록 탭 활성화로 시작
+        setTab(false);
 
         loadTasks(user);
       }
@@ -135,10 +132,10 @@
 
     function setTab(inputActive) {
       const isAdmin = currentUserData?.role === 'admin';
-      if (isAdmin) {
-        document.getElementById('tabInput').classList.toggle('active', inputActive);
-        document.getElementById('sectionInput').classList.toggle('active', inputActive);
-      }
+
+      document.getElementById('tabInput').classList.toggle('active', inputActive && isAdmin);
+      document.getElementById('sectionInput').classList.toggle('active', inputActive && isAdmin);
+
       document.getElementById('tabList').classList.toggle('active', !inputActive);
       document.getElementById('sectionList').classList.toggle('active', !inputActive);
     }
@@ -171,9 +168,9 @@
     };
 
     async function loadTasks(user) {
-      const userSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-      if (userSnap.empty) return alert("사용자 정보 없음");
-      const userData = userSnap.docs[0].data();
+      const snap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
+      if (snap.empty) return alert("사용자 정보 없음");
+      const userData = snap.docs[0].data();
       const name = userData.name;
 
       let q;
@@ -183,11 +180,11 @@
         q = query(collection(db, 'tasks'), where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
       }
 
-      const snap = await getDocs(q);
+      const snapTasks = await getDocs(q);
       const list = document.getElementById('taskList');
       list.innerHTML = '';
 
-      snap.forEach(doc => {
+      snapTasks.forEach(doc => {
         const d = doc.data();
         const div = document.createElement('div');
         div.className = 'task';
