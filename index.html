@@ -17,32 +17,25 @@
     .tab button.active { background: #2980b9; }
     .section { display: none; }
     .section.active { display: block; }
-    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; position: relative; }
+    .task.done { background: #d3d3d3; }
     .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
     .logout-btn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; float: right; margin-bottom: 10px; }
-    .btn-group { display: flex; justify-content: flex-end; gap: 5px; margin-top: 10px; }
-    .btn-small { padding: 5px 10px; font-size: 14px; }
+    .actions { display: flex; gap: 5px; margin-top: 8px; }
+    .actions button { flex: 1; font-size: 14px; padding: 5px; }
   </style>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log("✅ 서비스워커 등록 완료"))
-        .catch(err => console.error("❌ 서비스워커 등록 실패", err));
-    }
-  </script>
 </head>
 <body>
   <h1>📋 작업지시표</h1>
 
   <div id="loginBox" class="box">
-    <input type="email" id="email" placeholder="이메일 (예: test@dadam.tv)" />
+    <input type="email" id="email" placeholder="이메일" />
     <input type="password" id="password" placeholder="비밀번호" />
     <button id="loginBtn">로그인</button>
   </div>
 
   <div id="mainApp" style="display:none">
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
-
     <div class="tab" id="tabButtons"></div>
 
     <div id="sectionInput" class="section box">
@@ -68,7 +61,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSrhEZtE44KT66sTke6g-ZH3732QjFNyA",
@@ -82,7 +75,9 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    let currentUser = null;
+
+    let currentUserRole = '';
+    let currentUserName = '';
 
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
@@ -96,36 +91,34 @@
 
     onAuthStateChanged(auth, async user => {
       if (user) {
-        currentUser = user;
-        const usersRef = collection(db, 'users');
-        const userSnap = await getDocs(query(usersRef, where('email', '==', user.email)));
+        const userSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
         if (userSnap.empty) return alert("사용자 정보가 없습니다.");
         const userData = userSnap.docs[0].data();
-        const role = userData.role;
-        const name = userData.name;
+        currentUserRole = userData.role;
+        currentUserName = userData.name;
 
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
 
         const tabButtons = document.getElementById('tabButtons');
         tabButtons.innerHTML = '';
-        if (role === 'admin') {
+        if (currentUserRole === 'admin') {
           tabButtons.innerHTML += `<button id="tabInput" class="active">작업 입력</button>`;
           document.getElementById('sectionInput').classList.add('active');
         } else {
           document.getElementById('sectionInput').style.display = 'none';
         }
-        tabButtons.innerHTML += `<button id="tabList"${role !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
+        tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
 
-        if (role === 'admin') {
+        if (currentUserRole === 'admin') {
           document.getElementById('tabInput').onclick = () => setTab(true);
         }
         document.getElementById('tabList').onclick = () => {
           setTab(false);
-          loadTasks(role, name);
+          loadTasks();
         };
 
-        loadTasks(role, name);
+        loadTasks();
       }
     });
 
@@ -148,7 +141,7 @@
       const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
 
       const task = {
-        uid: currentUser.uid,
+        uid: auth.currentUser.uid,
         staffNames,
         date: document.getElementById('date').value,
         client: document.getElementById('client').value,
@@ -160,30 +153,33 @@
         price: document.getElementById('price').value,
         parts: document.getElementById('parts').value,
         memo: document.getElementById('memo').value,
-        createdAt: new Date()
+        createdAt: new Date(),
+        done: false,
+        deletedBy: []
       };
 
       await addDoc(collection(db, 'tasks'), task);
       alert("작업이 저장되었습니다.");
     };
 
-    async function loadTasks(role, name) {
-      let q;
+    async function loadTasks() {
       const tasksRef = collection(db, 'tasks');
-      if (role === 'admin') {
-        q = query(tasksRef, orderBy('date', 'desc'));
-      } else {
-        q = query(tasksRef, where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
-      }
+      let q = currentUserRole === 'admin'
+        ? query(tasksRef, orderBy('date', 'desc'))
+        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), orderBy('date', 'desc'));
 
       const snap = await getDocs(q);
       const list = document.getElementById('taskList');
       list.innerHTML = '';
 
-      snap.forEach(doc => {
-        const d = doc.data();
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const id = docSnap.id;
+
+        if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
+
         const div = document.createElement('div');
-        div.className = 'task';
+        div.className = 'task' + (d.done ? ' done' : '');
         div.innerHTML = `
           <strong>${d.date}</strong> / ${d.staffNames?.join(', ')} / ${d.client} / ${d.content}<br>
           <small>${d.items}</small>
@@ -195,10 +191,10 @@
             <p>부품: ${d.parts}</p>
             <p>비고: ${d.memo}</p>
           </div>
-          <div class="btn-group">
-            <button class="btn-small" onclick="alert('수정 기능은 구현 예정입니다.')">수정</button>
-            <button class="btn-small" onclick="deleteTask('${doc.id}')">삭제</button>
-            <button class="btn-small" onclick="alert('완료 기능은 구현 예정입니다.')">완료</button>
+          <div class="actions">
+            <button onclick="markDone('${id}')">완료</button>
+            <button onclick="deleteTask('${id}')">삭제</button>
+            <button onclick="alert('수정기능 준비중')">수정</button>
           </div>
         `;
         div.onclick = () => {
@@ -209,12 +205,27 @@
       });
     }
 
-    window.deleteTask = async (id) => {
-      if (confirm("이 작업을 삭제하시겠습니까?")) {
-        await deleteDoc(doc(db, 'tasks', id));
-        alert("삭제되었습니다.");
-        location.reload();
+    window.markDone = async id => {
+      const ref = doc(db, 'tasks', id);
+      await updateDoc(ref, { done: true });
+      loadTasks();
+    };
+
+    window.deleteTask = async id => {
+      const ref = doc(db, 'tasks', id);
+      const snap = await getDoc(ref);
+      const data = snap.data();
+
+      if (currentUserRole === 'admin') {
+        await deleteDoc(ref);
+      } else {
+        const deletedBy = data.deletedBy || [];
+        if (!deletedBy.includes(currentUserName)) {
+          deletedBy.push(currentUserName);
+          await updateDoc(ref, { deletedBy });
+        }
       }
+      loadTasks();
     };
   </script>
 </body>
