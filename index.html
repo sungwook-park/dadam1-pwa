@@ -1,0 +1,188 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>작업지시표 - 다담TV</title>
+  <meta name="theme-color" content="#2c3e50" />
+  <style>
+    body { font-family: 'Malgun Gothic', sans-serif; background: #f4f6f8; padding: 20px; }
+    h1 { background: #2c3e50; color: #fff; padding: 15px; text-align: center; border-radius: 10px; }
+    .box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input, textarea, button { width: 100%; padding: 10px; margin: 5px 0; font-size: 16px; box-sizing: border-box; }
+    button { background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .tab { display: flex; gap: 10px; margin-bottom: 10px; }
+    .tab button { flex: 1; }
+    .tab button.active { background: #2980b9; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
+    .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>📋 작업지시표</h1>
+
+  <div id="loginBox" class="box">
+    <input type="email" id="email" placeholder="이메일 (예: test@dadam.tv)" />
+    <input type="password" id="password" placeholder="비밀번호 (123456)" />
+    <button id="loginBtn">로그인</button>
+  </div>
+
+  <div id="mainApp" style="display:none">
+    <div class="tab">
+      <button id="tabInput" class="active">작업 입력</button>
+      <button id="tabList">목록 보기</button>
+    </div>
+
+    <div id="sectionInput" class="section active box">
+      <input type="date" id="date" />
+      <input type="text" id="staff" placeholder="작업자" />
+      <input type="text" id="client" placeholder="거래처명" />
+      <input type="text" id="removeAddr" placeholder="철거주소" />
+      <input type="text" id="installAddr" placeholder="설치주소" />
+      <input type="text" id="contact" placeholder="고객연락처" />
+      <textarea id="content" placeholder="작업내용"></textarea>
+      <input type="text" id="items" placeholder="작업품목" />
+      <input type="text" id="price" placeholder="금액" />
+      <textarea id="parts" placeholder="사용부품"></textarea>
+      <textarea id="memo" placeholder="비고"></textarea>
+      <button id="saveBtn">작업 저장</button>
+    </div>
+
+    <div id="sectionList" class="section box">
+      <div id="taskList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, doc, getDoc, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSrhEZtE44KT66sTke6g-ZH3732QjFNyA",
+      authDomain: "dadam-work.firebaseapp.com",
+      projectId: "dadam-work",
+      storageBucket: "dadam-work.firebasestorage.app",
+      messagingSenderId: "617534061102",
+      appId: "1:617534061102:web:b2dec870a45c6a5b20bdbf"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    document.getElementById('loginBtn').onclick = async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        alert("로그인 실패: " + err.message);
+      }
+    };
+
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) {
+          alert("사용자 권한 정보가 없습니다.");
+          return;
+        }
+        const role = userDoc.data().role;
+        console.log("✅ 로그인 UID:", user.uid, " / 역할:", role);
+
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+
+        // 권한에 따라 탭 제어
+        if (role === 'admin') {
+          document.getElementById('tabInput').style.display = 'inline-block';
+          setTab(true);
+          loadTasks(); // 전체 보기
+        } else {
+          document.getElementById('tabInput').style.display = 'none';
+          setTab(false);
+          loadTasks(user.uid); // 본인만 보기
+        }
+
+        // 저장 버튼 기능 (관리자만 입력)
+        document.getElementById('saveBtn').onclick = async () => {
+          if (role !== 'admin') return;
+          const task = {
+            uid: user.uid,
+            date: document.getElementById('date').value,
+            staff: document.getElementById('staff').value,
+            client: document.getElementById('client').value,
+            removeAddr: document.getElementById('removeAddr').value,
+            installAddr: document.getElementById('installAddr').value,
+            contact: document.getElementById('contact').value,
+            content: document.getElementById('content').value,
+            items: document.getElementById('items').value,
+            price: document.getElementById('price').value,
+            parts: document.getElementById('parts').value,
+            memo: document.getElementById('memo').value,
+            createdAt: new Date()
+          };
+          await addDoc(collection(db, 'tasks'), task);
+          alert("작업이 저장되었습니다.");
+          ['date','staff','client','removeAddr','installAddr','contact','content','items','price','parts','memo']
+            .forEach(id => document.getElementById(id).value = '');
+        };
+      }
+    });
+
+    document.getElementById('tabInput').onclick = () => setTab(true);
+    document.getElementById('tabList').onclick = () => {
+      setTab(false);
+      const user = auth.currentUser;
+      if (user) loadTasks(user.uid);
+    };
+
+    function setTab(inputActive) {
+      document.getElementById('tabInput').classList.toggle('active', inputActive);
+      document.getElementById('tabList').classList.toggle('active', !inputActive);
+      document.getElementById('sectionInput').classList.toggle('active', inputActive);
+      document.getElementById('sectionList').classList.toggle('active', !inputActive);
+    }
+
+    async function loadTasks(uid = null) {
+      try {
+        const taskRef = collection(db, 'tasks');
+        const q = uid
+          ? query(taskRef, where('uid', '==', uid), orderBy('createdAt', 'desc'))
+          : query(taskRef, orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        const list = document.getElementById('taskList');
+        list.innerHTML = '';
+        snap.forEach(doc => {
+          const d = doc.data();
+          const div = document.createElement('div');
+          div.className = 'task';
+          div.innerHTML = `
+            <strong>${d.date}</strong> / ${d.staff} / ${d.client} / ${d.content}<br>
+            <small>${d.items}</small>
+            <div class="details">
+              <p>철거: ${d.removeAddr}</p>
+              <p>설치: ${d.installAddr}</p>
+              <p>연락처: ${d.contact}</p>
+              <p>금액: ${d.price}</p>
+              <p>부품: ${d.parts}</p>
+              <p>비고: ${d.memo}</p>
+            </div>`;
+          div.onclick = () => {
+            const det = div.querySelector('.details');
+            det.style.display = det.style.display === 'block' ? 'none' : 'block';
+          };
+          list.appendChild(div);
+        });
+      } catch (error) {
+        console.error("❌ 작업 불러오기 오류:", error);
+        alert("작업 목록을 불러오지 못했습니다.");
+      }
+    }
+  </script>
+</body>
+</html>
