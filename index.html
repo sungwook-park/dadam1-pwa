@@ -34,21 +34,20 @@
 
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일 (예: test@dadam.tv)" />
-    <input type="password" id="password" placeholder="비밀번호 (123456)" />
+    <input type="password" id="password" placeholder="비밀번호" />
     <button id="loginBtn">로그인</button>
   </div>
 
   <div id="mainApp" style="display:none">
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
 
-    <div class="tab" id="tabContainer">
-      <button id="tabInput">작업 입력</button>
-      <button id="tabList" class="active">목록 보기</button>
+    <div class="tab" id="tabButtons">
+      <!-- 탭은 로그인 후 JS에서 표시됨 -->
     </div>
 
     <div id="sectionInput" class="section box">
       <input type="date" id="date" />
-      <input type="text" id="staff" placeholder="작업자 이름 (여러명일 경우 ,로 구분)" />
+      <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />
       <input type="text" id="client" placeholder="거래처명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
       <input type="text" id="installAddr" placeholder="설치주소" />
@@ -61,7 +60,7 @@
       <button id="saveBtn">작업 저장</button>
     </div>
 
-    <div id="sectionList" class="section active box">
+    <div id="sectionList" class="section box">
       <div id="taskList"></div>
     </div>
   </div>
@@ -84,8 +83,6 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUserData = null;
-
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -98,23 +95,39 @@
 
     onAuthStateChanged(auth, async user => {
       if (user) {
-        const snap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-        if (snap.empty) return alert("사용자 정보 없음");
-
-        currentUserData = snap.docs[0].data();
+        const usersRef = collection(db, 'users');
+        const userSnap = await getDocs(query(usersRef, where('email', '==', user.email)));
+        if (userSnap.empty) return alert("사용자 정보가 없습니다.");
+        const userData = userSnap.docs[0].data();
+        const role = userData.role;
+        const name = userData.name;
 
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
 
-        const isAdmin = currentUserData.role === 'admin';
+        // 탭 버튼 생성
+        const tabButtons = document.getElementById('tabButtons');
+        tabButtons.innerHTML = '';
+        if (role === 'admin') {
+          tabButtons.innerHTML += `<button id="tabInput" class="active">작업 입력</button>`;
+          document.getElementById('sectionInput').classList.add('active');
+        } else {
+          document.getElementById('sectionInput').style.display = 'none';
+        }
+        tabButtons.innerHTML += `<button id="tabList"${role !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
 
-        // 관리자만 입력 탭 보이기
-        document.getElementById('tabInput').style.display = isAdmin ? 'block' : 'none';
+        // 탭 이벤트
+        if (role === 'admin') {
+          document.getElementById('tabInput').onclick = () => {
+            setTab(true);
+          };
+        }
+        document.getElementById('tabList').onclick = () => {
+          setTab(false);
+          loadTasks(role, name);
+        };
 
-        // 목록 탭 활성화로 시작
-        setTab(false);
-
-        loadTasks(user);
+        loadTasks(role, name);
       }
     });
 
@@ -123,20 +136,12 @@
       location.reload();
     };
 
-    document.getElementById('tabInput').onclick = () => setTab(true);
-    document.getElementById('tabList').onclick = () => {
-      setTab(false);
-      const user = auth.currentUser;
-      if (user) loadTasks(user);
-    };
-
     function setTab(inputActive) {
-      const isAdmin = currentUserData?.role === 'admin';
-
-      document.getElementById('tabInput').classList.toggle('active', inputActive && isAdmin);
-      document.getElementById('sectionInput').classList.toggle('active', inputActive && isAdmin);
-
-      document.getElementById('tabList').classList.toggle('active', !inputActive);
+      const inputTab = document.getElementById('tabInput');
+      const listTab = document.getElementById('tabList');
+      if (inputTab) inputTab.classList.toggle('active', inputActive);
+      if (listTab) listTab.classList.toggle('active', !inputActive);
+      document.getElementById('sectionInput').classList.toggle('active', inputActive);
       document.getElementById('sectionList').classList.toggle('active', !inputActive);
     }
 
@@ -145,7 +150,7 @@
       if (!user) return;
 
       const staffInput = document.getElementById('staff').value;
-      const staffNames = staffInput.split(',').map(s => s.trim()).filter(Boolean);
+      const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
 
       const task = {
         uid: user.uid,
@@ -167,24 +172,20 @@
       alert("작업이 저장되었습니다.");
     };
 
-    async function loadTasks(user) {
-      const snap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-      if (snap.empty) return alert("사용자 정보 없음");
-      const userData = snap.docs[0].data();
-      const name = userData.name;
-
+    async function loadTasks(role, name) {
       let q;
-      if (userData.role === 'admin') {
-        q = query(collection(db, 'tasks'), orderBy('date', 'desc'));
+      const tasksRef = collection(db, 'tasks');
+      if (role === 'admin') {
+        q = query(tasksRef, orderBy('date', 'desc'));
       } else {
-        q = query(collection(db, 'tasks'), where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
+        q = query(tasksRef, where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
       }
 
-      const snapTasks = await getDocs(q);
+      const snap = await getDocs(q);
       const list = document.getElementById('taskList');
       list.innerHTML = '';
 
-      snapTasks.forEach(doc => {
+      snap.forEach(doc => {
         const d = doc.data();
         const div = document.createElement('div');
         div.className = 'task';
