@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+관리자만 작업입력 가능하게 제한<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -19,8 +19,9 @@
     .section.active { display: block; }
     .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
     .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
-    .logout-btn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; float: right; margin-bottom: 10px; }
+    #logoutBtn { width: auto; background: white; color: red; border: 1px solid red; padding: 5px 10px; float: right; border-radius: 5px; margin-top: -40px; }
   </style>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
@@ -30,7 +31,7 @@
   </script>
 </head>
 <body>
-  <h1>📋 작업지시표</h1>
+  <h1>📋 작업지시표 <button id="logoutBtn">로그아웃</button></h1>
 
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일 (예: test@dadam.tv)" />
@@ -39,16 +40,14 @@
   </div>
 
   <div id="mainApp" style="display:none">
-    <button id="logoutBtn" class="logout-btn">로그아웃</button>
-
     <div class="tab">
-      <button id="tabInput" class="active">작업 입력</button>
-      <button id="tabList">목록 보기</button>
+      <button id="tabInput">작업 입력</button>
+      <button id="tabList" class="active">목록 보기</button>
     </div>
 
-    <div id="sectionInput" class="section active box">
+    <div id="sectionInput" class="section box">
       <input type="date" id="date" />
-      <input type="text" id="staff" placeholder="작업자 이름 (여러명일 경우 ,로 구분)" />
+      <input type="text" id="staff" placeholder="작업자 이름 (쉼표로 구분)" />
       <input type="text" id="client" placeholder="거래처명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
       <input type="text" id="installAddr" placeholder="설치주소" />
@@ -61,7 +60,8 @@
       <button id="saveBtn">작업 저장</button>
     </div>
 
-    <div id="sectionList" class="section box">
+    <div id="sectionList" class="section active box">
+      <div id="staffNameInputArea" style="margin-bottom:10px;"></div>
       <div id="taskList"></div>
     </div>
   </div>
@@ -69,7 +69,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSrhEZtE44KT66sTke6g-ZH3732QjFNyA",
@@ -84,44 +84,42 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUserData = null;
+    let currentUserRole = '';
+    let currentUserName = '';
 
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        const snap = await getDoc(doc(db, 'users', email));
+        if (snap.exists()) {
+          currentUserRole = snap.data().role;
+          currentUserName = snap.data().name;
+          initApp();
+        } else {
+          alert('사용자 정보가 없습니다.');
+        }
       } catch (err) {
         alert("로그인 실패: " + err.message);
       }
     };
 
-    onAuthStateChanged(auth, async user => {
-      if (user) {
-        const userSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-        if (userSnap.empty) {
-          alert("사용자 정보가 없습니다.");
-          return;
-        }
-        currentUserData = userSnap.docs[0].data();
-
-        document.getElementById('loginBox').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        loadTasks(user);
-      }
-    });
-
-    document.getElementById('logoutBtn').onclick = async () => {
-      await signOut(auth);
-      location.reload();
-    };
-
-    document.getElementById('tabInput').onclick = () => setTab(true);
-    document.getElementById('tabList').onclick = () => {
+    function initApp() {
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
       setTab(false);
-      const user = auth.currentUser;
-      if (user) loadTasks(user);
-    };
+
+      if (currentUserRole === 'admin') {
+        document.getElementById('tabInput').style.display = 'block';
+        document.getElementById('sectionInput').style.display = 'block';
+        loadTasks(); // 관리자 전체 작업 조회
+      } else {
+        document.getElementById('tabInput').style.display = 'none';
+        document.getElementById('sectionInput').style.display = 'none';
+        showStaffNameInput();
+      }
+    }
 
     function setTab(inputActive) {
       document.getElementById('tabInput').classList.toggle('active', inputActive);
@@ -130,16 +128,25 @@
       document.getElementById('sectionList').classList.toggle('active', !inputActive);
     }
 
+    document.getElementById('tabInput').onclick = () => setTab(true);
+    document.getElementById('tabList').onclick = () => {
+      setTab(false);
+      if (currentUserRole === 'admin') {
+        loadTasks();
+      } else {
+        showStaffNameInput();
+      }
+    };
+
     document.getElementById('saveBtn').onclick = async () => {
       const user = auth.currentUser;
       if (!user) return;
-
-      const staffInput = document.getElementById('staff').value;
-      const staffNames = staffInput.split(',').map(s => s.trim()).filter(Boolean);
+      const staffRaw = document.getElementById('staff').value;
+      const staffNames = staffRaw.split(',').map(s => s.trim());
 
       const task = {
         uid: user.uid,
-        staffNames,
+        staffNames: staffNames,
         date: document.getElementById('date').value,
         client: document.getElementById('client').value,
         removeAddr: document.getElementById('removeAddr').value,
@@ -152,33 +159,19 @@
         memo: document.getElementById('memo').value,
         createdAt: new Date()
       };
-
       await addDoc(collection(db, 'tasks'), task);
       alert("작업이 저장되었습니다.");
     };
 
-    async function loadTasks(user) {
-      const usersRef = collection(db, 'users');
-      const userSnap = await getDocs(query(usersRef, where('email', '==', user.email)));
-      if (userSnap.empty) return alert("사용자 정보가 없습니다.");
-
-      const userData = userSnap.docs[0].data();
-      const role = userData.role;
-      const name = userData.name;
-
-      let q;
-      if (role === 'admin') {
-        q = query(collection(db, 'tasks'), orderBy('date', 'desc'));
-      } else {
-        q = query(collection(db, 'tasks'), where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
-      }
-
+    async function loadTasks(staffNameFilter = '') {
+      const q = query(collection(db, 'tasks'), orderBy('date', 'desc'));
       const snap = await getDocs(q);
       const list = document.getElementById('taskList');
       list.innerHTML = '';
-
       snap.forEach(doc => {
         const d = doc.data();
+        if (staffNameFilter && !(d.staffNames || []).includes(staffNameFilter)) return;
+
         const div = document.createElement('div');
         div.className = 'task';
         div.innerHTML = `
@@ -199,6 +192,21 @@
         list.appendChild(div);
       });
     }
+
+    function showStaffNameInput() {
+      const area = document.getElementById('staffNameInputArea');
+      area.innerHTML = `<input type="text" id="staffSearch" placeholder="본인 이름을 입력하세요" />
+                        <button id="searchBtn">검색</button>`;
+      document.getElementById('searchBtn').onclick = () => {
+        const name = document.getElementById('staffSearch').value.trim();
+        if (name) loadTasks(name);
+      };
+    }
+
+    document.getElementById('logoutBtn').onclick = async () => {
+      await signOut(auth);
+      location.reload();
+    };
   </script>
 </body>
 </html>
