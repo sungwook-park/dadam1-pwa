@@ -1,7 +1,7 @@
 {
   "name": "다담TV 작업지시표",
   "short_name": "작업지시표",
-  "start_url": "./index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f6f8",
   "theme_color": "#2c3e50",
