@@ -17,7 +17,7 @@
     .tab button.active { background: #2980b9; }
     .section { display: none; }
     .section.active { display: block; }
-    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; position: relative; }
+    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative; }
     .task.done { background: #d3d3d3; }
     .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
     .logout-btn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; float: right; margin-bottom: 10px; }
@@ -41,7 +41,7 @@
     <div id="sectionInput" class="section box">
       <input type="date" id="date" />
       <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />
-      <input type="text" id="client" placeholder="거래처명" />
+      <input type="text" id="client" placeholder="거래차명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
       <input type="text" id="installAddr" placeholder="설치주소" />
       <input type="text" id="contact" placeholder="고객연락처" />
@@ -58,176 +58,7 @@
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCSrhEZtE44KT66sTke6g-ZH3732QjFNyA",
-      authDomain: "dadam-work.firebaseapp.com",
-      projectId: "dadam-work",
-      storageBucket: "dadam-work.appspot.com",
-      messagingSenderId: "617534061102",
-      appId: "1:617534061102:web:b2dec870a45c6a5b20bdbf"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    let currentUserRole = '';
-    let currentUserName = '';
-
-    document.getElementById('loginBtn').onclick = async () => {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (err) {
-        alert("로그인 실패: " + err.message);
-      }
-    };
-
-    onAuthStateChanged(auth, async user => {
-      if (user) {
-        const userSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-        if (userSnap.empty) return alert("사용자 정보가 없습니다.");
-        const userData = userSnap.docs[0].data();
-        currentUserRole = userData.role;
-        currentUserName = userData.name;
-
-        document.getElementById('loginBox').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-
-        const tabButtons = document.getElementById('tabButtons');
-        tabButtons.innerHTML = '';
-        if (currentUserRole === 'admin') {
-          tabButtons.innerHTML += `<button id="tabInput" class="active">작업 입력</button>`;
-          document.getElementById('sectionInput').classList.add('active');
-        } else {
-          document.getElementById('sectionInput').style.display = 'none';
-        }
-        tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
-
-        if (currentUserRole === 'admin') {
-          document.getElementById('tabInput').onclick = () => setTab(true);
-        }
-        document.getElementById('tabList').onclick = () => {
-          setTab(false);
-          loadTasks();
-        };
-
-        loadTasks();
-      }
-    });
-
-    document.getElementById('logoutBtn').onclick = async () => {
-      await signOut(auth);
-      location.reload();
-    };
-
-    function setTab(inputActive) {
-      const inputTab = document.getElementById('tabInput');
-      const listTab = document.getElementById('tabList');
-      if (inputTab) inputTab.classList.toggle('active', inputActive);
-      if (listTab) listTab.classList.toggle('active', !inputActive);
-      document.getElementById('sectionInput').classList.toggle('active', inputActive);
-      document.getElementById('sectionList').classList.toggle('active', !inputActive);
-    }
-
-    document.getElementById('saveBtn').onclick = async () => {
-      const staffInput = document.getElementById('staff').value;
-      const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
-
-      const task = {
-        uid: auth.currentUser.uid,
-        staffNames,
-        date: document.getElementById('date').value,
-        client: document.getElementById('client').value,
-        removeAddr: document.getElementById('removeAddr').value,
-        installAddr: document.getElementById('installAddr').value,
-        contact: document.getElementById('contact').value,
-        content: document.getElementById('content').value,
-        items: document.getElementById('items').value,
-        price: document.getElementById('price').value,
-        parts: document.getElementById('parts').value,
-        memo: document.getElementById('memo').value,
-        createdAt: new Date(),
-        done: false,
-        deletedBy: []
-      };
-
-      await addDoc(collection(db, 'tasks'), task);
-      alert("작업이 저장되었습니다.");
-    };
-
-    async function loadTasks() {
-      const tasksRef = collection(db, 'tasks');
-      let q = currentUserRole === 'admin'
-        ? query(tasksRef, orderBy('date', 'desc'))
-        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), orderBy('date', 'desc'));
-
-      const snap = await getDocs(q);
-      const list = document.getElementById('taskList');
-      list.innerHTML = '';
-
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        const id = docSnap.id;
-
-        if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
-
-        const div = document.createElement('div');
-        div.className = 'task' + (d.done ? ' done' : '');
-        div.innerHTML = `
-          <strong>${d.date}</strong> / ${d.staffNames?.join(', ')} / ${d.client} / ${d.content}<br>
-          <small>${d.items}</small>
-          <div class="details">
-            <p>철거: ${d.removeAddr}</p>
-            <p>설치: ${d.installAddr}</p>
-            <p>연락처: ${d.contact}</p>
-            <p>금액: ${d.price}</p>
-            <p>부품: ${d.parts}</p>
-            <p>비고: ${d.memo}</p>
-          </div>
-          <div class="actions">
-            <button onclick="markDone('${id}')">완료</button>
-            <button onclick="deleteTask('${id}')">삭제</button>
-            <button onclick="alert('수정기능 준비중')">수정</button>
-          </div>
-        `;
-        div.onclick = () => {
-          const det = div.querySelector('.details');
-          det.style.display = det.style.display === 'block' ? 'none' : 'block';
-        };
-        list.appendChild(div);
-      });
-    }
-
-    window.markDone = async id => {
-      const ref = doc(db, 'tasks', id);
-      await updateDoc(ref, { done: true });
-      loadTasks();
-    };
-
-    window.deleteTask = async id => {
-      const ref = doc(db, 'tasks', id);
-      const snap = await getDoc(ref);
-      const data = snap.data();
-
-      if (currentUserRole === 'admin') {
-        await deleteDoc(ref);
-      } else {
-        const deletedBy = data.deletedBy || [];
-        if (!deletedBy.includes(currentUserName)) {
-          deletedBy.push(currentUserName);
-          await updateDoc(ref, { deletedBy });
-        }
-      }
-      loadTasks();
-    };
-  </script>
+  <!-- script tag placeholder: 실제 코드 연결은 별도 모듈에서 관리 -->
 </body>
 </html>
 
