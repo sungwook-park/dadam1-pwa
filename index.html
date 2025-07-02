@@ -17,9 +17,11 @@
     .tab button.active { background: #2980b9; }
     .section { display: none; }
     .section.active { display: block; }
-    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
+    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
     .logout-btn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; float: right; margin-bottom: 10px; }
+    .btn-group { display: flex; justify-content: flex-end; gap: 5px; margin-top: 10px; }
+    .btn-small { padding: 5px 10px; font-size: 14px; }
   </style>
   <script>
     if ('serviceWorker' in navigator) {
@@ -41,9 +43,7 @@
   <div id="mainApp" style="display:none">
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
 
-    <div class="tab" id="tabButtons">
-      <!-- 탭은 로그인 후 JS에서 표시됨 -->
-    </div>
+    <div class="tab" id="tabButtons"></div>
 
     <div id="sectionInput" class="section box">
       <input type="date" id="date" />
@@ -68,7 +68,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSrhEZtE44KT66sTke6g-ZH3732QjFNyA",
@@ -82,6 +82,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    let currentUser = null;
 
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
@@ -95,6 +96,7 @@
 
     onAuthStateChanged(auth, async user => {
       if (user) {
+        currentUser = user;
         const usersRef = collection(db, 'users');
         const userSnap = await getDocs(query(usersRef, where('email', '==', user.email)));
         if (userSnap.empty) return alert("사용자 정보가 없습니다.");
@@ -105,7 +107,6 @@
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
 
-        // 탭 버튼 생성
         const tabButtons = document.getElementById('tabButtons');
         tabButtons.innerHTML = '';
         if (role === 'admin') {
@@ -116,11 +117,8 @@
         }
         tabButtons.innerHTML += `<button id="tabList"${role !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
 
-        // 탭 이벤트
         if (role === 'admin') {
-          document.getElementById('tabInput').onclick = () => {
-            setTab(true);
-          };
+          document.getElementById('tabInput').onclick = () => setTab(true);
         }
         document.getElementById('tabList').onclick = () => {
           setTab(false);
@@ -146,14 +144,11 @@
     }
 
     document.getElementById('saveBtn').onclick = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-
       const staffInput = document.getElementById('staff').value;
       const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
 
       const task = {
-        uid: user.uid,
+        uid: currentUser.uid,
         staffNames,
         date: document.getElementById('date').value,
         client: document.getElementById('client').value,
@@ -199,7 +194,13 @@
             <p>금액: ${d.price}</p>
             <p>부품: ${d.parts}</p>
             <p>비고: ${d.memo}</p>
-          </div>`;
+          </div>
+          <div class="btn-group">
+            <button class="btn-small" onclick="alert('수정 기능은 구현 예정입니다.')">수정</button>
+            <button class="btn-small" onclick="deleteTask('${doc.id}')">삭제</button>
+            <button class="btn-small" onclick="alert('완료 기능은 구현 예정입니다.')">완료</button>
+          </div>
+        `;
         div.onclick = () => {
           const det = div.querySelector('.details');
           det.style.display = det.style.display === 'block' ? 'none' : 'block';
@@ -207,6 +208,14 @@
         list.appendChild(div);
       });
     }
+
+    window.deleteTask = async (id) => {
+      if (confirm("이 작업을 삭제하시겠습니까?")) {
+        await deleteDoc(doc(db, 'tasks', id));
+        alert("삭제되었습니다.");
+        location.reload();
+      }
+    };
   </script>
 </body>
 </html>
