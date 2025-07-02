@@ -1,11 +1,10 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>작업지시표 - 다담TV</title>
-  <link rel="manifest" href="manifest.json" />
+  <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#2c3e50" />
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background: #f4f6f8; padding: 20px; }
@@ -21,6 +20,15 @@
     .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
     .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
   </style>
+
+  <script>
+    // ✅ PWA 서비스워커 등록
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log("✅ 서비스워커 등록 완료"))
+        .catch(err => console.error("❌ 서비스워커 등록 실패", err));
+    }
+  </script>
 </head>
 <body>
   <h1>📋 작업지시표</h1>
@@ -60,13 +68,13 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSrhEZtE44KT66sTke6g-ZH3732QjFNyA",
       authDomain: "dadam-work.firebaseapp.com",
       projectId: "dadam-work",
-      storageBucket: "dadam-work.firebasestorage.app",
+      storageBucket: "dadam-work.appspot.com",
       messagingSenderId: "617534061102",
       appId: "1:617534061102:web:b2dec870a45c6a5b20bdbf"
     };
@@ -85,57 +93,17 @@
       }
     };
 
-    onAuthStateChanged(auth, async user => {
+    onAuthStateChanged(auth, user => {
       if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (!userDoc.exists()) {
-          alert("사용자 권한 정보가 없습니다.");
-          return;
-        }
-        const role = userDoc.data().role;
-        console.log("✅ 로그인 UID:", user.uid, " / 역할:", role);
-
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-
-        // 권한에 따라 탭 제어
-        if (role === 'admin') {
-          document.getElementById('tabInput').style.display = 'inline-block';
-          setTab(true);
-          loadTasks(); // 전체 보기
-        } else {
-          document.getElementById('tabInput').style.display = 'none';
-          setTab(false);
-          loadTasks(user.uid); // 본인만 보기
-        }
-
-        // 저장 버튼 기능 (관리자만 입력)
-        document.getElementById('saveBtn').onclick = async () => {
-          if (role !== 'admin') return;
-          const task = {
-            uid: user.uid,
-            date: document.getElementById('date').value,
-            staff: document.getElementById('staff').value,
-            client: document.getElementById('client').value,
-            removeAddr: document.getElementById('removeAddr').value,
-            installAddr: document.getElementById('installAddr').value,
-            contact: document.getElementById('contact').value,
-            content: document.getElementById('content').value,
-            items: document.getElementById('items').value,
-            price: document.getElementById('price').value,
-            parts: document.getElementById('parts').value,
-            memo: document.getElementById('memo').value,
-            createdAt: new Date()
-          };
-          await addDoc(collection(db, 'tasks'), task);
-          alert("작업이 저장되었습니다.");
-          ['date','staff','client','removeAddr','installAddr','contact','content','items','price','parts','memo']
-            .forEach(id => document.getElementById(id).value = '');
-        };
+        loadTasks(user.uid);
       }
     });
 
-    document.getElementById('tabInput').onclick = () => setTab(true);
+    document.getElementById('tabInput').onclick = () => {
+      setTab(true);
+    };
     document.getElementById('tabList').onclick = () => {
       setTab(false);
       const user = auth.currentUser;
@@ -149,41 +117,59 @@
       document.getElementById('sectionList').classList.toggle('active', !inputActive);
     }
 
-    async function loadTasks(uid = null) {
-      try {
-        const taskRef = collection(db, 'tasks');
-        const q = uid
-          ? query(taskRef, where('uid', '==', uid), orderBy('createdAt', 'desc'))
-          : query(taskRef, orderBy('createdAt', 'desc'));
-        const snap = await getDocs(q);
-        const list = document.getElementById('taskList');
-        list.innerHTML = '';
-        snap.forEach(doc => {
-          const d = doc.data();
-          const div = document.createElement('div');
-          div.className = 'task';
-          div.innerHTML = `
-            <strong>${d.date}</strong> / ${d.staff} / ${d.client} / ${d.content}<br>
-            <small>${d.items}</small>
-            <div class="details">
-              <p>철거: ${d.removeAddr}</p>
-              <p>설치: ${d.installAddr}</p>
-              <p>연락처: ${d.contact}</p>
-              <p>금액: ${d.price}</p>
-              <p>부품: ${d.parts}</p>
-              <p>비고: ${d.memo}</p>
-            </div>`;
-          div.onclick = () => {
-            const det = div.querySelector('.details');
-            det.style.display = det.style.display === 'block' ? 'none' : 'block';
-          };
-          list.appendChild(div);
-        });
-      } catch (error) {
-        console.error("❌ 작업 불러오기 오류:", error);
-        alert("작업 목록을 불러오지 못했습니다.");
-      }
+    document.getElementById('saveBtn').onclick = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const task = {
+        uid: user.uid,
+        date: document.getElementById('date').value,
+        staff: document.getElementById('staff').value,
+        client: document.getElementById('client').value,
+        removeAddr: document.getElementById('removeAddr').value,
+        installAddr: document.getElementById('installAddr').value,
+        contact: document.getElementById('contact').value,
+        content: document.getElementById('content').value,
+        items: document.getElementById('items').value,
+        price: document.getElementById('price').value,
+        parts: document.getElementById('parts').value,
+        memo: document.getElementById('memo').value,
+        createdAt: new Date()
+      };
+      await addDoc(collection(db, 'tasks'), task);
+      alert("작업이 저장되었습니다.");
+    };
+
+    async function loadTasks(uid) {
+      const q = query(collection(db, 'tasks'), where('uid', '==', uid), orderBy('date', 'desc'));
+      const snap = await getDocs(q);
+      const list = document.getElementById('taskList');
+      list.innerHTML = '';
+      snap.forEach(doc => {
+        const d = doc.data();
+        const div = document.createElement('div');
+        div.className = 'task';
+        div.innerHTML = `
+          <strong>${d.date}</strong> / ${d.staff} / ${d.client} / ${d.content}<br>
+          <small>${d.items}</small>
+          <div class="details">
+            <p>철거: ${d.removeAddr}</p>
+            <p>설치: ${d.installAddr}</p>
+            <p>연락처: ${d.contact}</p>
+            <p>금액: ${d.price}</p>
+            <p>부품: ${d.parts}</p>
+            <p>비고: ${d.memo}</p>
+          </div>`;
+        div.onclick = () => {
+          const det = div.querySelector('.details');
+          det.style.display = det.style.display === 'block' ? 'none' : 'block';
+        };
+        list.appendChild(div);
+      });
     }
+  </script>
+</body>
+</html>
+
   </script>
 </body>
 </html>
