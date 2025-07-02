@@ -8,28 +8,7 @@
   <meta name="theme-color" content="#2c3e50" />
   <style>
     body { font-family: 'Malgun Gothic', sans-serif; background: #f4f6f8; padding: 20px; }
-    h1 {
-      background: #2c3e50;
-      color: #fff;
-      padding: 15px;
-      text-align: center;
-      border-radius: 10px;
-      position: relative;
-    }
-    #logoutBtn {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      background: none;
-      border: 1px solid #e74c3c;
-      color: #e74c3c;
-      padding: 4px 10px;
-      border-radius: 5px;
-      font-size: 14px;
-      cursor: pointer;
-      display: none;
-      width: auto;
-    }
+    h1 { background: #2c3e50; color: #fff; padding: 15px; text-align: center; border-radius: 10px; }
     .box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
     input, textarea, button { width: 100%; padding: 10px; margin: 5px 0; font-size: 16px; box-sizing: border-box; }
     button { background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; }
@@ -40,10 +19,9 @@
     .section.active { display: block; }
     .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
     .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
+    #logoutBtn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; margin: 10px 0; float: right; }
   </style>
-
   <script>
-    // ✅ PWA 서비스워커 등록
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
         .then(() => console.log("✅ 서비스워커 등록 완료"))
@@ -52,10 +30,7 @@
   </script>
 </head>
 <body>
-  <h1>
-    <span>📋 작업지시표</span>
-    <button id="logoutBtn">로그아웃</button>
-  </h1>
+  <h1>📋 작업지시표</h1>
 
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일 (예: test@dadam.tv)" />
@@ -64,6 +39,7 @@
   </div>
 
   <div id="mainApp" style="display:none">
+    <button id="logoutBtn">로그아웃</button>
     <div class="tab">
       <button id="tabInput" class="active">작업 입력</button>
       <button id="tabList">목록 보기</button>
@@ -71,7 +47,7 @@
 
     <div id="sectionInput" class="section active box">
       <input type="date" id="date" />
-      <input type="text" id="staff" placeholder="작업자" />
+      <input type="text" id="staff" placeholder="작업자 (쉼표로 여러명 입력 가능)" />
       <input type="text" id="client" placeholder="거래처명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
       <input type="text" id="installAddr" placeholder="설치주소" />
@@ -85,7 +61,9 @@
     </div>
 
     <div id="sectionList" class="section box">
-      <div id="taskList"></div>
+      <input type="text" id="staffName" placeholder="작업자 이름 입력" />
+      <button id="viewMyTasksBtn">내 작업 보기</button>
+      <div id="taskList" style="margin-top: 10px;"></div>
     </div>
   </div>
 
@@ -117,32 +95,20 @@
       }
     };
 
-    document.getElementById('logoutBtn').onclick = async () => {
-      try {
-        await signOut(auth);
-        location.reload();
-      } catch (err) {
-        alert("로그아웃 실패: " + err.message);
-      }
-    };
-
     onAuthStateChanged(auth, user => {
       if (user) {
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('logoutBtn').style.display = 'inline-block';
-        loadTasks(user.uid);
       }
     });
 
-    document.getElementById('tabInput').onclick = () => {
-      setTab(true);
+    document.getElementById('logoutBtn').onclick = async () => {
+      await signOut(auth);
+      location.reload();
     };
-    document.getElementById('tabList').onclick = () => {
-      setTab(false);
-      const user = auth.currentUser;
-      if (user) loadTasks(user.uid);
-    };
+
+    document.getElementById('tabInput').onclick = () => setTab(true);
+    document.getElementById('tabList').onclick = () => setTab(false);
 
     function setTab(inputActive) {
       document.getElementById('tabInput').classList.toggle('active', inputActive);
@@ -154,10 +120,13 @@
     document.getElementById('saveBtn').onclick = async () => {
       const user = auth.currentUser;
       if (!user) return;
+      const rawNames = document.getElementById('staff').value.trim();
+      const staffNames = rawNames.split(',').map(n => n.trim()).filter(n => n);
+
       const task = {
         uid: user.uid,
+        staffNames: staffNames,
         date: document.getElementById('date').value,
-        staff: document.getElementById('staff').value,
         client: document.getElementById('client').value,
         removeAddr: document.getElementById('removeAddr').value,
         installAddr: document.getElementById('installAddr').value,
@@ -173,8 +142,13 @@
       alert("작업이 저장되었습니다.");
     };
 
-    async function loadTasks(uid) {
-      const q = query(collection(db, 'tasks'), where('uid', '==', uid), orderBy('date', 'desc'));
+    document.getElementById('viewMyTasksBtn').onclick = () => {
+      const staffName = document.getElementById('staffName').value.trim();
+      if (staffName) loadTasksByStaffName(staffName);
+    };
+
+    async function loadTasksByStaffName(name) {
+      const q = query(collection(db, 'tasks'), where('staffNames', 'array-contains', name), orderBy('date', 'desc'));
       const snap = await getDocs(q);
       const list = document.getElementById('taskList');
       list.innerHTML = '';
@@ -183,7 +157,7 @@
         const div = document.createElement('div');
         div.className = 'task';
         div.innerHTML = `
-          <strong>${d.date}</strong> / ${d.staff} / ${d.client} / ${d.content}<br>
+          <strong>${d.date}</strong> / ${d.staffNames?.join(', ')} / ${d.client} / ${d.content}<br>
           <small>${d.items}</small>
           <div class="details">
             <p>철거: ${d.removeAddr}</p>
