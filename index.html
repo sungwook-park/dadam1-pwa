@@ -203,7 +203,9 @@
       document.getElementById('parts').value = d.parts || '';
       document.getElementById('memo').value = d.memo || '';
 
-      setTab(true);
+      setTab(true); // 탭 전환
+      document.getElementById('sectionInput').classList.add('active');
+      document.getElementById('sectionList').classList.remove('active');
     };
 
     async function loadTasks() {
