@@ -105,22 +105,27 @@
         tabButtons.innerHTML = '';
 
         if (currentUserRole === 'admin') {
-          tabButtons.innerHTML += `<button id="tabInput" class="active">작업 입력</button>`;
-          document.getElementById('sectionInput').classList.add('active');
+          tabButtons.innerHTML += `<button id="tabInput">작업 입력</button>`;
         }
 
-        tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
+        tabButtons.innerHTML += `
+          <button id="tabList" class="active">목록 보기</button>
+          <button id="tabDone">완료 보기</button>
+        `;
 
         if (currentUserRole === 'admin') {
-          document.getElementById('tabInput').onclick = () => setTab(true);
+          document.getElementById('tabInput').onclick = () => setTab('input');
         }
-
         document.getElementById('tabList').onclick = () => {
-          setTab(false);
-          loadTasks();
+          setTab('list');
+          loadTasks('incomplete');
+        };
+        document.getElementById('tabDone').onclick = () => {
+          setTab('done');
+          loadTasks('done');
         };
 
-        loadTasks();
+        loadTasks('incomplete');
       }
     });
 
@@ -129,13 +134,17 @@
       location.reload();
     };
 
-    function setTab(inputActive) {
-      if (currentUserRole === 'admin') {
-        document.getElementById('tabInput')?.classList.toggle('active', inputActive);
+    function setTab(tabName) {
+      document.querySelectorAll('.tab button').forEach(btn => btn.classList.remove('active'));
+      if (tabName === 'input') {
+        document.getElementById('tabInput')?.classList.add('active');
+      } else if (tabName === 'list') {
+        document.getElementById('tabList')?.classList.add('active');
+      } else if (tabName === 'done') {
+        document.getElementById('tabDone')?.classList.add('active');
       }
-      document.getElementById('tabList')?.classList.toggle('active', !inputActive);
-      document.getElementById('sectionInput').classList.toggle('active', inputActive);
-      document.getElementById('sectionList').classList.toggle('active', !inputActive);
+      document.getElementById('sectionInput').classList.toggle('active', tabName === 'input');
+      document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
     }
 
     document.getElementById('saveBtn').onclick = async () => {
@@ -169,29 +178,20 @@
 
       alert("작업이 저장되었습니다.");
       clearForm();
-      setTab(false);
-      loadTasks();
+      setTab('list');
+      loadTasks('incomplete');
     };
 
     function clearForm() {
-      document.getElementById('date').value = '';
-      document.getElementById('staff').value = '';
-      document.getElementById('client').value = '';
-      document.getElementById('removeAddr').value = '';
-      document.getElementById('installAddr').value = '';
-      document.getElementById('contact').value = '';
-      document.getElementById('content').value = '';
-      document.getElementById('items').value = '';
-      document.getElementById('price').value = '';
-      document.getElementById('parts').value = '';
-      document.getElementById('memo').value = '';
+      ['date', 'staff', 'client', 'removeAddr', 'installAddr', 'contact', 'content', 'items', 'price', 'parts', 'memo'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
     }
 
     window.editTask = async id => {
       const ref = doc(db, 'tasks', id);
       const snap = await getDoc(ref);
       const d = snap.data();
-
       editTaskId = id;
 
       document.getElementById('date').value = d.date || '';
@@ -206,16 +206,16 @@
       document.getElementById('parts').value = d.parts || '';
       document.getElementById('memo').value = d.memo || '';
 
-      setTab(true); // 입력폼 열고
+      setTab('input');
     };
 
-    async function loadTasks() {
+    async function loadTasks(mode = 'incomplete') {
       const tasksRef = collection(db, 'tasks');
-      let q = currentUserRole === 'admin'
+      let baseQuery = currentUserRole === 'admin'
         ? query(tasksRef, orderBy('date', 'desc'))
         : query(tasksRef, where('staffNames', 'array-contains', currentUserName), orderBy('date', 'desc'));
 
-      const snap = await getDocs(q);
+      const snap = await getDocs(baseQuery);
       const list = document.getElementById('taskList');
       list.innerHTML = '';
 
@@ -224,6 +224,8 @@
         const id = docSnap.id;
 
         if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
+        if (mode === 'incomplete' && d.done) return;
+        if (mode === 'done' && !d.done) return;
 
         const div = document.createElement('div');
         div.className = 'task' + (d.done ? ' done' : '');
@@ -254,7 +256,7 @@
 
     window.markDone = async id => {
       await updateDoc(doc(db, 'tasks', id), { done: true });
-      loadTasks();
+      loadTasks('incomplete');
     };
 
     window.deleteTask = async id => {
@@ -271,7 +273,7 @@
           await updateDoc(ref, { deletedBy });
         }
       }
-      loadTasks();
+      loadTasks('incomplete');
     };
   </script>
 </body>
