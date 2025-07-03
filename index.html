@@ -27,21 +27,18 @@
 </head>
 <body>
   <h1>📋 작업지시표</h1>
-
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일" />
     <input type="password" id="password" placeholder="비밀번호" />
     <button id="loginBtn">로그인</button>
   </div>
-
   <div id="mainApp" style="display:none">
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
     <div class="tab" id="tabButtons"></div>
-
     <div id="sectionInput" class="section box">
       <input type="date" id="date" />
-      <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />
-      <input type="text" id="client" placeholder="거래처명" />
+      <input type="text" id="staff" placeholder="작업자 이름 (, 로 구분)" />
+      <input type="text" id="client" placeholder="거래차명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
       <input type="text" id="installAddr" placeholder="설치주소" />
       <input type="text" id="contact" placeholder="고객연락처" />
@@ -52,7 +49,6 @@
       <textarea id="memo" placeholder="비고"></textarea>
       <button id="saveBtn">작업 저장</button>
     </div>
-
     <div id="sectionList" class="section box">
       <div id="taskList"></div>
     </div>
@@ -78,6 +74,7 @@
 
     let currentUserRole = '';
     let currentUserName = '';
+    let editingTaskId = null;
 
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
@@ -141,7 +138,6 @@
       const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
 
       const task = {
-        uid: auth.currentUser.uid,
         staffNames,
         date: document.getElementById('date').value,
         client: document.getElementById('client').value,
@@ -152,14 +148,49 @@
         items: document.getElementById('items').value,
         price: document.getElementById('price').value,
         parts: document.getElementById('parts').value,
-        memo: document.getElementById('memo').value,
-        createdAt: new Date(),
-        done: false,
-        deletedBy: []
+        memo: document.getElementById('memo').value
       };
 
-      await addDoc(collection(db, 'tasks'), task);
-      alert("작업이 저장되었습니다.");
+      if (editingTaskId) {
+        const ref = doc(db, 'tasks', editingTaskId);
+        await updateDoc(ref, task);
+        alert("작업이 수정되었습니다.");
+        editingTaskId = null;
+        document.getElementById('saveBtn').textContent = '작업 저장';
+      } else {
+        task.uid = auth.currentUser.uid;
+        task.createdAt = new Date();
+        task.done = false;
+        task.deletedBy = [];
+        await addDoc(collection(db, 'tasks'), task);
+        alert("작업이 저장되었습니다.");
+      }
+
+      clearForm();
+      loadTasks();
+    };
+
+    function clearForm() {
+      ['date', 'staff', 'client', 'removeAddr', 'installAddr', 'contact', 'content', 'items', 'price', 'parts', 'memo']
+        .forEach(id => document.getElementById(id).value = '');
+    }
+
+    window.loadTaskToEdit = (id, d) => {
+      editingTaskId = id;
+      document.getElementById('date').value = d.date || '';
+      document.getElementById('staff').value = d.staffNames?.join(', ') || '';
+      document.getElementById('client').value = d.client || '';
+      document.getElementById('removeAddr').value = d.removeAddr || '';
+      document.getElementById('installAddr').value = d.installAddr || '';
+      document.getElementById('contact').value = d.contact || '';
+      document.getElementById('content').value = d.content || '';
+      document.getElementById('items').value = d.items || '';
+      document.getElementById('price').value = d.price || '';
+      document.getElementById('parts').value = d.parts || '';
+      document.getElementById('memo').value = d.memo || '';
+
+      setTab(true);
+      document.getElementById('saveBtn').textContent = '작업 수정';
     };
 
     async function loadTasks() {
@@ -194,7 +225,7 @@
           <div class="actions">
             <button onclick="markDone('${id}')">완료</button>
             <button onclick="deleteTask('${id}')">삭제</button>
-            <button onclick="alert('수정기능 준비중')">수정</button>
+            <button onclick='loadTaskToEdit("${id}", ${JSON.stringify(d)})'>수정</button>
           </div>
         `;
         div.onclick = () => {
