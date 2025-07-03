@@ -34,32 +34,20 @@
     <button id="loginBtn">로그인</button>
   </div>
 
-  $1
-    <div id="sectionDone" class="section box" style="display:none">
+  <div id="mainApp" style="display:none">
+    <button id="logoutBtn" class="logout-btn">로그아웃</button>
+    <div class="tab" id="tabButtons">
+      <button id="tabList" class="active">목록 보기</button>
+      <button id="tabDone">완료 작업</button>
+    </div>
+
+    <div id="sectionList" class="section box active">
+      <div id="taskList"></div>
+    </div>
+
+    <div id="sectionDone" class="section box">
       <h3>✅ 완료된 작업</h3>
       <div id="doneList"></div>
-    </div>
-    <button id="logoutBtn" class="logout-btn">로그아웃</button>
-    $1
-        <button id="tabDone">완료 작업</button></div>
-
-    <div id="sectionInput" class="section box">
-      <input type="date" id="date" />
-      <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />
-      <input type="text" id="client" placeholder="거래처명" />
-      <input type="text" id="removeAddr" placeholder="철거주소" />
-      <input type="text" id="installAddr" placeholder="설치주소" />
-      <input type="text" id="contact" placeholder="고객연락처" />
-      <textarea id="content" placeholder="작업내용"></textarea>
-      <input type="text" id="items" placeholder="작업품목" />
-      <input type="text" id="price" placeholder="금액" />
-      <textarea id="parts" placeholder="사용부품"></textarea>
-      <textarea id="memo" placeholder="비고"></textarea>
-      <button id="saveBtn">작업 저장</button>
-    </div>
-
-    <div id="sectionList" class="section box">
-      <div id="taskList"></div>
     </div>
   </div>
 
@@ -94,18 +82,24 @@
       }
     };
 
-    $1
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        const userSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
+        if (userSnap.empty) return alert("사용자 정보가 없습니다.");
+        const userData = userSnap.docs[0].data();
+        currentUserRole = userData.role;
+        currentUserName = userData.name;
+
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+
+        document.getElementById('tabList').onclick = () => {
+          setTab('list');
+          loadTasks();
+        };
         document.getElementById('tabDone').onclick = () => {
           setTab('done');
           loadDoneTasks();
-        };
-
-        if (currentUserRole === 'admin') {
-          document.getElementById('tabInput').onclick = () => setTab(true);
-        }
-        document.getElementById('tabList').onclick = () => {
-          setTab(false);
-          loadTasks();
         };
 
         loadTasks();
@@ -118,48 +112,17 @@
     };
 
     function setTab(mode) {
-  const inputTab = document.getElementById('tabInput');
-  const listTab = document.getElementById('tabList');
-  const doneTab = document.getElementById('tabDone');
-  if (inputTab) inputTab.classList.toggle('active', mode === 'input');
-  if (listTab) listTab.classList.toggle('active', mode === 'list');
-  if (doneTab) doneTab.classList.toggle('active', mode === 'done');
-  document.getElementById('sectionInput').classList.toggle('active', mode === 'input');
-  document.getElementById('sectionList').classList.toggle('active', mode === 'list');
-  document.getElementById('sectionDone').classList.toggle('active', mode === 'done');
-}
-
-    document.getElementById('saveBtn').onclick = async () => {
-      const staffInput = document.getElementById('staff').value;
-      const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
-
-      const task = {
-        uid: auth.currentUser.uid,
-        staffNames,
-        date: document.getElementById('date').value,
-        client: document.getElementById('client').value,
-        removeAddr: document.getElementById('removeAddr').value,
-        installAddr: document.getElementById('installAddr').value,
-        contact: document.getElementById('contact').value,
-        content: document.getElementById('content').value,
-        items: document.getElementById('items').value,
-        price: document.getElementById('price').value,
-        parts: document.getElementById('parts').value,
-        memo: document.getElementById('memo').value,
-        createdAt: new Date(),
-        done: false,
-        deletedBy: []
-      };
-
-      await addDoc(collection(db, 'tasks'), task);
-      alert("작업이 저장되었습니다.");
-    };
+      document.getElementById('tabList').classList.toggle('active', mode === 'list');
+      document.getElementById('tabDone').classList.toggle('active', mode === 'done');
+      document.getElementById('sectionList').classList.toggle('active', mode === 'list');
+      document.getElementById('sectionDone').classList.toggle('active', mode === 'done');
+    }
 
     async function loadTasks() {
       const tasksRef = collection(db, 'tasks');
       let q = currentUserRole === 'admin'
-        ? query(tasksRef, orderBy('date', 'desc'))
-        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), orderBy('date', 'desc'));
+        ? query(tasksRef, where('done', '==', false), orderBy('date', 'desc'))
+        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), where('done', '==', false), orderBy('date', 'desc'));
 
       const snap = await getDocs(q);
       const list = document.getElementById('taskList');
@@ -172,14 +135,14 @@
         if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
 
         const div = document.createElement('div');
-        div.className = 'task' + (d.done ? ' done' : '');
+        div.className = 'task';
         div.innerHTML = `
           <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
           <small>${d.items}</small>
           <div class="details">
             <p>철거: ${d.removeAddr}</p>
             <p>설치: ${d.installAddr}</p>
-            <p>연락처: ${d.contact}</p>
+            <p>연락처: <a href="tel:${d.contact}">${d.contact}</a></p>
             <p>금액: ${d.price}</p>
             <p>부품: ${d.parts}</p>
             <p>비고: ${d.memo}</p>
@@ -187,7 +150,44 @@
           <div class="actions">
             <button onclick="markDone('${id}')">완료</button>
             <button onclick="deleteTask('${id}')">삭제</button>
-            <button onclick="alert('수정기능 준비중')">수정</button>
+          </div>
+        `;
+        div.onclick = () => {
+          const det = div.querySelector('.details');
+          det.style.display = det.style.display === 'block' ? 'none' : 'block';
+        };
+        list.appendChild(div);
+      });
+    }
+
+    async function loadDoneTasks() {
+      const tasksRef = collection(db, 'tasks');
+      let q = currentUserRole === 'admin'
+        ? query(tasksRef, where('done', '==', true), orderBy('date', 'desc'))
+        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), where('done', '==', true), orderBy('date', 'desc'));
+
+      const snap = await getDocs(q);
+      const list = document.getElementById('doneList');
+      list.innerHTML = '';
+
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const id = docSnap.id;
+
+        if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
+
+        const div = document.createElement('div');
+        div.className = 'task done';
+        div.innerHTML = `
+          <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
+          <small>${d.items}</small>
+          <div class="details">
+            <p>철거: ${d.removeAddr}</p>
+            <p>설치: ${d.installAddr}</p>
+            <p>연락처: <a href="tel:${d.contact}">${d.contact}</a></p>
+            <p>금액: ${d.price}</p>
+            <p>부품: ${d.parts}</p>
+            <p>비고: ${d.memo}</p>
           </div>
         `;
         div.onclick = () => {
@@ -220,44 +220,6 @@
       }
       loadTasks();
     };
-  
-    async function loadDoneTasks() {
-      const tasksRef = collection(db, 'tasks');
-      let q = currentUserRole === 'admin'
-        ? query(tasksRef, where('done', '==', true), orderBy('date', 'desc'))
-        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), where('done', '==', true), orderBy('date', 'desc'));
-
-      const snap = await getDocs(q);
-      const list = document.getElementById('doneList');
-      list.innerHTML = '';
-
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        const id = docSnap.id;
-
-        if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
-
-        const div = document.createElement('div');
-        div.className = 'task done';
-        div.innerHTML = `
-          <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
-          <small>${d.items}</small>
-          <div class="details">
-            <p>철거: ${d.removeAddr}</p>
-            <p>설치: ${d.installAddr}</p>
-            <p>연락처: ${d.contact}</p>
-            <p>금액: ${d.price}</p>
-            <p>부품: ${d.parts}</p>
-            <p>비고: ${d.memo}</p>
-          </div>
-        `;
-        div.onclick = () => {
-          const det = div.querySelector('.details');
-          det.style.display = det.style.display === 'block' ? 'none' : 'block';
-        };
-        list.appendChild(div);
-      });
-    }
-$1
+  </script>
 </body>
 </html>
