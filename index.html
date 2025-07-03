@@ -105,13 +105,13 @@
         tabButtons.innerHTML = '';
 
         if (currentUserRole === 'admin') {
-          tabButtons.innerHTML += <button id="tabInput">작업 입력</button>;
+          tabButtons.innerHTML += `<button id="tabInput">작업 입력</button>`;
         }
 
-        tabButtons.innerHTML += 
+        tabButtons.innerHTML += `
           <button id="tabList" class="active">목록 보기</button>
           <button id="tabDone">완료 보기</button>
-        ;
+        `;
 
         if (currentUserRole === 'admin') {
           document.getElementById('tabInput').onclick = () => setTab('input');
@@ -229,7 +229,7 @@
 
         const div = document.createElement('div');
         div.className = 'task' + (d.done ? ' done' : '');
-        div.innerHTML = 
+        div.innerHTML = `
           <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
           <small>${d.items}</small>
           <div class="details">
@@ -245,7 +245,7 @@
             <button onclick="deleteTask('${id}')">삭제</button>
             <button onclick="editTask('${id}')">수정</button>
           </div>
-        ;
+        `;
         div.onclick = () => {
           const det = div.querySelector('.details');
           det.style.display = det.style.display === 'block' ? 'none' : 'block';
