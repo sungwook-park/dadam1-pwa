@@ -36,7 +36,7 @@
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
     <div class="tab" id="tabButtons"></div>
     <div id="sectionInput" class="section box">
-      <input type="date" id="date" />
+      <input type="datetime-local" id="date" />
       <input type="text" id="staff" placeholder="작업자 이름 (, 로 구분)" />
       <input type="text" id="client" placeholder="거래차명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
@@ -234,7 +234,7 @@
           <div class="details">
             <p>철거: ${d.removeAddr}</p>
             <p>설치: ${d.installAddr}</p>
-            <p>연락처: ${d.contact}</p>
+            <p>연락처: <a href="tel:${d.contact}">${d.contact}</a></p>
             <p>금액: ${d.price}</p>
             <p>부품: ${d.parts}</p>
             <p>비고: ${d.memo}</p>
