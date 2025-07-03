@@ -111,7 +111,11 @@
           document.getElementById('tabInput').onclick = () => setTab(true);
         }
         document.getElementById('tabList').onclick = () => {
-          setTab(false);
+  editingTaskId = null; // 상태 초기화
+  clearForm(); // 입력폼 초기화
+  document.getElementById('sectionInput').style.display = 'none'; // 입력폼 강제 숨김
+  document.getElementById('sectionInput').classList.remove('active');
+  setTab(false);
           loadTasks();
         };
 
@@ -125,13 +129,22 @@
     };
 
     function setTab(inputActive) {
-      const inputTab = document.getElementById('tabInput');
-      const listTab = document.getElementById('tabList');
-      if (inputTab) inputTab.classList.toggle('active', inputActive);
-      if (listTab) listTab.classList.toggle('active', !inputActive);
-      document.getElementById('sectionInput').classList.toggle('active', inputActive);
-      document.getElementById('sectionList').classList.toggle('active', !inputActive);
-    }
+  const inputTab = document.getElementById('tabInput');
+  const listTab = document.getElementById('tabList');
+
+  if (inputTab) inputTab.classList.toggle('active', inputActive);
+  if (listTab) listTab.classList.toggle('active', !inputActive);
+
+  if (inputActive) {
+    document.getElementById('sectionInput').style.display = 'block';
+    document.getElementById('sectionInput').classList.add('active');
+    document.getElementById('sectionList').classList.remove('active');
+  } else {
+    document.getElementById('sectionInput').style.display = 'none';
+    document.getElementById('sectionInput').classList.remove('active');
+    document.getElementById('sectionList').classList.add('active');
+  }
+}
 
     document.getElementById('saveBtn').onclick = async () => {
       const staffInput = document.getElementById('staff').value;
