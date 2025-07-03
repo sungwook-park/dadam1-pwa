@@ -39,7 +39,7 @@
     <div class="tab" id="tabButtons"></div>
 
     <div id="sectionInput" class="section box">
-      <input type="datetime-local" id="date" />
+      <input type="date" id="date" />
       <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />
       <input type="text" id="client" placeholder="거래처명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
@@ -78,7 +78,7 @@
 
     let currentUserRole = '';
     let currentUserName = '';
-    let editingId = null;
+    let editTaskId = null;
 
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
@@ -112,10 +112,10 @@
         tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
 
         if (currentUserRole === 'admin') {
-          document.getElementById('tabInput').onclick = () => setTab('input');
+          document.getElementById('tabInput').onclick = () => setTab(true);
         }
         document.getElementById('tabList').onclick = () => {
-          setTab('list');
+          setTab(false);
           loadTasks();
         };
 
@@ -128,17 +128,11 @@
       location.reload();
     };
 
-    function setTab(tab) {
-      const inputTab = document.getElementById('tabInput');
-      const listTab = document.getElementById('tabList');
-      const sectionInput = document.getElementById('sectionInput');
-      const sectionList = document.getElementById('sectionList');
-
-      if (inputTab) inputTab.classList.toggle('active', tab === 'input');
-      if (listTab) listTab.classList.toggle('active', tab === 'list');
-
-      sectionInput.classList.toggle('active', tab === 'input');
-      sectionList.classList.toggle('active', tab === 'list');
+    function setTab(inputActive) {
+      document.getElementById('tabInput')?.classList.toggle('active', inputActive);
+      document.getElementById('tabList')?.classList.toggle('active', !inputActive);
+      document.getElementById('sectionInput').classList.toggle('active', inputActive);
+      document.getElementById('sectionList').classList.toggle('active', !inputActive);
     }
 
     document.getElementById('saveBtn').onclick = async () => {
@@ -158,21 +152,58 @@
         price: document.getElementById('price').value,
         parts: document.getElementById('parts').value,
         memo: document.getElementById('memo').value,
-        createdAt: new Date(),
         done: false,
         deletedBy: []
       };
 
-      if (editingId) {
-        await updateDoc(doc(db, 'tasks', editingId), task);
-        editingId = null;
+      if (editTaskId) {
+        await updateDoc(doc(db, 'tasks', editTaskId), task);
+        editTaskId = null;
       } else {
+        task.createdAt = new Date();
         await addDoc(collection(db, 'tasks'), task);
       }
 
       alert("작업이 저장되었습니다.");
-      setTab('list');
+      clearForm();
+      setTab(false);
       loadTasks();
+    };
+
+    function clearForm() {
+      document.getElementById('date').value = '';
+      document.getElementById('staff').value = '';
+      document.getElementById('client').value = '';
+      document.getElementById('removeAddr').value = '';
+      document.getElementById('installAddr').value = '';
+      document.getElementById('contact').value = '';
+      document.getElementById('content').value = '';
+      document.getElementById('items').value = '';
+      document.getElementById('price').value = '';
+      document.getElementById('parts').value = '';
+      document.getElementById('memo').value = '';
+    }
+
+    window.editTask = async id => {
+      const ref = doc(db, 'tasks', id);
+      const snap = await getDoc(ref);
+      const d = snap.data();
+
+      editTaskId = id;
+
+      document.getElementById('date').value = d.date || '';
+      document.getElementById('staff').value = (d.staffNames || []).join(', ');
+      document.getElementById('client').value = d.client || '';
+      document.getElementById('removeAddr').value = d.removeAddr || '';
+      document.getElementById('installAddr').value = d.installAddr || '';
+      document.getElementById('contact').value = d.contact || '';
+      document.getElementById('content').value = d.content || '';
+      document.getElementById('items').value = d.items || '';
+      document.getElementById('price').value = d.price || '';
+      document.getElementById('parts').value = d.parts || '';
+      document.getElementById('memo').value = d.memo || '';
+
+      setTab(true);
     };
 
     async function loadTasks() {
@@ -199,7 +230,7 @@
           <div class="details">
             <p>철거: ${d.removeAddr}</p>
             <p>설치: ${d.installAddr}</p>
-            <p>연락처: <a href="tel:${d.contact}">${d.contact}</a></p>
+            <p>연락처: ${d.contact}</p>
             <p>금액: ${d.price}</p>
             <p>부품: ${d.parts}</p>
             <p>비고: ${d.memo}</p>
@@ -219,8 +250,7 @@
     }
 
     window.markDone = async id => {
-      const ref = doc(db, 'tasks', id);
-      await updateDoc(ref, { done: true });
+      await updateDoc(doc(db, 'tasks', id), { done: true });
       loadTasks();
     };
 
@@ -239,27 +269,6 @@
         }
       }
       loadTasks();
-    };
-
-    window.editTask = async id => {
-      const ref = doc(db, 'tasks', id);
-      const snap = await getDoc(ref);
-      const data = snap.data();
-
-      document.getElementById('date').value = data.date;
-      document.getElementById('staff').value = data.staffNames?.join(', ');
-      document.getElementById('client').value = data.client;
-      document.getElementById('removeAddr').value = data.removeAddr;
-      document.getElementById('installAddr').value = data.installAddr;
-      document.getElementById('contact').value = data.contact;
-      document.getElementById('content').value = data.content;
-      document.getElementById('items').value = data.items;
-      document.getElementById('price').value = data.price;
-      document.getElementById('parts').value = data.parts;
-      document.getElementById('memo').value = data.memo;
-
-      editingId = id;
-      setTab('input');
     };
   </script>
 </body>
