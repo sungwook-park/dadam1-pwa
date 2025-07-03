@@ -37,7 +37,7 @@
     <div class="tab" id="tabButtons"></div>
     <div id="sectionInput" class="section box">
       <input type="datetime-local" id="date" />
-      <input type="text" id="staff" placeholder="작업자 이름 (, 로 구분)" />
+      <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />
       <input type="text" id="client" placeholder="거래처명" />
       <input type="text" id="removeAddr" placeholder="철거주소" />
       <input type="text" id="installAddr" placeholder="설치주소" />
@@ -53,7 +53,6 @@
       <div id="taskList"></div>
     </div>
   </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -111,12 +110,11 @@
           document.getElementById('tabInput').onclick = () => setTab(true);
         }
         document.getElementById('tabList').onclick = () => {
-  editingTaskId = null; // 상태 초기화
-  clearForm(); // 입력폼 초기화
-  document.getElementById('sectionInput').style.display = 'none'; // 입력폼 강제 숨김
-  document.getElementById('sectionInput').classList.remove('active');
-  setTab(false);
-          loadTasks();
+          editingTaskId = null;
+          clearForm();
+          document.getElementById('sectionInput').style.display = 'none';
+          document.getElementById('sectionInput').classList.remove('active');
+          setTab(false);
         };
 
         loadTasks();
@@ -129,22 +127,22 @@
     };
 
     function setTab(inputActive) {
-  const inputTab = document.getElementById('tabInput');
-  const listTab = document.getElementById('tabList');
+      const inputTab = document.getElementById('tabInput');
+      const listTab = document.getElementById('tabList');
 
-  if (inputTab) inputTab.classList.toggle('active', inputActive);
-  if (listTab) listTab.classList.toggle('active', !inputActive);
+      if (inputTab) inputTab.classList.toggle('active', inputActive);
+      if (listTab) listTab.classList.toggle('active', !inputActive);
 
-  if (inputActive) {
-    document.getElementById('sectionInput').style.display = 'block';
-    document.getElementById('sectionInput').classList.add('active');
-    document.getElementById('sectionList').classList.remove('active');
-  } else {
-    document.getElementById('sectionInput').style.display = 'none';
-    document.getElementById('sectionInput').classList.remove('active');
-    document.getElementById('sectionList').classList.add('active');
-  }
-}
+      if (inputActive) {
+        document.getElementById('sectionInput').style.display = 'block';
+        document.getElementById('sectionInput').classList.add('active');
+        document.getElementById('sectionList').classList.remove('active');
+      } else {
+        document.getElementById('sectionInput').style.display = 'none';
+        document.getElementById('sectionInput').classList.remove('active');
+        document.getElementById('sectionList').classList.add('active');
+      }
+    }
 
     document.getElementById('saveBtn').onclick = async () => {
       const staffInput = document.getElementById('staff').value;
@@ -170,7 +168,7 @@
         alert("작업이 수정되었습니다.");
         editingTaskId = null;
         document.getElementById('saveBtn').textContent = '작업 저장';
-        setTab(false); // 수정 후 목록으로 돌아가기
+        setTab(false);
       } else {
         task.uid = auth.currentUser.uid;
         task.createdAt = new Date();
@@ -211,17 +209,17 @@
     };
 
     function formatDateTime(str) {
-  if (!str) return '';
-  const d = new Date(str);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
-}
+      if (!str) return '';
+      const d = new Date(str);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+    }
 
-async function loadTasks() {
+    async function loadTasks() {
       const tasksRef = collection(db, 'tasks');
       let q = currentUserRole === 'admin'
         ? query(tasksRef, orderBy('date', 'desc'))
@@ -240,7 +238,7 @@ async function loadTasks() {
         const div = document.createElement('div');
         div.className = 'task' + (d.done ? ' done' : '');
         div.innerHTML = `
-          $1<span style="background:yellow; font-weight:bold;">$2</span> / ${d.content}<br>
+          <strong>${formatDateTime(d.date)}</strong> / ${d.staffNames?.join(', ')} / ${d.client} / ${d.content}<br>
           <small>${d.items}</small>
           <div class="details">
             <p>철거: ${d.removeAddr}</p>
