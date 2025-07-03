@@ -210,7 +210,18 @@
       document.getElementById('saveBtn').textContent = '작업 수정';
     };
 
-    async function loadTasks() {
+    function formatDateTime(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+}
+
+async function loadTasks() {
       const tasksRef = collection(db, 'tasks');
       let q = currentUserRole === 'admin'
         ? query(tasksRef, orderBy('date', 'desc'))
@@ -229,7 +240,7 @@
         const div = document.createElement('div');
         div.className = 'task' + (d.done ? ' done' : '');
         div.innerHTML = `
-          <strong>${d.date}</strong> / ${d.staffNames?.join(', ')} / ${d.client} / ${d.content}<br>
+          <strong>${formatDateTime(d.date)}</strong> / ${d.staffNames?.join(', ')} / ${d.client} / ${d.content}<br>
           <small>${d.items}</small>
           <div class="details">
             <p>철거: ${d.removeAddr}</p>
