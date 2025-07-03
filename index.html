@@ -56,11 +56,6 @@
     <div id="sectionList" class="section box">
       <div id="taskList"></div>
     </div>
-
-    <div id="sectionDone" class="section box">
-      <h3>✅ 완료된 작업</h3>
-      <div id="doneList"></div>
-    </div>
   </div>
 
   <script type="module">
@@ -114,18 +109,13 @@
           document.getElementById('sectionInput').style.display = 'none';
         }
         tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
-        tabButtons.innerHTML += `<button id="tabDone">완료 작업</button>`;
 
         if (currentUserRole === 'admin') {
-          document.getElementById('tabInput').onclick = () => setTab('input');
+          document.getElementById('tabInput').onclick = () => setTab(true);
         }
         document.getElementById('tabList').onclick = () => {
-          setTab('list');
+          setTab(false);
           loadTasks();
-        };
-        document.getElementById('tabDone').onclick = () => {
-          setTab('done');
-          loadDoneTasks();
         };
 
         loadTasks();
@@ -137,20 +127,13 @@
       location.reload();
     };
 
-    function setTab(mode) {
-      ['sectionInput', 'sectionList', 'sectionDone'].forEach(id => {
-        document.getElementById(id).classList.remove('active');
-      });
-      if (mode === 'input') document.getElementById('sectionInput').classList.add('active');
-      if (mode === 'list') document.getElementById('sectionList').classList.add('active');
-      if (mode === 'done') document.getElementById('sectionDone').classList.add('active');
-
-      ['tabInput', 'tabList', 'tabDone'].forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.classList.remove('active');
-      });
-      const activeBtn = document.getElementById(`tab${mode.charAt(0).toUpperCase() + mode.slice(1)}`);
-      if (activeBtn) activeBtn.classList.add('active');
+    function setTab(inputActive) {
+      const inputTab = document.getElementById('tabInput');
+      const listTab = document.getElementById('tabList');
+      if (inputTab) inputTab.classList.toggle('active', inputActive);
+      if (listTab) listTab.classList.toggle('active', !inputActive);
+      document.getElementById('sectionInput').classList.toggle('active', inputActive);
+      document.getElementById('sectionList').classList.toggle('active', !inputActive);
     }
 
     document.getElementById('saveBtn').onclick = async () => {
@@ -182,8 +165,8 @@
     async function loadTasks() {
       const tasksRef = collection(db, 'tasks');
       let q = currentUserRole === 'admin'
-        ? query(tasksRef, where('done', '==', false), orderBy('date', 'desc'))
-        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), where('done', '==', false), orderBy('date', 'desc'));
+        ? query(tasksRef, orderBy('date', 'desc'))
+        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), orderBy('date', 'desc'));
 
       const snap = await getDocs(q);
       const list = document.getElementById('taskList');
@@ -196,7 +179,7 @@
         if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
 
         const div = document.createElement('div');
-        div.className = 'task';
+        div.className = 'task' + (d.done ? ' done' : '');
         div.innerHTML = `
           <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
           <small>${d.items}</small>
@@ -211,44 +194,7 @@
           <div class="actions">
             <button onclick="markDone('${id}')">완료</button>
             <button onclick="deleteTask('${id}')">삭제</button>
-          </div>
-        `;
-        div.onclick = () => {
-          const det = div.querySelector('.details');
-          det.style.display = det.style.display === 'block' ? 'none' : 'block';
-        };
-        list.appendChild(div);
-      });
-    }
-
-    async function loadDoneTasks() {
-      const tasksRef = collection(db, 'tasks');
-      let q = currentUserRole === 'admin'
-        ? query(tasksRef, where('done', '==', true), orderBy('date', 'desc'))
-        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), where('done', '==', true), orderBy('date', 'desc'));
-
-      const snap = await getDocs(q);
-      const list = document.getElementById('doneList');
-      list.innerHTML = '';
-
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        const id = docSnap.id;
-
-        if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
-
-        const div = document.createElement('div');
-        div.className = 'task done';
-        div.innerHTML = `
-          <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
-          <small>${d.items}</small>
-          <div class="details">
-            <p>철거: ${d.removeAddr}</p>
-            <p>설치: ${d.installAddr}</p>
-            <p>연락처: <a href="tel:${d.contact}">${d.contact}</a></p>
-            <p>금액: ${d.price}</p>
-            <p>부품: ${d.parts}</p>
-            <p>비고: ${d.memo}</p>
+            <button onclick="alert('수정기능 준비중')">수정</button>
           </div>
         `;
         div.onclick = () => {
