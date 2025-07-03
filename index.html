@@ -181,7 +181,7 @@
         const div = document.createElement('div');
         div.className = 'task' + (d.done ? ' done' : '');
         div.innerHTML = `
-          <strong>${d.date}</strong> / ${d.staffNames?.join(', ')} / ${d.client} / ${d.content}<br>
+          <strong>${new Date(d.date).toLocaleString()}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
           <small>${d.items}</small>
           <div class="details">
             <p>철거: ${d.removeAddr}</p>
