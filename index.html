@@ -27,14 +27,17 @@
 </head>
 <body>
   <h1>📋 작업지시표</h1>
+
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일" />
     <input type="password" id="password" placeholder="비밀번호" />
     <button id="loginBtn">로그인</button>
   </div>
+
   <div id="mainApp" style="display:none">
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
     <div class="tab" id="tabButtons"></div>
+
     <div id="sectionInput" class="section box">
       <input type="datetime-local" id="date" />
       <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />
@@ -49,13 +52,12 @@
       <textarea id="memo" placeholder="비고"></textarea>
       <button id="saveBtn">작업 저장</button>
     </div>
+
     <div id="sectionList" class="section box">
       <div id="taskList"></div>
     </div>
-    <div id="sectionDone" class="section box">
-      <div id="doneList"></div>
-    </div>
   </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -73,8 +75,10 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+
     let currentUserRole = '';
     let currentUserName = '';
+    let editingId = null;
 
     document.getElementById('loginBtn').onclick = async () => {
       const email = document.getElementById('email').value;
@@ -102,34 +106,45 @@
         if (currentUserRole === 'admin') {
           tabButtons.innerHTML += `<button id="tabInput" class="active">작업 입력</button>`;
           document.getElementById('sectionInput').classList.add('active');
+        } else {
+          document.getElementById('sectionInput').style.display = 'none';
         }
         tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
-        tabButtons.innerHTML += `<button id="tabDone">완료 작업</button>`;
 
-        document.getElementById('tabInput')?.addEventListener('click', () => setTab('input'));
-        document.getElementById('tabList').addEventListener('click', () => { setTab('list'); loadTasks(); });
-        document.getElementById('tabDone').addEventListener('click', () => { setTab('done'); loadDoneTasks(); });
+        if (currentUserRole === 'admin') {
+          document.getElementById('tabInput').onclick = () => setTab('input');
+        }
+        document.getElementById('tabList').onclick = () => {
+          setTab('list');
+          loadTasks();
+        };
 
         loadTasks();
       }
     });
-
-    function setTab(tab) {
-      const tabs = ['input', 'list', 'done'];
-      tabs.forEach(t => {
-        document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`)?.classList.toggle('active', tab === t);
-        document.getElementById(`section${t.charAt(0).toUpperCase() + t.slice(1)}`)?.classList.toggle('active', tab === t);
-      });
-    }
 
     document.getElementById('logoutBtn').onclick = async () => {
       await signOut(auth);
       location.reload();
     };
 
+    function setTab(tab) {
+      const inputTab = document.getElementById('tabInput');
+      const listTab = document.getElementById('tabList');
+      const sectionInput = document.getElementById('sectionInput');
+      const sectionList = document.getElementById('sectionList');
+
+      if (inputTab) inputTab.classList.toggle('active', tab === 'input');
+      if (listTab) listTab.classList.toggle('active', tab === 'list');
+
+      sectionInput.classList.toggle('active', tab === 'input');
+      sectionList.classList.toggle('active', tab === 'list');
+    }
+
     document.getElementById('saveBtn').onclick = async () => {
       const staffInput = document.getElementById('staff').value;
       const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
+
       const task = {
         uid: auth.currentUser.uid,
         staffNames,
@@ -147,7 +162,14 @@
         done: false,
         deletedBy: []
       };
-      await addDoc(collection(db, 'tasks'), task);
+
+      if (editingId) {
+        await updateDoc(doc(db, 'tasks', editingId), task);
+        editingId = null;
+      } else {
+        await addDoc(collection(db, 'tasks'), task);
+      }
+
       alert("작업이 저장되었습니다.");
       setTab('list');
       loadTasks();
@@ -155,7 +177,7 @@
 
     async function loadTasks() {
       const tasksRef = collection(db, 'tasks');
-      const q = currentUserRole === 'admin'
+      let q = currentUserRole === 'admin'
         ? query(tasksRef, orderBy('date', 'desc'))
         : query(tasksRef, where('staffNames', 'array-contains', currentUserName), orderBy('date', 'desc'));
 
@@ -166,10 +188,11 @@
       snap.forEach(docSnap => {
         const d = docSnap.data();
         const id = docSnap.id;
-        if (d.done || d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
+
+        if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
 
         const div = document.createElement('div');
-        div.className = 'task';
+        div.className = 'task' + (d.done ? ' done' : '');
         div.innerHTML = `
           <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
           <small>${d.items}</small>
@@ -184,33 +207,13 @@
           <div class="actions">
             <button onclick="markDone('${id}')">완료</button>
             <button onclick="deleteTask('${id}')">삭제</button>
+            <button onclick="editTask('${id}')">수정</button>
           </div>
         `;
         div.onclick = () => {
           const det = div.querySelector('.details');
           det.style.display = det.style.display === 'block' ? 'none' : 'block';
         };
-        list.appendChild(div);
-      });
-    }
-
-    async function loadDoneTasks() {
-      const tasksRef = collection(db, 'tasks');
-      const q = currentUserRole === 'admin'
-        ? query(tasksRef, where('done', '==', true), orderBy('date', 'desc'))
-        : query(tasksRef, where('done', '==', true), where('staffNames', 'array-contains', currentUserName), orderBy('date', 'desc'));
-      const snap = await getDocs(q);
-      const list = document.getElementById('doneList');
-      list.innerHTML = '';
-
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        const div = document.createElement('div');
-        div.className = 'task done';
-        div.innerHTML = `
-          <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
-          <small>${d.items}</small>
-        `;
         list.appendChild(div);
       });
     }
@@ -225,6 +228,7 @@
       const ref = doc(db, 'tasks', id);
       const snap = await getDoc(ref);
       const data = snap.data();
+
       if (currentUserRole === 'admin') {
         await deleteDoc(ref);
       } else {
@@ -236,6 +240,28 @@
       }
       loadTasks();
     };
+
+    window.editTask = async id => {
+      const ref = doc(db, 'tasks', id);
+      const snap = await getDoc(ref);
+      const data = snap.data();
+
+      document.getElementById('date').value = data.date;
+      document.getElementById('staff').value = data.staffNames?.join(', ');
+      document.getElementById('client').value = data.client;
+      document.getElementById('removeAddr').value = data.removeAddr;
+      document.getElementById('installAddr').value = data.installAddr;
+      document.getElementById('contact').value = data.contact;
+      document.getElementById('content').value = data.content;
+      document.getElementById('items').value = data.items;
+      document.getElementById('price').value = data.price;
+      document.getElementById('parts').value = data.parts;
+      document.getElementById('memo').value = data.memo;
+
+      editingId = id;
+      setTab('input');
+    };
   </script>
 </body>
 </html>
+
