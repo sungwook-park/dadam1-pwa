@@ -103,17 +103,18 @@
 
         const tabButtons = document.getElementById('tabButtons');
         tabButtons.innerHTML = '';
+
         if (currentUserRole === 'admin') {
           tabButtons.innerHTML += `<button id="tabInput" class="active">작업 입력</button>`;
           document.getElementById('sectionInput').classList.add('active');
-        } else {
-          document.getElementById('sectionInput').style.display = 'none';
         }
+
         tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
 
         if (currentUserRole === 'admin') {
           document.getElementById('tabInput').onclick = () => setTab(true);
         }
+
         document.getElementById('tabList').onclick = () => {
           setTab(false);
           loadTasks();
@@ -129,7 +130,9 @@
     };
 
     function setTab(inputActive) {
-      document.getElementById('tabInput')?.classList.toggle('active', inputActive);
+      if (currentUserRole === 'admin') {
+        document.getElementById('tabInput')?.classList.toggle('active', inputActive);
+      }
       document.getElementById('tabList')?.classList.toggle('active', !inputActive);
       document.getElementById('sectionInput').classList.toggle('active', inputActive);
       document.getElementById('sectionList').classList.toggle('active', !inputActive);
@@ -203,9 +206,7 @@
       document.getElementById('parts').value = d.parts || '';
       document.getElementById('memo').value = d.memo || '';
 
-      setTab(true); // 탭 전환
-      document.getElementById('sectionInput').classList.add('active');
-      document.getElementById('sectionList').classList.remove('active');
+      setTab(true); // 입력폼 열고
     };
 
     async function loadTasks() {
