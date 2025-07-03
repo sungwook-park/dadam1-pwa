@@ -34,9 +34,14 @@
     <button id="loginBtn">로그인</button>
   </div>
 
-  <div id="mainApp" style="display:none">
+  $1
+    <div id="sectionDone" class="section box" style="display:none">
+      <h3>✅ 완료된 작업</h3>
+      <div id="doneList"></div>
+    </div>
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
-    <div class="tab" id="tabButtons"></div>
+    $1
+        <button id="tabDone">완료 작업</button></div>
 
     <div id="sectionInput" class="section box">
       <input type="date" id="date" />
@@ -89,26 +94,11 @@
       }
     };
 
-    onAuthStateChanged(auth, async user => {
-      if (user) {
-        const userSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
-        if (userSnap.empty) return alert("사용자 정보가 없습니다.");
-        const userData = userSnap.docs[0].data();
-        currentUserRole = userData.role;
-        currentUserName = userData.name;
-
-        document.getElementById('loginBox').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-
-        const tabButtons = document.getElementById('tabButtons');
-        tabButtons.innerHTML = '';
-        if (currentUserRole === 'admin') {
-          tabButtons.innerHTML += `<button id="tabInput" class="active">작업 입력</button>`;
-          document.getElementById('sectionInput').classList.add('active');
-        } else {
-          document.getElementById('sectionInput').style.display = 'none';
-        }
-        tabButtons.innerHTML += `<button id="tabList"${currentUserRole !== 'admin' ? ' class="active"' : ''}>목록 보기</button>`;
+    $1
+        document.getElementById('tabDone').onclick = () => {
+          setTab('done');
+          loadDoneTasks();
+        };
 
         if (currentUserRole === 'admin') {
           document.getElementById('tabInput').onclick = () => setTab(true);
@@ -127,14 +117,17 @@
       location.reload();
     };
 
-    function setTab(inputActive) {
-      const inputTab = document.getElementById('tabInput');
-      const listTab = document.getElementById('tabList');
-      if (inputTab) inputTab.classList.toggle('active', inputActive);
-      if (listTab) listTab.classList.toggle('active', !inputActive);
-      document.getElementById('sectionInput').classList.toggle('active', inputActive);
-      document.getElementById('sectionList').classList.toggle('active', !inputActive);
-    }
+    function setTab(mode) {
+  const inputTab = document.getElementById('tabInput');
+  const listTab = document.getElementById('tabList');
+  const doneTab = document.getElementById('tabDone');
+  if (inputTab) inputTab.classList.toggle('active', mode === 'input');
+  if (listTab) listTab.classList.toggle('active', mode === 'list');
+  if (doneTab) doneTab.classList.toggle('active', mode === 'done');
+  document.getElementById('sectionInput').classList.toggle('active', mode === 'input');
+  document.getElementById('sectionList').classList.toggle('active', mode === 'list');
+  document.getElementById('sectionDone').classList.toggle('active', mode === 'done');
+}
 
     document.getElementById('saveBtn').onclick = async () => {
       const staffInput = document.getElementById('staff').value;
@@ -227,6 +220,44 @@
       }
       loadTasks();
     };
-  </script>
+  
+    async function loadDoneTasks() {
+      const tasksRef = collection(db, 'tasks');
+      let q = currentUserRole === 'admin'
+        ? query(tasksRef, where('done', '==', true), orderBy('date', 'desc'))
+        : query(tasksRef, where('staffNames', 'array-contains', currentUserName), where('done', '==', true), orderBy('date', 'desc'));
+
+      const snap = await getDocs(q);
+      const list = document.getElementById('doneList');
+      list.innerHTML = '';
+
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const id = docSnap.id;
+
+        if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
+
+        const div = document.createElement('div');
+        div.className = 'task done';
+        div.innerHTML = `
+          <strong>${new Date(d.date).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', hour12: true })}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
+          <small>${d.items}</small>
+          <div class="details">
+            <p>철거: ${d.removeAddr}</p>
+            <p>설치: ${d.installAddr}</p>
+            <p>연락처: ${d.contact}</p>
+            <p>금액: ${d.price}</p>
+            <p>부품: ${d.parts}</p>
+            <p>비고: ${d.memo}</p>
+          </div>
+        `;
+        div.onclick = () => {
+          const det = div.querySelector('.details');
+          det.style.display = det.style.display === 'block' ? 'none' : 'block';
+        };
+        list.appendChild(div);
+      });
+    }
+$1
 </body>
 </html>
