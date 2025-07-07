@@ -1,29 +1,116 @@
-<!-- 작업지시표 전체코드 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>작업지시표 - 다담TV</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다담티비</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#2c3e50" />
+  <meta name="theme-color" content="#f9fafb" />
   <style>
-    body { font-family: 'Malgun Gothic', sans-serif; background: #f4f6f8; padding: 20px; }
-    h1 { background: #2c3e50; color: #fff; padding: 15px; text-align: center; border-radius: 10px; }
-    .box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    input, textarea, button { width: 100%; padding: 10px; margin: 5px 0; font-size: 16px; box-sizing: border-box; }
-    button { background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    .tab { display: flex; gap: 10px; margin-bottom: 10px; }
-    .tab button { flex: 1; }
-    .tab button.active { background: #2980b9; }
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: #f9fafb;
+      margin: 0;
+      padding: 0 1rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+      background: #4f46e5;
+      color: white;
+      padding: 1rem;
+      border-radius: 1rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .box {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+      margin: 1.2rem 0;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.3rem 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #4338ca;
+    }
+    .logout-btn {
+      background: transparent;
+      color: #ef4444;
+      border: 1px solid #ef4444;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      float: right;
+      margin: 1rem 0;
+    }
+    .tab {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .tab button {
+      flex: 1;
+      font-weight: bold;
+      border-radius: 1rem;
+      background: #e0e7ff;
+      color: #1e40af;
+    }
+    .tab button.active {
+      background: #4f46e5;
+      color: white;
+    }
     .section { display: none; }
     .section.active { display: block; }
-    .task { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; position: relative; }
-    .task.done { background: #d3d3d3; }
-    .details { display: none; padding-top: 10px; border-top: 1px solid #ccc; margin-top: 10px; }
-    .logout-btn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; float: right; margin-bottom: 10px; }
-    .actions { display: flex; gap: 5px; margin-top: 8px; }
-    .actions button { flex: 1; font-size: 14px; padding: 5px; }
+    .task {
+      background: #ffffff;
+      padding: 1rem;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      margin-bottom: 1rem;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    .task.done {
+      background: #f3f4f6;
+    }
+    .details {
+      display: none;
+      margin-top: 0.75rem;
+      border-top: 1px dashed #d1d5db;
+      padding-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #4b5563;
+    }
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .actions button {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .highlight {
+      background: #fef08a;
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.5rem;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
