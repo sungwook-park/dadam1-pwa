@@ -2,46 +2,35 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>작업지시표 - 다담TV</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#2c3e50" />
+  <meta name="theme-color" content="#f4f6f8" />
   <style>
     body {
       font-family: 'Malgun Gothic', sans-serif;
-      background: #f9f9fb;
+      background: #f4f6f8;
       padding: 20px;
-      margin: 0;
     }
-    header {
-      display: flex;
-      justify-content: space-between;
+    h1 {
+      display: inline-flex;
       align-items: center;
-      background: #ffffff;
-      padding: 15px 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-    header h1 {
-      margin: 0;
+      gap: 10px;
       font-size: 24px;
       color: #333;
+      margin-bottom: 10px;
     }
-    .logout-btn {
-      background: #fff;
-      color: #7c3aed;
-      border: 1px solid #7c3aed;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
+    h1::before {
+      content: url('https://cdn-icons-png.flaticon.com/512/1827/1827374.png');
+      width: 30px;
+      height: 30px;
+      display: inline-block;
     }
     .box {
       background: white;
       padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-radius: 16px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       margin-bottom: 20px;
     }
     input, textarea, button {
@@ -49,45 +38,49 @@
       padding: 12px;
       margin: 6px 0;
       font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
       box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 12px;
     }
     button {
-      background: #ddd;
+      background: #8e9be8;
       color: white;
       border: none;
+      border-radius: 12px;
       cursor: pointer;
+      transition: 0.3s;
     }
-    #saveBtn {
-      background: #c4b5fd; /* 연보라 */
-      color: white;
+    button:hover {
+      opacity: 0.9;
     }
     .tab {
       display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
     .tab button {
       flex: 1;
       padding: 12px;
-      border-radius: 10px;
-      border: none;
       font-size: 16px;
+      background: transparent;
+      border: none;
       cursor: pointer;
+      transition: 0.3s;
+    }
+    .tab button.active:nth-child(1) {
+      background: #6fbaff;
       color: white;
     }
-    #tabInput {
-      background: #3b82f6; /* 현파랑 */
+    .tab button.active:nth-child(2) {
+      background: #d7c6f4;
+      color: white;
     }
-    #tabList {
-      background: #a78bfa; /* 연보라 */
-    }
-    #tabDone {
-      background: #8b5cf6; /* 어울리는 보라 */
-    }
-    .tab button.active {
-      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2);
+    .tab button.active:nth-child(3) {
+      background: #a592f0;
+      color: white;
     }
     .section {
       display: none;
@@ -97,40 +90,49 @@
     }
     .task {
       background: #fff;
-      padding: 12px;
+      padding: 10px;
       border-radius: 10px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       cursor: pointer;
       position: relative;
     }
     .task.done {
-      background: #e5e7eb;
+      background: #d3d3d3;
     }
     .details {
       display: none;
       padding-top: 10px;
-      border-top: 1px solid #ddd;
+      border-top: 1px solid #ccc;
       margin-top: 10px;
+    }
+    .logout-btn {
+      background: white;
+      color: red;
+      border: 1px solid red;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      float: right;
+      margin-top: 4px;
     }
     .actions {
       display: flex;
       gap: 5px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
     .actions button {
       flex: 1;
       font-size: 14px;
-      padding: 8px;
-      border-radius: 8px;
+      padding: 5px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>📋 작업지시표</h1>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>작업지시표</h1>
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
-  </header>
+  </div>
 
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일" />
