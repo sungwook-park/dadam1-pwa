@@ -241,12 +241,13 @@ document.getElementById('doneSearchBox').style.display = (tabName === 'done') ? 
   async function loadTasks(mode = 'incomplete') {
     const tasksRef = collection(db, 'tasks');
     let baseQuery = currentUserRole === 'admin'
-      ? query(tasksRef, orderBy('date', 'asc'))
-      : query(
-          tasksRef,
-          where('staffNames', 'array-contains', currentUserName),
-          orderBy('date', 'asc')
-        );
+  ? query(tasksRef, orderBy('date', mode === 'done' ? 'desc' : 'asc'))
+  : query(
+      tasksRef,
+      where('staffNames', 'array-contains', currentUserName),
+      orderBy('date', mode === 'done' ? 'desc' : 'asc')
+    );
+
 
     const snap = await getDocs(baseQuery);
     const list = document.getElementById('taskList');
