@@ -123,13 +123,16 @@
   </style>
 </head>
 <body>
-  <h1>작업지시표 <button id="logoutBtn" class="logout-btn">로그아웃</button></h1>
-</body>
-</html>
+ <h1>📋 작업지시표</h1>
 
-<div class="tab" id="tabButtons"></div>
+  <div id="loginBox" class="box">
+    <input type="email" id="email" placeholder="이메일" />
+    <input type="password" id="password" placeholder="비밀번호" />
+    <button id="loginBtn">로그인</button>
+  </div>
 
   <div id="mainApp" style="display:none">
+    <button id="logoutBtn" class="logout-btn">로그아웃</button>
     <div class="tab" id="tabButtons"></div>
 
     <div id="sectionInput" class="section box">
