@@ -2,119 +2,108 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>작업지시표 - 다담TV</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#f4f6f8" />
+  <meta name="theme-color" content="#ffffff" />
   <style>
     body {
       font-family: 'Malgun Gothic', sans-serif;
       background: #f4f6f8;
       padding: 20px;
     }
-    h1 {
-      display: inline-flex;
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      border-radius: 12px;
+      padding: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #555;
+      font-weight: 600;
+      display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 24px;
-      color: #333;
-      margin-bottom: 10px;
     }
-    h1::before {
-      content: url('https://cdn-icons-png.flaticon.com/512/1827/1827374.png');
-      width: 30px;
-      height: 30px;
-      display: inline-block;
-    }
-    .box {
-      background: white;
-      padding: 15px;
-      border-radius: 16px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 12px;
-      margin: 6px 0;
-      font-size: 16px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-    }
-    button {
-      background: #8e9be8;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      opacity: 0.9;
-    }
-    .tab {
-      display: flex;
-      background: #fff;
-      border-radius: 16px;
-      overflow: hidden;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    }
-    .tab button {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .tab button.active:nth-child(1) {
-      background: #6fbaff;
-      color: white;
-    }
-    .tab button.active:nth-child(2) {
-      background: #d7c6f4;
-      color: white;
-    }
-    .tab button.active:nth-child(3) {
-      background: #a592f0;
-      color: white;
-    }
-    .section {
-      display: none;
-    }
-    .section.active {
-      display: block;
-    }
-    .task {
-      background: #fff;
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      cursor: pointer;
-      position: relative;
-    }
-    .task.done {
-      background: #d3d3d3;
-    }
-    .details {
-      display: none;
-      padding-top: 10px;
-      border-top: 1px solid #ccc;
-      margin-top: 10px;
+    .header h1::before {
+      content: '📋';
+      font-size: 26px;
     }
     .logout-btn {
       background: white;
       color: red;
       border: 1px solid red;
-      padding: 5px 12px;
-      border-radius: 8px;
+      padding: 5px 10px;
       font-size: 14px;
-      float: right;
-      margin-top: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .box {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 16px;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+    }
+    .tab {
+      display: flex;
+      background: #ddd;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .tab button {
+      flex: 1;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      background: transparent;
+      transition: 0.3s;
+    }
+    .tab button.active#tabInput {
+      background: #3399ff;
+      color: white;
+    }
+    .tab button.active#tabList {
+      background: #bfaef5;
+      color: white;
+    }
+    .tab button.active#tabDone {
+      background: #8b78d6;
+      color: white;
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+    .task {
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+    .task.done { background: #d3d3d3; }
+    .details {
+      display: none;
+      padding-top: 10px;
+      border-top: 1px solid #ccc;
+      margin-top: 10px;
     }
     .actions {
       display: flex;
@@ -125,11 +114,17 @@
       flex: 1;
       font-size: 14px;
       padding: 5px;
+      border-radius: 8px;
+    }
+    #saveBtn {
+      background: #bfaef5;
+      color: white;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div style="display: flex; justify-content: space-between; align-items: center;">
+  <div class="header">
     <h1>작업지시표</h1>
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
   </div>
