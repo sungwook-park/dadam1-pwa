@@ -6,127 +6,123 @@
   <title>작업지시표 - 다담TV</title>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#ffffff" />
-  <style>
-    body {
-      font-family: 'Malgun Gothic', sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: white;
-      border-radius: 12px;
-      padding: 10px 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    .header h1 {
-      font-size: 24px;
-      color: #555;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .header h1::before {
-      content: '📋';
-      font-size: 26px;
-    }
-   .logout-btn { background: white; color: red; border: 1px solid red; width: auto; padding: 5px 10px; float: right; margin-bottom: 10px; }
-    
-    .box {
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      font-size: 16px;
-      box-sizing: border-box;
-      border-radius: 12px;
-      border: 1px solid #ccc;
-    }
-    .tab {
-      display: flex;
-      background: #ddd;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 10px;
-    }
-    .tab button {
-      flex: 1;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      background: transparent;
-      transition: 0.3s;
-    }
-    .tab button.active#tabInput {
-      background: #3399ff;
-      color: white;
-    }
-    .tab button.active#tabList {
-      background: #bfaef5;
-      color: white;
-    }
-    .tab button.active#tabDone {
-      background: #8b78d6;
-      color: white;
-    }
-    .section { display: none; }
-    .section.active { display: block; }
-    .task {
-      background: #fff;
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      cursor: pointer;
-    }
-    .task.done { background: #d3d3d3; }
-    .details {
-      display: none;
-      padding-top: 10px;
-      border-top: 1px solid #ccc;
-      margin-top: 10px;
-    }
-    .actions {
-      display: flex;
-      gap: 5px;
-      margin-top: 8px;
-    }
-    .actions button {
-      flex: 1;
-      font-size: 14px;
-      padding: 5px;
-      border-radius: 8px;
-    }
-    #saveBtn {
-      background: #bfaef5;
-      color: white;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>작업지시표</h1>
-    <button id="logoutBtn" class="logout-btn">로그아웃</button>
-  </div>
+<style>
+  body {
+    font-family: 'Malgun Gothic', sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+  }
+  h1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 24px;
+    color: #555;
+    background: none;
+    padding: 0;
+    margin-bottom: 10px;
+  }
+  .logout-btn {
+    background: white;
+    color: red;
+    border: 1px solid red;
+    width: auto;
+    padding: 5px 10px;
+    font-size: 14px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .tab {
+    display: flex;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .tab button {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .tab button:nth-child(1) {
+    background: #4e8cff;
+    color: white;
+  }
+  .tab button:nth-child(2) {
+    background: #dcd6f7;
+    color: #333;
+  }
+  .tab button:nth-child(3) {
+    background: #a29bfe;
+    color: white;
+  }
+  .tab button.active {
+    border: 2px solid #555;
+  }
+  .section {
+    display: none;
+  }
+  .section.active {
+    display: block;
+  }
+  .task {
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: pointer;
+  }
+  .task.done {
+    background: #e0e0e0;
+  }
+  .details {
+    display: none;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+    margin-top: 10px;
+  }
+  .actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+  }
+  .actions button {
+    flex: 1;
+    font-size: 14px;
+    padding: 6px;
+    border-radius: 8px;
+    background: #ddd;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+  button#saveBtn {
+    background: #b2bfff;
+    color: black;
+    font-weight: bold;
+    border: none;
+    border-radius: 20px;
+    padding: 12px;
+    margin-top: 10px;
+  }
+</style>
 
-  <div id="loginBox" class="box">
-    <input type="email" id="email" placeholder="이메일" />
-    <input type="password" id="password" placeholder="비밀번호" />
-    <button id="loginBtn">로그인</button>
-  </div>
+<h1>
+  <span>📋 작업지시표</span>
+  <button id="logoutBtn" class="logout-btn">로그아웃</button>
+</h1>
+
+<div class="tab" id="tabButtons"></div>
 
   <div id="mainApp" style="display:none">
     <div class="tab" id="tabButtons"></div>
