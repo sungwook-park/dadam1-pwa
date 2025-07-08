@@ -149,11 +149,12 @@
       <input type="text" id="contact" placeholder="고객연락처" />
       <select id="content" onchange="handleContentChange()">
         <option value="">작업내용 선택</option>
-        <option value="벽걸이TV 설치">벽걸이TV 설치</option>
-        <option value="이전 설치 및 철거">이전 설치 및 철거</option>
-        <option value="브라켓 교체">브라켓 교체</option>
-        <option value="TV 정리 및 선정리">TV 정리 및 선정리</option>
-        <option value="기타">기타</option>
+        <option value="이전설치">이전설치</option>
+        <option value="설치">설치</option>
+        <option value="철거">철거</option>
+        <option value="철거보관">철거보관</option>
+        <option value="보관설치">보관설치</option>
+        <option value="A/S">A/S</option>
       </select>
       <input type="text" id="contentEtc" placeholder="기타 작업내용 입력" style="display:none" />
       <input type="text" id="items" placeholder="작업품목" />
@@ -198,6 +199,11 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+   function handleContentChange() {
+      const select = document.getElementById('content');
+      const etcInput = document.getElementById('contentEtc');
+      etcInput.style.display = (select.value === '기타') ? 'block' : 'none';
+    }
   // ✅ 수정된 함수: 오전/오후 + 두 자리 시:분 표시
   function formatKoreanDateTime(dateString) {
     const d = new Date(dateString);
