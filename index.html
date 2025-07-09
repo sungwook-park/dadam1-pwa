@@ -462,7 +462,7 @@ document.getElementById('doneSearchBox').style.display = (tabName === 'done') ? 
     loadTasks('incomplete');
   };
 
-  function exportDoneToExcel() {
+  window.exportDoneToExcel = function () {
   console.log("⏳ 엑셀 내보내기 함수 시작됨");
 
   const taskElements = document.querySelectorAll('.task.done');
