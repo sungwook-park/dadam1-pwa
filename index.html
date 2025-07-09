@@ -137,6 +137,10 @@
     cursor: pointer;
     margin-left: 5px;
   }
+ #tabButtons.hidden {
+  display: none;
+}
+ 
 </style>
 
 </head>
@@ -159,7 +163,7 @@
   <div id="mainApp" style="display:none">
     <div class="tab" id="tabButtons"></div>
 
-    <div id="sectionHome" class="section box active">
+    <div id="sectionHome" class="section box">
   <h2 style="text-align:center; margin-bottom: 15px;">📱 다담TV 홈</h2>
   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
     <button onclick="setTab('task')">작업지시</button>
@@ -345,9 +349,18 @@ function setTab(tabName) {
     document.getElementById('tabDone')?.classList.add('active');
   }
 
-  // 4. 완료탭이면 검색창 보이기
+    // 4. 완료탭이면 검색창 보이기
   document.getElementById('doneSearchBox').style.display = (tabName === 'done') ? 'block' : 'none';
+
+  // 5. 홈일 때는 탭 버튼 숨기기
+  const tabBar = document.getElementById('tabButtons');
+  if (tabName === 'home') {
+    tabBar.classList.add('hidden');
+  } else {
+    tabBar.classList.remove('hidden');
+  }
 }
+
 
 
   document.getElementById('saveBtn').onclick = async () => {
