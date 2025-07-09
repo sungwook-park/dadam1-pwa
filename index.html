@@ -458,6 +458,72 @@ document.getElementById('doneSearchBox').style.display = (tabName === 'done') ? 
     }
     loadTasks('incomplete');
   };
+
+  function exportDoneToExcel() {
+  const startDate = document.getElementById('startDateInput').value;
+  const endDate = document.getElementById('endDateInput').value;
+  const keyword = document.getElementById('doneSearchInput').value.toLowerCase();
+
+  const taskElements = document.querySelectorAll('.task.done');
+  const data = [];
+
+  taskElements.forEach(taskEl => {
+    const text = taskEl.innerText;
+    const strong = taskEl.querySelector('strong')?.textContent || '';
+    const detailLines = [...taskEl.querySelectorAll('.details p')].map(p => p.textContent);
+
+    const dateStr = strong.split(' ')[0]; // yyyy.mm.dd
+    if (startDate && new Date(dateStr) < new Date(startDate)) return;
+    if (endDate && new Date(dateStr) > new Date(endDate)) return;
+
+    const combinedText = text.toLowerCase();
+    if (keyword && !combinedText.includes(keyword)) return;
+
+    const staff = (text.match(/\/ (.*?) \//) || [])[1] || '';
+    const clientMatch = text.match(/거래처: (.*?)\n/);
+    const client = clientMatch ? clientMatch[1] : taskEl.querySelector('span')?.textContent || '';
+
+    const removeAddr = detailLines[0]?.replace('철거: ', '') || '';
+    const installAddr = detailLines[1]?.replace('설치: ', '') || '';
+    const fullAddr = removeAddr + ' ~ ' + installAddr;
+
+    const contact = detailLines[2]?.replace('연락처: ', '') || '';
+    const price = detailLines[3]?.replace('금액: ', '') || '';
+    const parts = detailLines[4]?.replace('부품: ', '') || '';
+    const memo = detailLines[5]?.replace('비고: ', '') || '';
+
+    const workMatch = text.match(/\/ .*? \/ (.*?)\n/);
+    const workType = workMatch ? workMatch[1] : '';
+    const items = taskEl.querySelector('small')?.textContent || '';
+    const fullWork = workType + ' - ' + items;
+
+    data.push({
+      날짜: strong,
+      작업자: staff,
+      거래처명: client,
+      주소: fullAddr,
+      고객연락처: contact,
+      작업: fullWork,
+      금액: price,
+      사용부품: parts,
+      비고: memo
+    });
+  });
+
+  if (data.length === 0) {
+    alert("조건에 맞는 완료된 작업이 없습니다.");
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "완료된 작업");
+
+  const now = new Date();
+  const filename = `완료작업_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+}
+
  </script>
 </body>
 </html>
