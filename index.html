@@ -173,7 +173,7 @@
         <input type="date" id="endDateInput" style="padding: 8px; width: 32%; font-size: 16px;" />
         <input type="text" id="doneSearchInput" placeholder="검색어 (거래처, 품목 등)" style="padding: 8px; width: 32%; font-size: 16px;" />
       </div>
-      <div style="text-align: right; margin-bottom: 10px;">
+      <div id="excelExportBox" style="text-align: right; margin-bottom: 10px; display: none;">
   <button onclick="exportDoneToExcel()">엑셀로 내보내기</button>
 </div>
 
@@ -292,7 +292,7 @@
     document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
     // ✅ 검색창 표시
 document.getElementById('doneSearchBox').style.display = (tabName === 'done') ? 'block' : 'none';
-
+document.getElementById('excelExportBox').style.display = (tabName === 'done') ? 'block' : 'none';
   }
 
   document.getElementById('saveBtn').onclick = async () => {
