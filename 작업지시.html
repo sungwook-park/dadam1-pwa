@@ -130,12 +130,15 @@
 </head>
 <body onload="handleContentChange()">
   <div class="header-bar">
-  <h1>작업지시표</h1>
-  <div>
-    <button onclick="location.href='index.html'" style="margin-right:10px;">🏠 홈으로</button>
+    <h1>작업지시표</h1>
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
   </div>
-</div>
+
+  <!-- ✅ 홈으로 버튼 추가 -->
+  <div style="text-align:right; margin-bottom:10px;">
+    <button onclick="location.href='index.html'" style="background:#ffb703; color:white; padding:8px 12px; border:none; border-radius:8px; font-weight:bold;">🏠 홈으로</button>
+  </div>
+
 
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일" />
