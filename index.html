@@ -127,12 +127,28 @@
  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<style>
+  .header-bar button {
+    background: #ffffff;
+    border: 1px solid #aaa;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 5px;
+  }
+</style>
+
 </head>
 <body onload="handleContentChange()">
   <div class="header-bar">
-    <h1>작업지시표</h1>
+  <h1>작업지시표</h1>
+  <div>
+    <button onclick="setTab('home')" style="margin-right: 8px;">🏠 홈</button>
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
   </div>
+</div>
+
 
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일" />
@@ -142,6 +158,18 @@
 
   <div id="mainApp" style="display:none">
     <div class="tab" id="tabButtons"></div>
+
+    <div id="sectionHome" class="section box active">
+  <h2 style="text-align:center; margin-bottom: 15px;">📱 다담TV 홈</h2>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+    <button onclick="setTab('task')">작업지시</button>
+    <button onclick="setTab('schedule')">예약현황</button>
+    <button onclick="setTab('account')">정산</button>
+    <button onclick="setTab('expense')">지출</button>
+    <button onclick="setTab('stock')">입출고</button>
+    <button onclick="setTab('staff')">사원관리</button>
+  </div>
+</div>
 
     <div id="sectionInput" class="section box">
       <input type="datetime-local" id="date" />
@@ -246,6 +274,9 @@
       document.getElementById('loginBox').style.display = 'none';
       document.getElementById('mainApp').style.display = 'block';
 
+      setTab('home'); 
+      loadTasks('incomplete')
+      
       const tabButtons = document.getElementById('tabButtons');
       tabButtons.innerHTML = '';
 
@@ -279,21 +310,45 @@
     location.reload();
   };
 
-  function setTab(tabName) {
-    document.querySelectorAll('.tab button').forEach(btn => btn.classList.remove('active'));
-    if (tabName === 'input') {
-      document.getElementById('tabInput')?.classList.add('active');
-    } else if (tabName === 'list') {
-      document.getElementById('tabList')?.classList.add('active');
-    } else if (tabName === 'done') {
-      document.getElementById('tabDone')?.classList.add('active');
-    }
-    document.getElementById('sectionInput').classList.toggle('active', tabName === 'input');
-    document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
-    // ✅ 검색창 표시
-document.getElementById('doneSearchBox').style.display = (tabName === 'done') ? 'block' : 'none';
+function setTab(tabName) {
+  // 1. 모든 section 숨기기
+  document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
 
+  // 2. 해당 tabName에 따라 보이게
+  if (tabName === 'home') {
+    document.getElementById('sectionHome')?.classList.add('active');
+  } else if (tabName === 'task') {
+    document.getElementById('sectionInput')?.classList.add('active');
+  } else if (tabName === 'schedule') {
+    document.getElementById('sectionSchedule')?.classList.add('active');
+  } else if (tabName === 'account') {
+    document.getElementById('sectionAccount')?.classList.add('active');
+  } else if (tabName === 'expense') {
+    document.getElementById('sectionExpense')?.classList.add('active');
+  } else if (tabName === 'stock') {
+    document.getElementById('sectionStock')?.classList.add('active');
+  } else if (tabName === 'staff') {
+    document.getElementById('sectionStaff')?.classList.add('active');
+  } else if (tabName === 'list') {
+    document.getElementById('sectionList')?.classList.add('active');
+  } else if (tabName === 'done') {
+    document.getElementById('sectionList')?.classList.add('active');
   }
+
+  // 3. 탭버튼에 active 효과는 목록/완료 탭만 적용
+  document.querySelectorAll('.tab button').forEach(btn => btn.classList.remove('active'));
+  if (tabName === 'input') {
+    document.getElementById('tabInput')?.classList.add('active');
+  } else if (tabName === 'list') {
+    document.getElementById('tabList')?.classList.add('active');
+  } else if (tabName === 'done') {
+    document.getElementById('tabDone')?.classList.add('active');
+  }
+
+  // 4. 완료탭이면 검색창 보이기
+  document.getElementById('doneSearchBox').style.display = (tabName === 'done') ? 'block' : 'none';
+}
+
 
   document.getElementById('saveBtn').onclick = async () => {
     const staffInput = document.getElementById('staff').value;
