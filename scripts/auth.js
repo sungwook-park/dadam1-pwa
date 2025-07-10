@@ -30,31 +30,12 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('loginBox').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
 
-    const tabButtons = document.getElementById('tabButtons');
-    tabButtons.innerHTML = '';
-
+    // 관리자 → 홈으로
     if (currentUserRole === 'admin') {
-      // 관리자일 경우 홈화면으로
-      window.setTab('home');
-      return;
+      window.routeTo('home');
+    } else {
+      window.routeTo('work');
     }
-
-    tabButtons.innerHTML += `
-      <button id="tabList" class="active">목록 보기</button>
-      <button id="tabDone">완료 보기</button>
-    `;
-
-    document.getElementById('tabList').onclick = () => {
-      window.setTab('list');
-      window.loadTasks('incomplete');
-    };
-    document.getElementById('tabDone').onclick = () => {
-      window.setTab('done');
-      window.loadTasks('done');
-    };
-
-    window.setTab('list');
-    window.loadTasks('incomplete');
   }
 });
 
