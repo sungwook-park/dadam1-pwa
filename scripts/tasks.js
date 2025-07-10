@@ -6,21 +6,38 @@ import {
 let editTaskId = null;
 
 window.setTab = function (tabName) {
+  const tabButtons = document.getElementById('tabButtons');
+
+  // ✅ 홈화면일 경우 탭버튼 숨김, 그 외에는 표시
+  if (tabName === 'home') {
+    tabButtons.style.display = 'none';
+  } else {
+    tabButtons.style.display = 'flex';
+  }
+
+  // ✅ 탭 버튼 active 클래스 처리
   document.querySelectorAll('.tab button').forEach(btn => btn.classList.remove('active'));
-  if (tabName === 'home') document.getElementById('tabHome')?.classList.add('active');
-  if (tabName === 'input') document.getElementById('tabInput')?.classList.add('active');
-  if (tabName === 'list') document.getElementById('tabList')?.classList.add('active');
-  if (tabName === 'done') document.getElementById('tabDone')?.classList.add('active');
+  document.getElementById(`tab${capitalize(tabName)}`)?.classList.add('active');
 
-  document.getElementById('sectionHome')?.classList.toggle('active', tabName === 'home');
-  document.getElementById('sectionInput').classList.toggle('active', tabName === 'input');
-  document.getElementById('sectionList').classList.toggle('active', tabName !== 'input' && tabName !== 'home');
+  // ✅ 모든 section 숨기고 선택한 탭만 보여주기
+  const sectionIds = ['Home', 'Input', 'List', 'Reserve', 'Income', 'Expense', 'Stock', 'Holiday'];
+  sectionIds.forEach(id => {
+    const section = document.getElementById(`section${id}`);
+    if (section) section.classList.remove('active');
+  });
+  const activeSection = document.getElementById(`section${capitalize(tabName)}`);
+  if (activeSection) activeSection.classList.add('active');
 
+  // ✅ 완료탭일 때만 필터/엑셀 버튼 보이기
   document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'flex' : 'none';
   document.getElementById('excelExportBox').style.display = tabName === 'done' ? 'block' : 'none';
 
   if (tabName === 'done') requestAnimationFrame(setupDoneFilterInputs);
 };
+
+function capitalize(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 function setupDoneFilterInputs() {
   ['startDateInput', 'endDateInput', 'doneSearchInput'].forEach(id => {
