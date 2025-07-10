@@ -130,19 +130,23 @@ button {
   display: flex;
   flex-wrap: nowrap;
   gap: 10px;
-  justify-content: space-between;
   margin-bottom: 10px;
+  overflow-x: auto; /* 혹시라도 초과될 경우 스크롤 */
 }
+
 #doneSearchBox input[type="date"] {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 120px;
+  max-width: 140px;
+  min-width: 100px;
   padding: 8px;
   font-size: 16px;
 }
+
 #doneSearchBox input[type="text"] {
-  width: auto;
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 120px;
+  max-width: 140px;
+  min-width: 100px;
   padding: 8px;
   font-size: 16px;
 }
+
