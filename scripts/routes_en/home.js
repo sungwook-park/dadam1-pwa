@@ -2,7 +2,7 @@ export function render(container) {
   container.innerHTML = `
     <style>
       .admin-button {
-        height: 120px;
+        height: 130px;
         font-size: 22px;
         background-color: #219ebc;
         color: white;
@@ -17,14 +17,15 @@ export function render(container) {
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       }
     </style>
-    <div class="box" style="padding: 20px 20px 40px; min-height: 85vh; display: flex; flex-direction: column; justify-content: center;">
-      <h2 style="text-align:center; font-size: 30px; margin-bottom: 20px;">📋 관리자 홈</h2>
+    <div class="box" style="padding: 10px 15px 20px; min-height: 85vh; display: flex; flex-direction: column; justify-content: center;">
+      <h2 style="text-align:center; font-size: 30px; margin: 10px 0 16px;">📋 관리자 홈</h2>
       <div style="
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 28px;
+        gap: 12px;
         max-width: 700px;
         margin: 0 auto;
+        width: 100%;
       ">
         <button onclick="routeTo('work')" class="admin-button">작업지시</button>
         <button onclick="routeTo('reserve')" class="admin-button">예약</button>
