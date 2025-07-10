@@ -24,6 +24,18 @@
   <div id="mainApp" style="display:none">
     <div class="tab" id="tabButtons"></div>
 
+    <div id="sectionHome" class="section box">
+      <h2>📌 관리자 홈</h2>
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+        <button onclick="setTab('input')">작업지시</button>
+        <button onclick="setTab('reserve')">예약현황</button>
+        <button onclick="setTab('income')">정산</button>
+        <button onclick="setTab('expense')">지출</button>
+        <button onclick="setTab('stock')">입출고</button>
+        <button onclick="setTab('holiday')">휴무관리</button>
+      </div>
+    </div>
+
     <div id="sectionInput" class="section box">
       <input type="datetime-local" id="date" />
       <input type="text" id="staff" placeholder="작업자 이름 (,로 구분)" />

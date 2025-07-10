@@ -38,13 +38,15 @@ onAuthStateChanged(auth, async user => {
     }
 
     tabButtons.innerHTML += `
-      <button id="tabList" class="active">목록 보기</button>
+      <button id="tabHome" class="active">홈</button>
+      <button id="tabList">목록 보기</button>
       <button id="tabDone">완료 보기</button>
     `;
 
     if (currentUserRole === 'admin') {
       document.getElementById('tabInput').onclick = () => window.setTab('input');
     }
+    document.getElementById('tabHome').onclick = () => window.setTab('home');
     document.getElementById('tabList').onclick = () => {
       window.setTab('list');
       window.loadTasks('incomplete');
@@ -54,8 +56,7 @@ onAuthStateChanged(auth, async user => {
       window.loadTasks('done');
     };
 
-    window.setTab('list');
-    window.loadTasks('incomplete');
+    window.setTab('home');
   }
 });
 

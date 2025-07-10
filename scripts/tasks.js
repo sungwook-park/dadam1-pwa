@@ -1,4 +1,3 @@
-
 import { auth, db } from './firebase-config.js';
 import {
   collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy
@@ -8,18 +7,19 @@ let editTaskId = null;
 
 window.setTab = function (tabName) {
   document.querySelectorAll('.tab button').forEach(btn => btn.classList.remove('active'));
+  if (tabName === 'home') document.getElementById('tabHome')?.classList.add('active');
   if (tabName === 'input') document.getElementById('tabInput')?.classList.add('active');
   if (tabName === 'list') document.getElementById('tabList')?.classList.add('active');
   if (tabName === 'done') document.getElementById('tabDone')?.classList.add('active');
 
+  document.getElementById('sectionHome')?.classList.toggle('active', tabName === 'home');
   document.getElementById('sectionInput').classList.toggle('active', tabName === 'input');
-  document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
+  document.getElementById('sectionList').classList.toggle('active', tabName !== 'input' && tabName !== 'home');
+
   document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'flex' : 'none';
   document.getElementById('excelExportBox').style.display = tabName === 'done' ? 'block' : 'none';
 
-  if (tabName === 'done') {
-    requestAnimationFrame(setupDoneFilterInputs);
-  }
+  if (tabName === 'done') requestAnimationFrame(setupDoneFilterInputs);
 };
 
 function setupDoneFilterInputs() {
