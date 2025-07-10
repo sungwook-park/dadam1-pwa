@@ -1,3 +1,4 @@
+
 import { auth, db } from './firebase-config.js';
 import {
   collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy
@@ -13,8 +14,81 @@ window.setTab = function (tabName) {
 
   document.getElementById('sectionInput').classList.toggle('active', tabName === 'input');
   document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
-  document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'block' : 'none';
+  document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'flex' : 'none';
   document.getElementById('excelExportBox').style.display = tabName === 'done' ? 'block' : 'none';
+
+  if (tabName === 'done') {
+    ['startDateInput', 'endDateInput', 'doneSearchInput'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => {
+        window.loadTasks('done');
+      });
+    });
+  }
+};
+
+window.loadTasks = async function (mode = 'incomplete') {
+  const { currentUserRole, currentUserName } = window.getUserInfo();
+  const tasksRef = collection(db, 'tasks');
+
+  let baseQuery = query(tasksRef, orderBy('date', mode === 'done' ? 'desc' : 'asc'));
+  const snap = await getDocs(baseQuery);
+
+  const list = document.getElementById('taskList');
+  list.innerHTML = '';
+
+  const startDate = (mode === 'done') ? document.getElementById('startDateInput')?.value : '';
+  const endDate = (mode === 'done') ? document.getElementById('endDateInput')?.value : '';
+  const keyword = (mode === 'done') ? document.getElementById('doneSearchInput')?.value?.toLowerCase() : '';
+
+  snap.forEach(docSnap => {
+    const d = docSnap.data();
+    const id = docSnap.id;
+
+    if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
+    if (mode === 'incomplete' && d.done) return;
+    if (mode === 'done' && !d.done) return;
+
+    // ✅ 작업자일 경우 본인 이름 포함된 작업만 표시
+    if (currentUserRole !== 'admin') {
+      if (!d.staffNames?.includes(currentUserName)) return;
+    }
+
+    const taskDate = new Date(d.date);
+    if (mode === 'done') {
+      if (startDate && taskDate < new Date(startDate + 'T00:00:00')) return;
+      if (endDate && taskDate > new Date(endDate + 'T23:59:59')) return;
+
+      if (keyword) {
+        const combined = [d.staffNames?.join(', ') || '', d.client || '', d.content || '', d.items || '', d.memo || ''].join(' ').toLowerCase();
+        if (!combined.includes(keyword)) return;
+      }
+    }
+
+    const div = document.createElement('div');
+    div.className = 'task' + (d.done ? ' done' : '');
+    div.innerHTML = `
+      <strong>${formatKoreanDateTime(d.date)}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
+      <small>${d.items}</small>
+      <div class="details">
+        <p>철거: ${d.removeAddr}</p>
+        <p>설치: ${d.installAddr}</p>
+        <p>연락처: <a href="tel:${d.contact}" style="color:blue;">${d.contact}</a></p>
+        <p>금액: ${d.price}</p>
+        <p>부품: ${d.parts}</p>
+        <p>비고: ${d.memo}</p>
+      </div>
+      <div class="actions">
+        <button onclick="markDone('${id}')">완료</button>
+        <button onclick="deleteTask('${id}')">삭제</button>
+        <button onclick="editTask('${id}')">수정</button>
+      </div>
+    `;
+    div.onclick = () => {
+      const det = div.querySelector('.details');
+      det.style.display = det.style.display === 'block' ? 'none' : 'block';
+    };
+    list.appendChild(div);
+  });
 };
 
 document.getElementById('saveBtn').onclick = async () => {
@@ -94,67 +168,6 @@ window.deleteTask = async id => {
     }
   }
   window.loadTasks('incomplete');
-};
-
-window.loadTasks = async function (mode = 'incomplete') {
-  const { currentUserRole, currentUserName } = window.getUserInfo();
-  const tasksRef = collection(db, 'tasks');
-  let baseQuery = currentUserRole === 'admin'
-    ? query(tasksRef, orderBy('date', mode === 'done' ? 'desc' : 'asc'))
-    : query(tasksRef, where('staffNames', 'array-contains', currentUserName), orderBy('date', mode === 'done' ? 'desc' : 'asc'));
-
-  const snap = await getDocs(baseQuery);
-  const list = document.getElementById('taskList');
-  list.innerHTML = '';
-
-  const startDate = (mode === 'done') ? document.getElementById('startDateInput')?.value : '';
-  const endDate = (mode === 'done') ? document.getElementById('endDateInput')?.value : '';
-  const keyword = (mode === 'done') ? document.getElementById('doneSearchInput')?.value?.toLowerCase() : '';
-
-  snap.forEach(docSnap => {
-    const d = docSnap.data();
-    const id = docSnap.id;
-
-    if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
-    if (mode === 'incomplete' && d.done) return;
-    if (mode === 'done' && !d.done) return;
-
-    const taskDate = new Date(d.date);
-    if (mode === 'done') {
-      if (startDate && taskDate < new Date(startDate + 'T00:00:00')) return;
-      if (endDate && taskDate > new Date(endDate + 'T23:59:59')) return;
-
-      if (keyword) {
-        const combined = [d.staffNames?.join(', ') || '', d.client || '', d.content || '', d.items || '', d.memo || ''].join(' ').toLowerCase();
-        if (!combined.includes(keyword)) return;
-      }
-    }
-
-    const div = document.createElement('div');
-    div.className = 'task' + (d.done ? ' done' : '');
-    div.innerHTML = `
-      <strong>${formatKoreanDateTime(d.date)}</strong> / ${d.staffNames?.join(', ')} / <span style="background: yellow; font-weight: bold;">${d.client}</span> / ${d.content}<br>
-      <small>${d.items}</small>
-      <div class="details">
-        <p>철거: ${d.removeAddr}</p>
-        <p>설치: ${d.installAddr}</p>
-        <p>연락처: <a href="tel:${d.contact}" style="color:blue;">${d.contact}</a></p>
-        <p>금액: ${d.price}</p>
-        <p>부품: ${d.parts}</p>
-        <p>비고: ${d.memo}</p>
-      </div>
-      <div class="actions">
-        <button onclick="markDone('${id}')">완료</button>
-        <button onclick="deleteTask('${id}')">삭제</button>
-        <button onclick="editTask('${id}')">수정</button>
-      </div>
-    `;
-    div.onclick = () => {
-      const det = div.querySelector('.details');
-      det.style.display = det.style.display === 'block' ? 'none' : 'block';
-    };
-    list.appendChild(div);
-  });
 };
 
 function formatKoreanDateTime(dateString) {
