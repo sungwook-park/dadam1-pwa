@@ -1,5 +1,10 @@
 window.routeTo = async (name) => {
   const container = document.getElementById('routeContainer');
+  if (!container) {
+    alert("❌ routeContainer 요소가 없습니다!");
+    return;
+  }
+
   container.innerHTML = '<p>로딩 중...</p>';
   try {
     const module = await import(`./routes_en/${name}.js`);
