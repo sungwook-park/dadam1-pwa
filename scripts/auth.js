@@ -34,7 +34,9 @@ onAuthStateChanged(auth, async user => {
     tabButtons.innerHTML = '';
 
     if (currentUserRole === 'admin') {
-      tabButtons.innerHTML += `<button id="tabInput">작업 입력</button>`;
+      // 관리자일 경우 홈화면으로
+      window.setTab('home');
+      return;
     }
 
     tabButtons.innerHTML += `
@@ -42,9 +44,6 @@ onAuthStateChanged(auth, async user => {
       <button id="tabDone">완료 보기</button>
     `;
 
-    if (currentUserRole === 'admin') {
-      document.getElementById('tabInput').onclick = () => window.setTab('input');
-    }
     document.getElementById('tabList').onclick = () => {
       window.setTab('list');
       window.loadTasks('incomplete');
