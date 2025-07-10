@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="./styles/main.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body onload="handleContentChange()">
+<body>
   <div class="header-bar">
     <h1>작업지시표</h1>
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
@@ -22,6 +22,20 @@
   </div>
 
   <div id="mainApp" style="display:none">
+    <!-- 🔹 관리자 홈화면 -->
+    <div id="adminHome" class="section box">
+      <h2>관리자모드</h2>
+      <div class="admin-grid">
+        <button onclick="setTab('task')">작업지시</button>
+        <button onclick="setTab('reservation')">예약</button>
+        <button onclick="setTab('expense')">지출</button>
+        <button onclick="setTab('settlement')">정산</button>
+        <button onclick="setTab('inventory')">입출고</button>
+        <button onclick="setTab('vacation')">휴무관리</button>
+      </div>
+    </div>
+
+    <!-- 기존 작업입력/목록 보기 영역 -->
     <div class="tab" id="tabButtons"></div>
 
     <div id="sectionInput" class="section box">
@@ -59,6 +73,14 @@
       </div>
       <div id="taskList"></div>
     </div>
+
+    <!-- 각 하위탭들 -->
+    <div id="sectionTask" class="section box">작업지시 탭 내용입니다. <button onclick="setTab('home')">🏠 홈으로</button></div>
+    <div id="sectionReservation" class="section box">예약 탭입니다. <button onclick="setTab('home')">🏠 홈으로</button></div>
+    <div id="sectionExpense" class="section box">지출 탭입니다. <button onclick="setTab('home')">🏠 홈으로</button></div>
+    <div id="sectionSettlement" class="section box">정산 탭입니다. <button onclick="setTab('home')">🏠 홈으로</button></div>
+    <div id="sectionInventory" class="section box">입출고 탭입니다. <button onclick="setTab('home')">🏠 홈으로</button></div>
+    <div id="sectionVacation" class="section box">휴무관리 탭입니다. <button onclick="setTab('home')">🏠 홈으로</button></div>
   </div>
 
   <script type="module" src="./scripts/auth.js"></script>
