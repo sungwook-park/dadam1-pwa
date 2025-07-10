@@ -196,3 +196,50 @@ function formatKoreanDateTime(dateString) {
   const hourStr = String(hour).padStart(2, '0');
   return `${yyyy}.${mm}.${dd} ${period}${hourStr}:${minute}`;
 }
+
+
+// ✅ 동적 saveBtn 이벤트 위임 처리
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.id === 'saveBtn') {
+    saveTask();
+  }
+});
+
+function saveTask() {
+  const staffInput = document.getElementById('staff').value;
+  const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
+
+  const task = {
+    uid: auth.currentUser.uid,
+    staffNames,
+    date: document.getElementById('date').value,
+    client: document.getElementById('client').value,
+    removeAddr: document.getElementById('removeAddr').value,
+    installAddr: document.getElementById('installAddr').value,
+    contact: document.getElementById('contact').value,
+    content: document.getElementById('content').value,
+    items: document.getElementById('items').value,
+    price: document.getElementById('price').value,
+    parts: document.getElementById('parts').value,
+    memo: document.getElementById('memo').value,
+    done: false,
+    deletedBy: []
+  };
+
+  if (editTaskId) {
+    updateDoc(doc(db, 'tasks', editTaskId), task).then(() => {
+      editTaskId = null;
+      alert("작업이 수정되었습니다.");
+      window.setTab('list');
+      window.loadTasks('incomplete');
+    });
+  } else {
+    task.createdAt = new Date();
+    addDoc(collection(db, 'tasks'), task).then(() => {
+      alert("작업이 저장되었습니다.");
+      ['date','staff','client','removeAddr','installAddr','contact','content','items','price','parts','memo'].forEach(id => document.getElementById(id).value = '');
+      window.setTab('list');
+      window.loadTasks('incomplete');
+    });
+  }
+}
