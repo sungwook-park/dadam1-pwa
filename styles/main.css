@@ -125,15 +125,19 @@ button {
   border-radius: 8px;
 }
 
-/* ✅ 한 줄 정렬 스타일 추가 */
+/* ✅ 검색창 한 줄 정렬 */
 #doneSearchBox {
   display: flex;
+  flex-wrap: nowrap;
   gap: 10px;
   justify-content: space-between;
   margin-bottom: 10px;
 }
-#doneSearchBox input {
+#doneSearchBox input[type="date"],
+#doneSearchBox input[type="text"] {
+  width: auto;
   flex: 1;
-  font-size: 16px;
+  min-width: 0;
   padding: 8px;
+  font-size: 16px;
 }
