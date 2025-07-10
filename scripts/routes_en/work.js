@@ -1,5 +1,19 @@
 import '../tasks.js';
 
+function waitForElement(selector, callback) {
+  const el = document.querySelector(selector);
+  if (el) return callback(el);
+
+  const observer = new MutationObserver(() => {
+    const elNow = document.querySelector(selector);
+    if (elNow) {
+      observer.disconnect();
+      callback(elNow);
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
 export function render(container) {
   container.innerHTML = `
     <div class="box">
@@ -21,10 +35,9 @@ export function render(container) {
     </div>
   `;
 
-  setTimeout(() => {
+  waitForElement('#tabButtons', () => {
     const tabButtons = document.getElementById('tabButtons');
-    tabButtons.innerHTML = '';
-    tabButtons.innerHTML += `
+    tabButtons.innerHTML = `
       <button id="tabInput">작업 입력</button>
       <button id="tabList" class="active">목록 보기</button>
       <button id="tabDone">완료 보기</button>
@@ -46,5 +59,5 @@ export function render(container) {
       window.setTab('list');
       window.loadTasks('incomplete');
     }
-  }, 100);
+  });
 }
