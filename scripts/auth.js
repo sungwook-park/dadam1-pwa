@@ -67,3 +67,8 @@ document.getElementById('logoutBtn').onclick = async () => {
 };
 
 window.getUserInfo = () => ({ currentUserRole, currentUserName });
+
+
+export function getUserInfo() {
+  return { currentUserRole, currentUserName };
+}
