@@ -1,8 +1,0 @@
-{
-  "name": "작업지시표",
-  "short_name": "작업표",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2c3e50"
-}
