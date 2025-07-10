@@ -124,3 +124,16 @@ button {
   padding: 5px;
   border-radius: 8px;
 }
+
+/* ✅ 한 줄 정렬 스타일 추가 */
+#doneSearchBox {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+#doneSearchBox input {
+  flex: 1;
+  font-size: 16px;
+  padding: 8px;
+}
