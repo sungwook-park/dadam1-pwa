@@ -29,6 +29,7 @@ onAuthStateChanged(auth, async user => {
 
     document.getElementById('loginBox').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
+    window.routeTo('home');
 
     const tabButtons = document.getElementById('tabButtons');
     tabButtons.innerHTML = '';
