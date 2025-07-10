@@ -16,14 +16,6 @@ window.setTab = function (tabName) {
   document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
   document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'flex' : 'none';
   document.getElementById('excelExportBox').style.display = tabName === 'done' ? 'block' : 'none';
-
-  if (tabName === 'done') {
-    ['startDateInput', 'endDateInput', 'doneSearchInput'].forEach(id => {
-      document.getElementById(id)?.addEventListener('input', () => {
-        window.loadTasks('done');
-      });
-    });
-  }
 };
 
 window.loadTasks = async function (mode = 'incomplete') {
@@ -48,7 +40,6 @@ window.loadTasks = async function (mode = 'incomplete') {
     if (mode === 'incomplete' && d.done) return;
     if (mode === 'done' && !d.done) return;
 
-    // ✅ 작업자일 경우 본인 이름 포함된 작업만 표시
     if (currentUserRole !== 'admin') {
       if (!d.staffNames?.includes(currentUserName)) return;
     }
@@ -90,6 +81,18 @@ window.loadTasks = async function (mode = 'incomplete') {
     list.appendChild(div);
   });
 };
+
+function setupDoneFilterInputs() {
+  ['startDateInput', 'endDateInput', 'doneSearchInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        window.loadTasks('done');
+      });
+    }
+  });
+}
+window.setupDoneFilterInputs = setupDoneFilterInputs;
 
 document.getElementById('saveBtn').onclick = async () => {
   const staffInput = document.getElementById('staff').value;
