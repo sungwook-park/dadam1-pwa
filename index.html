@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>작업지시표 - 다담TV</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2c3e50" />
+  <link rel="stylesheet" href="./styles/main.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="header-bar">
+    <h1>작업지시표</h1>
+    <button id="logoutBtn" class="logout-btn">로그아웃</button>
+  </div>
+
+  <div id="loginBox" class="box">
+    <input type="email" id="email" placeholder="이메일" />
+    <input type="password" id="password" placeholder="비밀번호" />
+    <button id="loginBtn">로그인</button>
+  </div>
+
+  <div id="mainApp" style="display:none">
+    <div id="routeContainer"></div>
+  </div>
+
+  <script type="module" src="./scripts/auth.js"></script>
+  <script type="module" src="./scripts/router.js"></script>
+  <script type="module" src="./scripts/tasks.js"></script>
+  <script type="module" src="./scripts/export.js"></script>
+</body>
+</html>
