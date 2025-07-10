@@ -1,4 +1,3 @@
-
 import { auth, db } from './firebase-config.js';
 import {
   collection, addDoc, getDocs, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy
@@ -14,8 +13,87 @@ window.setTab = function (tabName) {
 
   document.getElementById('sectionInput').classList.toggle('active', tabName === 'input');
   document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
-  document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'flex' : 'none';
+  document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'block' : 'none';
   document.getElementById('excelExportBox').style.display = tabName === 'done' ? 'block' : 'none';
+};
+
+document.getElementById('saveBtn').onclick = async () => {
+  const staffInput = document.getElementById('staff').value;
+  const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
+
+  const task = {
+    uid: auth.currentUser.uid,
+    staffNames,
+    date: document.getElementById('date').value,
+    client: document.getElementById('client').value,
+    removeAddr: document.getElementById('removeAddr').value,
+    installAddr: document.getElementById('installAddr').value,
+    contact: document.getElementById('contact').value,
+    content: document.getElementById('content').value,
+    items: document.getElementById('items').value,
+    price: document.getElementById('price').value,
+    parts: document.getElementById('parts').value,
+    memo: document.getElementById('memo').value,
+    done: false,
+    deletedBy: []
+  };
+
+  if (editTaskId) {
+    await updateDoc(doc(db, 'tasks', editTaskId), task);
+    editTaskId = null;
+  } else {
+    task.createdAt = new Date();
+    await addDoc(collection(db, 'tasks'), task);
+  }
+
+  alert("작업이 저장되었습니다.");
+  ['date','staff','client','removeAddr','installAddr','contact','content','items','price','parts','memo'].forEach(id => document.getElementById(id).value = '');
+  window.setTab('list');
+  window.loadTasks('incomplete');
+};
+
+window.editTask = async function (id) {
+  const ref = doc(db, 'tasks', id);
+  const snap = await getDoc(ref);
+  const d = snap.data();
+  editTaskId = id;
+
+  document.getElementById('date').value = d.date || '';
+  document.getElementById('staff').value = (d.staffNames || []).join(', ');
+  document.getElementById('client').value = d.client || '';
+  document.getElementById('removeAddr').value = d.removeAddr || '';
+  document.getElementById('installAddr').value = d.installAddr || '';
+  document.getElementById('contact').value = d.contact || '';
+  document.getElementById('content').value = d.content || '';
+  document.getElementById('items').value = d.items || '';
+  document.getElementById('price').value = d.price || '';
+  document.getElementById('parts').value = d.parts || '';
+  document.getElementById('memo').value = d.memo || '';
+
+  window.setTab('input');
+};
+
+window.markDone = async id => {
+  await updateDoc(doc(db, 'tasks', id), { done: true });
+  window.loadTasks('incomplete');
+};
+
+window.deleteTask = async id => {
+  const ref = doc(db, 'tasks', id);
+  const snap = await getDoc(ref);
+  const data = snap.data();
+  const { currentUserRole, currentUserName } = window.getUserInfo();
+
+  if (currentUserRole === 'admin') {
+    await deleteDoc(ref);
+  } else {
+    const deletedBy = data.deletedBy || [];
+    if (!deletedBy.includes(currentUserName)) {
+      deletedBy.push(currentUserName);
+      await updateDoc(ref, { deletedBy });
+    }
+  }
+  window.loadTasks('incomplete');
 };
 
 window.loadTasks = async function (mode = 'incomplete') {
@@ -38,13 +116,14 @@ window.loadTasks = async function (mode = 'incomplete') {
     const id = docSnap.id;
 
     if (d.deletedBy?.includes(currentUserRole === 'admin' ? 'admin' : currentUserName)) return;
-    if (mode === 'incomplete' && d.done === true) return;
-    if (mode === 'done' && d.done !== true) return;
+    if (mode === 'incomplete' && d.done) return;
+    if (mode === 'done' && !d.done) return;
 
     const taskDate = new Date(d.date);
     if (mode === 'done') {
       if (startDate && taskDate < new Date(startDate + 'T00:00:00')) return;
       if (endDate && taskDate > new Date(endDate + 'T23:59:59')) return;
+
       if (keyword) {
         const combined = [d.staffNames?.join(', ') || '', d.client || '', d.content || '', d.items || '', d.memo || ''].join(' ').toLowerCase();
         if (!combined.includes(keyword)) return;
@@ -76,59 +155,6 @@ window.loadTasks = async function (mode = 'incomplete') {
     };
     list.appendChild(div);
   });
-};
-
-// 필터 input 이벤트 연결 (탭 전환 이후 실행 보장)
-window.setupFilterInputs = function () {
-  ['startDateInput', 'endDateInput', 'doneSearchInput'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => {
-      window.loadTasks('done');
-    });
-  });
-};
-
-window.markDone = async id => {
-  await updateDoc(doc(db, 'tasks', id), { done: true });
-  window.loadTasks('incomplete');
-};
-
-window.deleteTask = async id => {
-  const ref = doc(db, 'tasks', id);
-  const snap = await getDoc(ref);
-  const data = snap.data();
-  const { currentUserRole, currentUserName } = window.getUserInfo();
-
-  if (currentUserRole === 'admin') {
-    await deleteDoc(ref);
-  } else {
-    const deletedBy = data.deletedBy || [];
-    if (!deletedBy.includes(currentUserName)) {
-      deletedBy.push(currentUserName);
-      await updateDoc(ref, { deletedBy });
-    }
-  }
-  window.loadTasks('incomplete');
-};
-
-window.editTask = async function (id) {
-  const ref = doc(db, 'tasks', id);
-  const snap = await getDoc(ref);
-  const d = snap.data();
-  editTaskId = id;
-
-  document.getElementById('date').value = d.date || '';
-  document.getElementById('staff').value = (d.staffNames || []).join(', ');
-  document.getElementById('client').value = d.client || '';
-  document.getElementById('removeAddr').value = d.removeAddr || '';
-  document.getElementById('installAddr').value = d.installAddr || '';
-  document.getElementById('contact').value = d.contact || '';
-  document.getElementById('content').value = d.content || '';
-  document.getElementById('items').value = d.items || '';
-  document.getElementById('price').value = d.price || '';
-  document.getElementById('parts').value = d.parts || '';
-  document.getElementById('memo').value = d.memo || '';
-
-  window.setTab('input');
 };
 
 function formatKoreanDateTime(dateString) {
