@@ -56,7 +56,13 @@
     </div>
 
     <div id="sectionList" class="section box">
-      <div id="doneSearchBox" style="margin-bottom: 10px; display: none;">
+      
+  <!-- ✅ 날짜 필터 고정 삽입 -->
+  <div id="adminDateFilterBox" style="display: none; margin-bottom: 10px;">
+    <input type="date" id="dateFilterInput" />
+  </div>
+  <div id="doneSearchBox"
+   style="margin-bottom: 10px; display: none;">
         <input type="date" id="startDateInput" />
         <input type="date" id="endDateInput" />
         <input type="text" id="doneSearchInput" placeholder="검색어 (거래처, 품목 등)" />
@@ -82,6 +88,31 @@
       }
     }
   </script>
+  
+<script>
+  function handleContentChange() {
+    const select = document.getElementById('content');
+    const etc = document.getElementById('contentEtc');
+    if (select && etc) {
+      etc.style.display = (select.value === '기타') ? 'block' : 'none';
+    }
+  }
+
+  window.addEventListener('load', () => {
+    const info = window.getUserInfo?.();
+    const role = info?.currentUserRole;
+    if (role === 'admin') {
+      const input = document.getElementById('dateFilterInput');
+      const box = document.getElementById('adminDateFilterBox');
+      if (input && box) {
+        input.valueAsDate = new Date();
+        input.onchange = () => window.loadTasks('list');
+        box.style.display = 'block';
+      }
+    }
+  });
+</script>
+
   <script type="module" src="./scripts/router.js"></script>
   <script type="module" src="./scripts/auth.js"></script>
   <script type="module" src="./scripts/tasks.js"></script>
