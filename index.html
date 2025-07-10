@@ -15,17 +15,12 @@
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
   </div>
 
-  <!-- 로그인 -->
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일" />
     <input type="password" id="password" placeholder="비밀번호" />
     <button id="loginBtn">로그인</button>
   </div>
 
-  <!-- 관리자 전용 라우팅 화면 -->
-  <div id="routeContainer" style="display: none;"></div>
-
-  <!-- 작업자 전용 기존 앱 -->
   <div id="mainApp" style="display:none">
     <div class="tab" id="tabButtons"></div>
 
@@ -66,11 +61,8 @@
     </div>
   </div>
 
-  <!-- JS 연결 -->
- <script type="module" src="./scripts/router.js"></script>
   <script type="module" src="./scripts/auth.js"></script>
   <script type="module" src="./scripts/tasks.js"></script>
   <script type="module" src="./scripts/export.js"></script>
 </body>
 </html>
-

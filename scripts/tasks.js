@@ -41,21 +41,6 @@ window.loadTasks = async function (mode = 'incomplete') {
   let baseQuery = query(tasksRef, orderBy('date', mode === 'done' ? 'desc' : 'asc'));
   const snap = await getDocs(baseQuery);
 
-  
-  // ✅ 관리자 전용 날짜 필터 (작업지시 목록)
-  const isAdmin = currentUserRole === 'admin';
-  if (isAdmin && mode === 'list') {
-    if (!document.getElementById('dateFilterInput')) {
-      const dateFilter = document.createElement('input');
-      dateFilter.type = 'date';
-      dateFilter.id = 'dateFilterInput';
-      dateFilter.style.marginBottom = '10px';
-      dateFilter.valueAsDate = new Date();
-      dateFilter.onchange = () => window.loadTasks('list');
-      list.parentElement.insertBefore(dateFilter, list);
-    }
-  }
-  
   const list = document.getElementById('taskList');
   list.innerHTML = '';
 
@@ -76,13 +61,6 @@ window.loadTasks = async function (mode = 'incomplete') {
     }
 
     const taskDate = new Date(d.date);
-    
-    if (mode === 'reserve') {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      if (taskDate < new Date(tomorrow.setFullYear(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 0,0,0,0))) return;
-    }
-    
     if (mode === 'done') {
       if (startDate && taskDate < new Date(startDate + 'T00:00:00')) return;
       if (endDate && taskDate > new Date(endDate + 'T23:59:59')) return;
@@ -211,68 +189,3 @@ function formatKoreanDateTime(dateString) {
   const hourStr = String(hour).padStart(2, '0');
   return `${yyyy}.${mm}.${dd} ${period}${hourStr}:${minute}`;
 }
-
-
-// ✅ 동적 saveBtn 이벤트 위임 처리
-document.addEventListener('click', function(e) {
-  if (e.target && e.target.id === 'saveBtn') {
-    saveTask();
-  }
-});
-
-function saveTask() {
-  const staffInput = document.getElementById('staff').value;
-  const staffNames = staffInput.split(',').map(name => name.trim()).filter(Boolean);
-
-  const task = {
-    uid: auth.currentUser.uid,
-    staffNames,
-    date: document.getElementById('date').value,
-    client: document.getElementById('client').value,
-    removeAddr: document.getElementById('removeAddr').value,
-    installAddr: document.getElementById('installAddr').value,
-    contact: document.getElementById('contact').value,
-    content: document.getElementById('content').value,
-    items: document.getElementById('items').value,
-    price: document.getElementById('price').value,
-    parts: document.getElementById('parts').value,
-    memo: document.getElementById('memo').value,
-    done: false,
-    deletedBy: []
-  };
-
-  if (editTaskId) {
-    updateDoc(doc(db, 'tasks', editTaskId), task).then(() => {
-      editTaskId = null;
-      alert("작업이 수정되었습니다.");
-      window.setTab('list');
-      window.loadTasks('incomplete');
-    });
-  } else {
-    task.createdAt = new Date();
-    addDoc(collection(db, 'tasks'), task).then(() => {
-      alert("작업이 저장되었습니다.");
-      ['date','staff','client','removeAddr','installAddr','contact','content','items','price','parts','memo'].forEach(id => document.getElementById(id).value = '');
-      window.setTab('list');
-      window.loadTasks('incomplete');
-    });
-  }
-}
-
-
-
-  setTimeout(() => {
-    const list = document.getElementById('taskList');
-    const existing = document.getElementById('dateFilterInput');
-    const { currentUserRole } = window.getUserInfo();
-    if (list && !existing && mode === 'list' && currentUserRole === 'admin') {
-      const input = document.createElement('input');
-      input.type = 'date';
-      input.id = 'dateFilterInput';
-      input.valueAsDate = new Date();
-      input.style.marginBottom = '10px';
-      input.style.display = 'block';
-      input.onchange = () => window.loadTasks('list');
-      list.parentElement.insertBefore(input, list);
-    }
-  }, 0);
