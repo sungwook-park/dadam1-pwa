@@ -41,6 +41,21 @@ window.loadTasks = async function (mode = 'incomplete') {
   let baseQuery = query(tasksRef, orderBy('date', mode === 'done' ? 'desc' : 'asc'));
   const snap = await getDocs(baseQuery);
 
+  
+  // ✅ 관리자 전용 날짜 필터 (작업지시 목록)
+  const isAdmin = currentUserRole === 'admin';
+  if (isAdmin && mode === 'list') {
+    if (!document.getElementById('dateFilterInput')) {
+      const dateFilter = document.createElement('input');
+      dateFilter.type = 'date';
+      dateFilter.id = 'dateFilterInput';
+      dateFilter.style.marginBottom = '10px';
+      dateFilter.valueAsDate = new Date();
+      dateFilter.onchange = () => window.loadTasks('list');
+      list.parentElement.insertBefore(dateFilter, list);
+    }
+  }
+  
   const list = document.getElementById('taskList');
   list.innerHTML = '';
 
