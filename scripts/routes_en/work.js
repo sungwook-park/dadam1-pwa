@@ -24,11 +24,11 @@ export function render(container) {
   setTimeout(() => {
     const tabButtons = document.getElementById('tabButtons');
     tabButtons.innerHTML = '';
-    tabButtons.innerHTML += \`
+    tabButtons.innerHTML += `
       <button id="tabInput">작업 입력</button>
       <button id="tabList" class="active">목록 보기</button>
       <button id="tabDone">완료 보기</button>
-    \`;
+    `;
 
     document.getElementById('tabInput').onclick = () => window.setTab('input');
     document.getElementById('tabList').onclick = () => {
