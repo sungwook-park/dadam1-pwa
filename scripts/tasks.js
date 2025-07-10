@@ -16,7 +16,23 @@ window.setTab = function (tabName) {
   document.getElementById('sectionList').classList.toggle('active', tabName !== 'input');
   document.getElementById('doneSearchBox').style.display = tabName === 'done' ? 'flex' : 'none';
   document.getElementById('excelExportBox').style.display = tabName === 'done' ? 'block' : 'none';
+
+  if (tabName === 'done') {
+    requestAnimationFrame(setupDoneFilterInputs);
+  }
 };
+
+function setupDoneFilterInputs() {
+  ['startDateInput', 'endDateInput', 'doneSearchInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.bound) {
+      el.addEventListener('input', () => {
+        window.loadTasks('done');
+      });
+      el.dataset.bound = 'true'; // 중복 방지
+    }
+  });
+}
 
 window.loadTasks = async function (mode = 'incomplete') {
   const { currentUserRole, currentUserName } = window.getUserInfo();
@@ -81,18 +97,6 @@ window.loadTasks = async function (mode = 'incomplete') {
     list.appendChild(div);
   });
 };
-
-function setupDoneFilterInputs() {
-  ['startDateInput', 'endDateInput', 'doneSearchInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', () => {
-        window.loadTasks('done');
-      });
-    }
-  });
-}
-window.setupDoneFilterInputs = setupDoneFilterInputs;
 
 document.getElementById('saveBtn').onclick = async () => {
   const staffInput = document.getElementById('staff').value;

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -50,9 +51,9 @@
 
     <div id="sectionList" class="section box">
       <div id="doneSearchBox" style="margin-bottom: 10px; display: none;">
-        <input type="date" id="startDateInput" />
-        <input type="date" id="endDateInput" />
-        <input type="text" id="doneSearchInput" placeholder="검색어 (거래처, 품목 등)" />
+        <input type="date" id="startDateInput" oninput="window.loadTasks('done')" />
+        <input type="date" id="endDateInput" oninput="window.loadTasks('done')" />
+        <input type="text" id="doneSearchInput" placeholder="검색어 (거래처, 품목 등)" oninput="window.loadTasks('done')" />
       </div>
       <div id="excelExportBox" style="text-align: right; margin-bottom: 10px; display: none;">
         <button onclick="exportDoneToExcel()">엑셀로 내보내기</button>
