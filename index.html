@@ -10,18 +10,23 @@
   <link rel="stylesheet" href="./styles/main.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body>
+<body onload="handleContentChange()">
   <div class="header-bar">
     <h1>작업지시표</h1>
     <button id="logoutBtn" class="logout-btn">로그아웃</button>
   </div>
 
+  <!-- 로그인 -->
   <div id="loginBox" class="box">
     <input type="email" id="email" placeholder="이메일" />
     <input type="password" id="password" placeholder="비밀번호" />
     <button id="loginBtn">로그인</button>
   </div>
 
+  <!-- 관리자 전용 라우팅 화면 -->
+  <div id="routeContainer" style="display: none;"></div>
+
+  <!-- 작업자 전용 기존 앱 -->
   <div id="mainApp" style="display:none">
     <div class="tab" id="tabButtons"></div>
 
@@ -51,11 +56,6 @@
     </div>
 
     <div id="sectionList" class="section box">
-      <!-- ✅ 날짜 필터 직접 삽입 -->
-      <div id="adminDateFilterBox" style="display: none; margin-bottom: 10px;">
-        <input type="date" id="dateFilterInput" />
-      </div>
-
       <div id="doneSearchBox" style="margin-bottom: 10px; display: none;">
         <input type="date" id="startDateInput" />
         <input type="date" id="endDateInput" />
@@ -68,6 +68,20 @@
     </div>
   </div>
 
+  <!-- JS 연결 -->
+  <script>
+    function handleContentChange() {
+      const select = document.getElementById('content');
+      const etc = document.getElementById('contentEtc');
+      if (select && etc) {
+        if (select.value === '기타') {
+          etc.style.display = 'block';
+        } else {
+          etc.style.display = 'none';
+        }
+      }
+    }
+  </script>
   <script type="module" src="./scripts/router.js"></script>
   <script type="module" src="./scripts/auth.js"></script>
   <script type="module" src="./scripts/tasks.js"></script>
