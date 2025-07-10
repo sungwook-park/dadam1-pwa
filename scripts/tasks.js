@@ -258,3 +258,21 @@ function saveTask() {
     });
   }
 }
+
+
+
+  setTimeout(() => {
+    const list = document.getElementById('taskList');
+    const existing = document.getElementById('dateFilterInput');
+    const { currentUserRole } = window.getUserInfo();
+    if (list && !existing && mode === 'list' && currentUserRole === 'admin') {
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.id = 'dateFilterInput';
+      input.valueAsDate = new Date();
+      input.style.marginBottom = '10px';
+      input.style.display = 'block';
+      input.onchange = () => window.loadTasks('list');
+      list.parentElement.insertBefore(input, list);
+    }
+  }, 0);
