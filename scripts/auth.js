@@ -28,34 +28,40 @@ onAuthStateChanged(auth, async user => {
     currentUserName = userData.name;
 
     document.getElementById('loginBox').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-
-    const tabButtons = document.getElementById('tabButtons');
-    tabButtons.innerHTML = '';
 
     if (currentUserRole === 'admin') {
-      tabButtons.innerHTML += `<button id="tabInput">작업 입력</button>`;
-    }
+      document.getElementById('routeContainer').style.display = 'block';
+      window.routeTo('home');
+    } else {
+      document.getElementById('mainApp').style.display = 'block';
 
-    tabButtons.innerHTML += `
-      <button id="tabList" class="active">목록 보기</button>
-      <button id="tabDone">완료 보기</button>
-    `;
+      const tabButtons = document.getElementById('tabButtons');
+      tabButtons.innerHTML = '';
 
-    if (currentUserRole === 'admin') {
-      document.getElementById('tabInput').onclick = () => window.setTab('input');
-    }
-    document.getElementById('tabList').onclick = () => {
+      if (currentUserRole === 'admin') {
+        tabButtons.innerHTML += `<button id="tabInput">작업 입력</button>`;
+      }
+
+      tabButtons.innerHTML += `
+        <button id="tabList" class="active">목록 보기</button>
+        <button id="tabDone">완료 보기</button>
+      `;
+
+      if (currentUserRole === 'admin') {
+        document.getElementById('tabInput').onclick = () => window.setTab('input');
+      }
+      document.getElementById('tabList').onclick = () => {
+        window.setTab('list');
+        window.loadTasks('incomplete');
+      };
+      document.getElementById('tabDone').onclick = () => {
+        window.setTab('done');
+        window.loadTasks('done');
+      };
+
       window.setTab('list');
       window.loadTasks('incomplete');
-    };
-    document.getElementById('tabDone').onclick = () => {
-      window.setTab('done');
-      window.loadTasks('done');
-    };
-
-    window.setTab('list');
-    window.loadTasks('incomplete');
+    }
   }
 });
 
