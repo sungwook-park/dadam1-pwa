@@ -6,6 +6,7 @@ import {
 let editTaskId = null;
 
 window.setTab = function (tabName) {
+  document.getElementById('homeShortcut').style.display = tabName === 'home' ? 'none' : 'block';
   const tabButtons = document.getElementById('tabButtons');
 
   // ✅ 홈화면일 경우 탭버튼 숨김, 그 외에는 표시
