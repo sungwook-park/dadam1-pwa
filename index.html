@@ -43,7 +43,11 @@
       <input type="text" id="contentEtc" placeholder="기타 작업내용 입력" style="display:none" />
       <input type="text" id="items" placeholder="작업품목" />
       <input type="text" id="price" placeholder="금액" />
-      <textarea id="parts" placeholder="사용부품"></textarea>
+
+      <!-- ✅ 부품 선택 UI 삽입 -->
+      <div id="partsContainer"></div>
+      <textarea id="parts" style="display:none;"></textarea>
+
       <textarea id="memo" placeholder="비고"></textarea>
       <button id="saveBtn">작업 저장</button>
     </div>
@@ -60,18 +64,16 @@
       <div id="taskList"></div>
     </div>
 
-    <!-- ✅ 예약탭 영역 -->
     <div id="sectionReserve" class="section box">
       <div id="reserveFilterBox" style="margin-bottom: 10px; display: flex; gap: 10px;">
         <input type="date" id="reserveStartDate" />
         <input type="date" id="reserveEndDate" />
       </div>
       <div id="reserveList"></div>
-    </div>
-  </div>
-
+    
+    <!-- ✅ 입출고 탭 -->
+    <div id="sectionInventory" class="section box"></div>
   <script type="module" src="./scripts/auth.js"></script>
-  <script type="module" src="./scripts/tasks.js"></script>
-  <script type="module" src="./scripts/export.js"></script>
+  <script type="module" src="./scripts/tasks/index.js"></script>
 </body>
 </html>

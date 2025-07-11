@@ -1,5 +1,6 @@
 import { db, auth } from '../firebase-config.js';
 import { addDoc, updateDoc, doc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getPartsString } from './task-parts.js';
 
 let editTaskId = null;
 
@@ -18,7 +19,7 @@ export async function saveTask() {
     content: document.getElementById('content').value,
     items: document.getElementById('items').value,
     price: document.getElementById('price').value,
-    parts: document.getElementById('parts').value,
+    parts: getPartsString(),  // ✅ 드롭다운 부품 처리
     memo: document.getElementById('memo').value,
     done: false,
     deletedBy: []
@@ -33,7 +34,7 @@ export async function saveTask() {
   }
 
   alert('작업이 저장되었습니다.');
-  ['date','staff','client','removeAddr','installAddr','contact','content','items','price','parts','memo'].forEach(id => document.getElementById(id).value = '');
+  ['date','staff','client','removeAddr','installAddr','contact','content','items','price','memo'].forEach(id => document.getElementById(id).value = '');
   window.setTab('list');
   window.loadTasks('incomplete');
 }

@@ -1,10 +1,38 @@
+// scripts/tasks/task-actions.js
 import { db } from '../firebase-config.js';
-import { doc, getDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, updateDoc, deleteDoc, addDoc, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { setEditTaskId } from './task-save.js';
 
 export async function markDone(id) {
-  await updateDoc(doc(db, 'tasks', id), { done: true });
+  const ref = doc(db, 'tasks', id);
+  const snap = await getDoc(ref);
+  const task = snap.data();
+
+  await updateDoc(ref, { done: true });
+  await recordPartsOut(task);
+
   window.loadTasks('incomplete');
+}
+
+async function recordPartsOut(task) {
+  if (!task.parts) return;
+  const lines = task.parts.split(/\n|\r/);
+  const { currentUserName } = window.getUserInfo();
+
+  for (const line of lines) {
+    const [name, qty] = line.split(':');
+    const quantity = parseInt(qty);
+    if (!name || isNaN(quantity)) continue;
+
+    await addDoc(collection(db, 'inventory'), {
+      date: task.date || new Date().toISOString(),
+      type: '출고',
+      item: name.trim(),
+      quantity: -quantity,
+      memo: '작업 완료 출고',
+      createdBy: currentUserName
+    });
+  }
 }
 
 export async function deleteTask(id) {
@@ -40,8 +68,11 @@ export async function editTask(id) {
   document.getElementById('content').value = d.content || '';
   document.getElementById('items').value = d.items || '';
   document.getElementById('price').value = d.price || '';
-  document.getElementById('parts').value = d.parts || '';
   document.getElementById('memo').value = d.memo || '';
+  document.getElementById('parts').value = d.parts || '';
+
+  const { setPartsFromString } = await import('./task-parts.js');
+  setPartsFromString(d.parts || '');
 
   window.setTab('input');
 }
