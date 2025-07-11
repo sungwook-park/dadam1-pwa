@@ -43,16 +43,29 @@ onAuthStateChanged(auth, async user => {
     `;
 
     if (currentUserRole === 'admin') {
+      tabButtons.innerHTML += `<button id="tabReserve">예약 확인</button>`;
+    }
+
+    if (currentUserRole === 'admin') {
       document.getElementById('tabInput').onclick = () => window.setTab('input');
     }
+
     document.getElementById('tabList').onclick = () => {
       window.setTab('list');
       window.loadTasks('incomplete');
     };
+
     document.getElementById('tabDone').onclick = () => {
       window.setTab('done');
       window.loadTasks('done');
     };
+
+    if (currentUserRole === 'admin') {
+      document.getElementById('tabReserve').onclick = () => {
+        window.setTab('reserve');
+        window.loadReserveTasks();
+      };
+    }
 
     window.setTab('list');
     window.loadTasks('incomplete');
