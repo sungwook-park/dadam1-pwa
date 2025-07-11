@@ -38,11 +38,7 @@ export function initPartsUI() {
     option.value = p.name;
     option.textContent = `${p.name} (${p.price.toLocaleString()}원)`;
 
-    // ✅ '--'로 시작하는 항목은 선택 불가 (구분용)
-    if (p.name.startsWith('--')) {
-      option.disabled = true;
-      option.selected = true; // 기본 선택
-    }
+  
 
     select.appendChild(option);
   });
