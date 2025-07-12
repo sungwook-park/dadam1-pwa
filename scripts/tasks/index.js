@@ -23,3 +23,32 @@ window.addEventListener('DOMContentLoaded', () => {
     saveBtn.onclick = window.saveTask;
   }
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const startDateInput = document.getElementById('reserveStartDate');
+  const endDateInput = document.getElementById('reserveEndDate');
+
+  if (startDateInput && endDateInput) {
+    startDateInput.addEventListener('change', () => {
+      
+    });
+    endDateInput.addEventListener('change', () => {
+      
+    });
+  }
+});
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const startDateInput = document.getElementById('reserveStartDate');
+  const endDateInput = document.getElementById('reserveEndDate');
+
+  if (startDateInput && endDateInput) {
+    startDateInput.addEventListener('change', () => {
+      if (typeof loadReserveTasks === 'function') loadReserveTasks();
+    });
+    endDateInput.addEventListener('change', () => {
+      if (typeof loadReserveTasks === 'function') loadReserveTasks();
+    });
+  }
+});
