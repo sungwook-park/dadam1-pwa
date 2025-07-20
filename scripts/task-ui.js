@@ -181,6 +181,10 @@ window.backToHome = function() {
   
   document.getElementById('tab-content').style.display = 'none';
   document.getElementById('home-buttons').style.display = 'grid';
+  
+  // 편집 상태 초기화
+  window.editingTaskId = null;
+  window.editingTabType = null;
 };
 
 // 작업 탭 표시 (관리자만)
@@ -425,7 +429,7 @@ window.loadDoneTasks = async function() {
   }
 };
 
-// 작업자용 작업 버튼 조정 (오늘작업 - 완료, 수정만 표시)
+// 작업자용 작업 버튼 조정 (오늘작업 - 완료, 수정, 삭제 모두 표시)
 function adjustWorkerTaskButtons() {
   setTimeout(() => {
     const taskActions = document.querySelectorAll('.task-actions');
@@ -433,7 +437,7 @@ function adjustWorkerTaskButtons() {
       const buttons = actions.querySelectorAll('button');
       buttons.forEach(button => {
         const text = button.textContent.trim();
-        if (text !== '완료' && text !== '수정') {
+        if (text !== '완료' && text !== '수정' && text !== '삭제') {
           button.style.display = 'none';
         }
       });
@@ -441,7 +445,7 @@ function adjustWorkerTaskButtons() {
   }, 300);
 }
 
-// 작업자용 작업 버튼 조정 (완료작업 - 수정만 표시)
+// 작업자용 작업 버튼 조정 (완료작업 - 수정, 삭제 표시)
 function adjustWorkerDoneTaskButtons() {
   setTimeout(() => {
     const taskActions = document.querySelectorAll('.task-actions');
@@ -449,7 +453,7 @@ function adjustWorkerDoneTaskButtons() {
       const buttons = actions.querySelectorAll('button');
       buttons.forEach(button => {
         const text = button.textContent.trim();
-        if (text !== '수정') {
+        if (text !== '수정' && text !== '삭제') {
           button.style.display = 'none';
         }
       });
@@ -480,25 +484,30 @@ window.completeTask = async function(id) {
   }
 };
 
-// 작업 삭제 (관리자만)
+// 작업 삭제 (관리자와 작업자 모두 가능)
 window.deleteTask = async function(id, tabType) {
-  if (!isCurrentUserAdmin()) {
-    alert('삭제 권한이 없습니다.');
-    return;
-  }
-  
   if (confirm("정말 삭제할까요?")) {
     try {
       await deleteDoc(doc(db, "tasks", id));
       alert("삭제되었습니다!");
       
       // 삭제 후 올바른 탭으로 이동
-      if (tabType === 'reserve') {
-        loadReserveTasks();
-      } else if (tabType === 'done') {
-        loadDoneTasks();
+      if (isCurrentUserAdmin()) {
+        // 관리자
+        if (tabType === 'reserve') {
+          loadReserveTasks();
+        } else if (tabType === 'done') {
+          loadDoneTasks();
+        } else {
+          loadTodayTasks();
+        }
       } else {
-        loadTodayTasks();
+        // 작업자
+        if (tabType === 'done') {
+          window.loadWorkerDoneTasks();
+        } else {
+          window.loadWorkerTodayTasks();
+        }
       }
     } catch (error) {
       console.error('작업 삭제 오류:', error);
@@ -509,22 +518,36 @@ window.deleteTask = async function(id, tabType) {
 
 // 작업 수정 - 관리자와 작업자 모두 동일한 폼 사용
 window.editTask = async function(id, tabType) {
+  console.log('=== 편집 시작 ===');
+  console.log('편집할 작업 ID:', id);
+  console.log('현재 탭 타입:', tabType);
+  
   try {
     const docRef = doc(db, "tasks", id);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
       const data = docSnap.data();
+      console.log('편집할 작업 데이터:', data);
       
-      // 관리자와 작업자 모두 동일한 수정 폼 사용
+      // 전역 편집 상태 설정 (중요!)
+      window.editingTaskId = id;
+      window.editingTabType = tabType;
+      
+      console.log('전역 편집 상태 설정:');
+      console.log('  window.editingTaskId:', window.editingTaskId);
+      console.log('  window.editingTabType:', window.editingTabType);
+      
       if (isCurrentUserAdmin()) {
-        // 관리자는 기존 방식 (작업입력 탭 이용)
+        // 관리자: 작업입력 탭으로 이동하여 수정
+        console.log('→ 관리자 수정 모드');
         showTaskTab('input');
         setTimeout(() => {
           populateEditForm(data, id, tabType);
         }, 200);
       } else {
-        // 작업자도 관리자와 동일한 폼 사용 (모바일 최적화)
+        // 작업자: 전용 수정 폼 표시
+        console.log('→ 작업자 수정 모드');
         showWorkerEditForm(data, id, tabType);
       }
       
@@ -539,10 +562,19 @@ window.editTask = async function(id, tabType) {
 
 // 관리자용 수정 폼 채우기
 function populateEditForm(data, id, tabType) {
-  const form = document.getElementById('task-form');
-  if (!form) return;
+  console.log('=== 관리자 수정 폼 채우기 ===');
+  console.log('데이터:', data);
   
-  form.date.value = data.date || '';
+  const form = document.getElementById('task-form');
+  if (!form) {
+    console.error('❌ task-form을 찾을 수 없습니다.');
+    return;
+  }
+  
+  // 날짜 설정
+  if (form.date && data.date) {
+    form.date.value = data.date;
+  }
   
   // 작업자 체크박스 설정
   const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
@@ -558,27 +590,30 @@ function populateEditForm(data, id, tabType) {
         checkbox.checked = true;
       }
     });
-    document.getElementById('selected-workers').value = data.worker;
+    
+    const selectedWorkersInput = document.getElementById('selected-workers');
+    if (selectedWorkersInput) {
+      selectedWorkersInput.value = data.worker;
+    }
   }
   
-  form.client.value = data.client || '';
-  form.removeAddress.value = data.removeAddress || '';
-  form.installAddress.value = data.installAddress || '';
-  form.contact.value = data.contact || '';
-  form.taskType.value = data.taskType || '';
+  // 나머지 필드들 설정
+  if (form.client) form.client.value = data.client || '';
+  if (form.removeAddress) form.removeAddress.value = data.removeAddress || '';
+  if (form.installAddress) form.installAddress.value = data.installAddress || '';
+  if (form.contact) form.contact.value = data.contact || '';
+  if (form.taskType) form.taskType.value = data.taskType || '';
+  if (form.items) form.items.value = data.items || '';
+  if (form.amount) form.amount.value = data.amount || '';
+  if (form.note) form.note.value = data.note || '';
   
-  if (form.items) {
-    form.items.value = data.items || '';
-  }
-  
-  form.amount.value = data.amount || '';
-  
-  // 수수료 필드 추가
+  // 수수료 필드 설정
   const feeInput = form.querySelector('[name="fee"]');
   if (feeInput && data.fee) {
     feeInput.value = data.fee;
   }
   
+  // 부품 필드 설정
   if (form.parts) {
     form.parts.value = data.parts || '';
   }
@@ -588,23 +623,35 @@ function populateEditForm(data, id, tabType) {
     window.loadExistingParts(data.parts);
   }
   
-  form.note.value = data.note || '';
-  
-  window.editingTaskId = id;
-  window.editingTabType = tabType;
-  form.querySelector("button[type='button']").onclick = () => handleTaskSave(true, id, tabType);
+  // 저장 버튼 이벤트 수정 - 편집 모드로 설정
+  const saveButton = form.querySelector("button[type='button']");
+  if (saveButton) {
+    saveButton.onclick = () => {
+      console.log('💾 관리자 수정 저장 버튼 클릭');
+      console.log('편집 상태:', { id, tabType });
+      window.handleTaskSave(true, id, tabType);
+    };
+  }
   
   // 수수료 자동 계산
   calculateFee();
+  
+  console.log('✅ 관리자 수정 폼 설정 완료');
 }
 
 // 작업자용 수정 폼 (관리자와 동일한 폼 사용)
 function showWorkerEditForm(data, id, tabType) {
+  console.log('=== 작업자 수정 폼 표시 ===');
+  console.log('데이터:', data);
+  
   const tabBody = document.getElementById('tab-body');
   const workerTaskContent = document.getElementById('worker-task-content');
   const targetElement = workerTaskContent || tabBody;
   
-  if (!targetElement) return;
+  if (!targetElement) {
+    console.error('❌ 대상 요소를 찾을 수 없습니다.');
+    return;
+  }
   
   // 관리자와 동일한 폼 HTML 생성
   const editFormHTML = `
@@ -708,6 +755,7 @@ function showWorkerEditForm(data, id, tabType) {
   
   // 스크롤을 상단으로
   window.scrollTo(0, 0);
+  console.log('✅ 작업자 수정 폼 설정 완료');
 }
 
 // 수정 폼용 작업자 관리
@@ -796,46 +844,22 @@ function calculateEditFee() {
 
 // 작업자용 수정 저장
 window.saveWorkerEdit = async function(id, tabType) {
-  const form = document.getElementById('worker-edit-form');
-  if (!form) return;
+  console.log('=== 작업자 수정 저장 ===');
+  console.log('편집 ID:', id);
+  console.log('탭 타입:', tabType);
   
-  const formData = new FormData(form);
-  const taskData = {
-    date: formData.get('date'),
-    worker: document.getElementById('edit-selected-workers').value,
-    client: formData.get('client'),
-    removeAddress: formData.get('removeAddress'),
-    installAddress: formData.get('installAddress'),
-    contact: formData.get('contact'),
-    taskType: formData.get('taskType'),
-    items: formData.get('items'),
-    amount: parseFloat(formData.get('amount')) || 0,
-    fee: parseFloat(formData.get('fee')) || 0,
-    parts: formData.get('parts'),
-    note: formData.get('note'),
-    updatedAt: new Date().toISOString(),
-    updatedBy: window.auth?.currentUser?.email || 'unknown'
-  };
-  
-  try {
-    await updateDoc(doc(db, "tasks", id), taskData);
-    alert('수정되었습니다!');
-    
-    // 원래 화면으로 돌아가기
-    if (tabType === 'done') {
-      window.loadWorkerDoneTasks();
-    } else {
-      window.loadWorkerTodayTasks();
-    }
-    
-  } catch (error) {
-    console.error('작업 수정 저장 오류:', error);
-    alert('수정 저장 중 오류가 발생했습니다.');
-  }
+  // handleTaskSave 함수 호출 (편집 모드)
+  await window.handleTaskSave(true, id, tabType);
 };
 
 // 작업자용 수정 취소
 window.cancelWorkerEdit = function() {
+  console.log('=== 작업자 수정 취소 ===');
+  
+  // 편집 상태 초기화
+  window.editingTaskId = null;
+  window.editingTabType = null;
+  
   // 원래 화면으로 돌아가기
   const activeTab = document.querySelector('.worker-tab-btn.active');
   if (activeTab && activeTab.id === 'done-tab') {
