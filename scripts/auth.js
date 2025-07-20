@@ -261,69 +261,63 @@ onAuthStateChanged(auth, async (user) => {
 
 // 작업자 전용 오늘작업 로드
 window.loadWorkerTodayTasks = async function() {
+  console.log('👷 작업자 오늘작업 로드');
+  
   // 탭 버튼 활성화 상태 변경
   document.querySelectorAll('.worker-tab-btn').forEach(btn => {
     btn.classList.remove('active');
   });
-  document.getElementById('today-tab').classList.add('active');
+  
+  const todayTab = document.getElementById('today-tab');
+  if (todayTab) {
+    todayTab.classList.add('active');
+  }
+  
+  // 편집 상태 초기화
+  window.editingTaskId = null;
+  window.editingTabType = null;
+  
+  // 작업자 인터페이스 복원
+  const workerTaskContent = document.getElementById('worker-task-content');
+  if (workerTaskContent) {
+    workerTaskContent.innerHTML = '<div class="task-list"></div>';
+  }
   
   // 기존 오늘작업 로드 함수 호출
   if (window.loadTodayTasks) {
     await window.loadTodayTasks();
-    
-    // 작업자용으로 버튼 조정 (완료, 수정만 표시)
-    adjustWorkerTaskButtons();
   }
 };
 
 // 작업자 전용 완료작업 로드
 window.loadWorkerDoneTasks = async function() {
+  console.log('👷 작업자 완료작업 로드');
+  
   // 탭 버튼 활성화 상태 변경
   document.querySelectorAll('.worker-tab-btn').forEach(btn => {
     btn.classList.remove('active');
   });
-  document.getElementById('done-tab').classList.add('active');
+  
+  const doneTab = document.getElementById('done-tab');
+  if (doneTab) {
+    doneTab.classList.add('active');
+  }
+  
+  // 편집 상태 초기화
+  window.editingTaskId = null;
+  window.editingTabType = null;
+  
+  // 작업자 인터페이스 복원
+  const workerTaskContent = document.getElementById('worker-task-content');
+  if (workerTaskContent) {
+    workerTaskContent.innerHTML = '<div class="task-list"></div>';
+  }
   
   // 기존 완료작업 로드 함수 호출
   if (window.loadDoneTasks) {
     await window.loadDoneTasks();
-    
-    // 작업자용으로 버튼 조정 (수정만 표시)
-    adjustWorkerDoneTaskButtons();
   }
 };
-
-// 작업자용 작업 버튼 조정 (오늘작업)
-function adjustWorkerTaskButtons() {
-  setTimeout(() => {
-    const taskActions = document.querySelectorAll('.task-actions');
-    taskActions.forEach(actions => {
-      const buttons = actions.querySelectorAll('button');
-      buttons.forEach(button => {
-        const text = button.textContent.trim();
-        if (text !== '완료' && text !== '수정') {
-          button.style.display = 'none';
-        }
-      });
-    });
-  }, 500);
-}
-
-// 작업자용 작업 버튼 조정 (완료작업)
-function adjustWorkerDoneTaskButtons() {
-  setTimeout(() => {
-    const taskActions = document.querySelectorAll('.task-actions');
-    taskActions.forEach(actions => {
-      const buttons = actions.querySelectorAll('button');
-      buttons.forEach(button => {
-        const text = button.textContent.trim();
-        if (text !== '수정') {
-          button.style.display = 'none';
-        }
-      });
-    });
-  }, 500);
-}
 
 // DOM 로드 후 이벤트 리스너 등록
 document.addEventListener('DOMContentLoaded', () => {
@@ -367,5 +361,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // 권한 확인 유틸리티 함수 전역 등록
 window.isAdmin = isAdmin;
 window.getCurrentUserEmail = () => auth.currentUser?.email || null;
+window.isCurrentUserAdmin = () => {
+  const user = auth?.currentUser;
+  return user && isAdmin(user.email);
+};
 window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;

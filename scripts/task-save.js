@@ -106,9 +106,12 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       
       // 작업자 폼인 경우 원래 화면으로 돌아가기
       if (isWorkerEditForm) {
+        console.log('📱 작업자 수정 완료 - 화면 복원');
         if (finalTabType === 'done') {
+          console.log('→ 완료작업탭으로 이동');
           window.loadWorkerDoneTasks();
         } else {
+          console.log('→ 오늘작업탭으로 이동');
           window.loadWorkerTodayTasks();
         }
         return; // 여기서 함수 종료

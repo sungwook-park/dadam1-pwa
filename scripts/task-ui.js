@@ -432,33 +432,53 @@ window.loadDoneTasks = async function() {
 // 작업자용 작업 버튼 조정 (오늘작업 - 완료, 수정, 삭제 모두 표시)
 function adjustWorkerTaskButtons() {
   setTimeout(() => {
+    console.log('🔧 작업자 오늘작업 버튼 조정 시작');
     const taskActions = document.querySelectorAll('.task-actions');
-    taskActions.forEach(actions => {
+    console.log('발견된 task-actions:', taskActions.length);
+    
+    taskActions.forEach((actions, index) => {
       const buttons = actions.querySelectorAll('button');
+      console.log(`작업 ${index}의 버튼들:`, Array.from(buttons).map(b => b.textContent.trim()));
+      
       buttons.forEach(button => {
         const text = button.textContent.trim();
-        if (text !== '완료' && text !== '수정' && text !== '삭제') {
+        // 완료, 수정, 삭제 버튼만 표시
+        if (text === '완료' || text === '수정' || text === '삭제') {
+          button.style.display = 'inline-block';
+          console.log(`✅ 버튼 표시: ${text}`);
+        } else {
           button.style.display = 'none';
+          console.log(`❌ 버튼 숨김: ${text}`);
         }
       });
     });
-  }, 300);
+  }, 500); // 시간을 늘려서 DOM이 완전히 로드된 후 실행
 }
 
 // 작업자용 작업 버튼 조정 (완료작업 - 수정, 삭제 표시)
 function adjustWorkerDoneTaskButtons() {
   setTimeout(() => {
+    console.log('🔧 작업자 완료작업 버튼 조정 시작');
     const taskActions = document.querySelectorAll('.task-actions');
-    taskActions.forEach(actions => {
+    console.log('발견된 task-actions:', taskActions.length);
+    
+    taskActions.forEach((actions, index) => {
       const buttons = actions.querySelectorAll('button');
+      console.log(`완료작업 ${index}의 버튼들:`, Array.from(buttons).map(b => b.textContent.trim()));
+      
       buttons.forEach(button => {
         const text = button.textContent.trim();
-        if (text !== '수정' && text !== '삭제') {
+        // 수정, 삭제 버튼만 표시
+        if (text === '수정' || text === '삭제') {
+          button.style.display = 'inline-block';
+          console.log(`✅ 버튼 표시: ${text}`);
+        } else {
           button.style.display = 'none';
+          console.log(`❌ 버튼 숨김: ${text}`);
         }
       });
     });
-  }, 300);
+  }, 500); // 시간을 늘려서 DOM이 완전히 로드된 후 실행
 }
 
 // 작업 완료 처리
@@ -848,8 +868,55 @@ window.saveWorkerEdit = async function(id, tabType) {
   console.log('편집 ID:', id);
   console.log('탭 타입:', tabType);
   
-  // handleTaskSave 함수 호출 (편집 모드)
-  await window.handleTaskSave(true, id, tabType);
+  const form = document.getElementById('worker-edit-form');
+  if (!form) {
+    console.error('❌ 작업자 수정 폼을 찾을 수 없습니다.');
+    return;
+  }
+  
+  // FormData로 데이터 수집
+  const formData = new FormData(form);
+  const taskData = {
+    date: formData.get('date'),
+    worker: document.getElementById('edit-selected-workers')?.value || '',
+    client: formData.get('client'),
+    removeAddress: formData.get('removeAddress'),
+    installAddress: formData.get('installAddress'),
+    contact: formData.get('contact'),
+    taskType: formData.get('taskType'),
+    items: formData.get('items'),
+    amount: parseFloat(formData.get('amount')) || 0,
+    fee: parseFloat(formData.get('fee')) || 0,
+    parts: formData.get('parts'),
+    note: formData.get('note'),
+    updatedAt: new Date().toISOString(),
+    updatedBy: window.auth?.currentUser?.email || 'unknown'
+  };
+  
+  try {
+    console.log('💾 작업자 데이터 저장 중...');
+    await updateDoc(doc(db, "tasks", id), taskData);
+    console.log('✅ 작업자 수정 저장 완료');
+    alert('수정되었습니다!');
+    
+    // 편집 상태 초기화
+    window.editingTaskId = null;
+    window.editingTabType = null;
+    
+    // 원래 화면으로 돌아가기
+    console.log('📱 작업자 화면 복원:', tabType);
+    if (tabType === 'done') {
+      console.log('→ 완료작업탭으로 이동');
+      window.loadWorkerDoneTasks();
+    } else {
+      console.log('→ 오늘작업탭으로 이동');
+      window.loadWorkerTodayTasks();
+    }
+    
+  } catch (error) {
+    console.error('❌ 작업자 수정 저장 오류:', error);
+    alert('수정 저장 중 오류가 발생했습니다: ' + error.message);
+  }
 };
 
 // 작업자용 수정 취소
