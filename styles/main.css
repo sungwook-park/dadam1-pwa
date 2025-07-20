@@ -1,9 +1,10 @@
-/* styles/main.css - 모바일 최적화 및 권한별 UI */
+/* styles/main.css - 모바일 최적화 및 리스트 개선 */
 
 /* 기본 스타일 */
 body {
   font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
-  background: #f4f6f8;
+  background: #f4f6f8 !important; /* 항상 라이트 배경 */
+  color: #333 !important; /* 항상 어두운 텍스트 */
   padding: 20px;
   margin: 0;
   line-height: 1.6;
@@ -16,7 +17,8 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  background: #fff;
+  background: #fff !important;
+  color: #333 !important;
   padding: 20px 32px 18px 32px;
   border-radius: 16px;
   box-shadow: 0 2px 10px rgba(33,158,188,0.06);
@@ -25,14 +27,14 @@ body {
 .header-title {
   display: flex;
   align-items: center;
-  font-size: 1.6rem; /* 제목 크기 증가 */
+  font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: -1px;
-  color: #222;
+  color: #222 !important;
 }
 
 .header-icon {
-  font-size: 1.8rem; /* 아이콘 크기 증가 */
+  font-size: 1.8rem;
   margin-right: 12px;
 }
 
@@ -46,10 +48,10 @@ body {
 .home-btn, .logout-btn {
   font-size: 1.1rem;
   font-weight: 700;
-  padding: 14px 28px; /* 패딩 증가 */
+  padding: 14px 28px;
   border-radius: 12px;
   min-width: 130px;
-  min-height: 52px; /* 최소 터치 영역 */
+  min-height: 52px;
   line-height: 1.2;
   box-sizing: border-box;
   display: inline-block;
@@ -58,34 +60,34 @@ body {
   transition: all 0.18s ease;
   border: 2px solid;
   text-decoration: none;
-  touch-action: manipulation; /* 터치 반응성 개선 */
+  touch-action: manipulation;
 }
 
 .logout-btn {
-  background: #fff;
-  color: #e63946;
+  background: #fff !important;
+  color: #e63946 !important;
   border-color: #e63946;
   box-shadow: 0 1.5px 4px rgba(230,57,70,0.07);
 }
 
 .logout-btn:hover, .logout-btn:focus, .logout-btn:active {
-  background: #e63946;
-  color: #fff;
+  background: #e63946 !important;
+  color: #fff !important;
   border-color: #e63946;
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(230,57,70,0.15);
 }
 
 .home-btn {
-  background: #219ebc;
-  color: #fff;
+  background: #219ebc !important;
+  color: #fff !important;
   border-color: #219ebc;
   box-shadow: 0 1.5px 4px rgba(33,158,188,0.07);
 }
 
 .home-btn:hover, .home-btn:focus, .home-btn:active {
-  background: #8ecae6;
-  color: #fff;
+  background: #8ecae6 !important;
+  color: #fff !important;
   border-color: #8ecae6;
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(33,158,188,0.15);
@@ -93,15 +95,17 @@ body {
 
 /* 로그인 컨테이너 */
 .login-container {
-  max-width: 380px; /* 모바일에 맞게 조정 */
+  max-width: 380px;
   margin: 40px auto;
   text-align: center;
+  background: #fff !important;
+  color: #333 !important;
 }
 
 .login-container h3 {
   margin-bottom: 25px;
-  color: #333;
-  font-size: 1.8rem; /* 로그인 제목 크기 증가 */
+  color: #333 !important;
+  font-size: 1.8rem;
 }
 
 /* 메인 메뉴 버튼 그리드 */
@@ -116,25 +120,25 @@ body {
 }
 
 .menu-button {
-  background: #fff;
+  background: #fff !important;
   border: 2px solid #8ecae6;
   border-radius: 16px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.09);
-  padding: 40px 12px; /* 패딩 증가 */
-  font-size: 22px; /* 폰트 크기 증가 */
+  padding: 40px 12px;
+  font-size: 22px;
   font-weight: bold;
-  color: #219ebc;
+  color: #219ebc !important;
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: center;
   line-height: 1.4;
-  min-height: 120px; /* 최소 높이 설정 */
+  min-height: 120px;
   touch-action: manipulation;
 }
 
 .menu-button:hover, .menu-button:focus, .menu-button:active {
-  background: #8ecae6;
-  color: #fff;
+  background: #8ecae6 !important;
+  color: #fff !important;
   box-shadow: 0 4px 12px rgba(33,158,188,0.2);
   transform: translateY(-2px);
   border-color: #219ebc;
@@ -142,7 +146,8 @@ body {
 
 /* 작업자 전용 UI */
 .mobile-tab-title {
-  background: white;
+  background: white !important;
+  color: #333 !important;
   padding: 20px;
   border-radius: 12px;
   margin-bottom: 20px;
@@ -153,7 +158,7 @@ body {
 .mobile-tab-title h3 {
   margin: 0;
   font-size: 1.6rem;
-  color: #333;
+  color: #333 !important;
   font-weight: 600;
 }
 
@@ -166,42 +171,251 @@ body {
 
 .worker-tab-btn {
   flex: 1;
-  background: #f8f9fa;
+  background: #f8f9fa !important;
   border: 2px solid #dee2e6;
   border-radius: 12px;
-  padding: 16px 12px; /* 패딩 증가 */
-  font-size: 18px; /* 폰트 크기 증가 */
+  padding: 16px 12px;
+  font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #333 !important;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 60px; /* 최소 터치 영역 */
+  min-height: 60px;
   touch-action: manipulation;
 }
 
 .worker-tab-btn.active {
-  background: #219ebc;
+  background: #219ebc !important;
   border-color: #219ebc;
-  color: #fff;
+  color: #fff !important;
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(33,158,188,0.2);
 }
 
 .worker-tab-btn:hover, .worker-tab-btn:focus {
   border-color: #8ecae6;
-  background: #e3f2fd;
+  background: #e3f2fd !important;
 }
 
 .worker-tab-btn.active:hover, .worker-tab-btn.active:focus {
-  background: #1a7a96;
+  background: #1a7a96 !important;
   border-color: #1a7a96;
+}
+
+/* 박스 컨테이너 */
+.box {
+  background: white !important;
+  color: #333 !important;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+
+/* 폼 요소 - 모바일 최적화 */
+input, textarea, select, button {
+  width: 100%;
+  padding: 16px 18px;
+  margin: 10px 0;
+  font-size: 18px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 52px;
+  touch-action: manipulation;
+  background: #fff !important;
+  color: #333 !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #8ecae6;
+  box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15);
+  background: #fff !important;
+  color: #333 !important;
+}
+
+button {
+  background: #8ecae6 !important;
+  color: white !important;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  min-height: 56px;
+}
+
+button:hover, button:active {
+  background: #219ebc !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(33,158,188,0.2);
+}
+
+button:disabled {
+  background: #ccc !important;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 작업 목록 - 모바일 최적화 및 한 줄 레이아웃 */
+.task-list {
+  margin: 30px 0;
+}
+
+.task-item {
+  border: 2px solid #e6e6e6;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  background: #fff !important;
+  color: #333 !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.task-item:hover, .task-item:active {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.12);
+  border-color: #8ecae6;
+}
+
+/* 모바일 최적화된 한 줄 요약 */
+.task-summary {
+  padding: 20px 22px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 16px;
+  min-height: 60px;
+  touch-action: manipulation;
+  background: #fff !important;
+  color: #333 !important;
+  position: relative;
+}
+
+.task-summary-mobile {
+  display: block;
+  line-height: 1.5;
+}
+
+.task-date-mobile {
+  font-weight: 600;
+  color: #219ebc !important;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.task-info-mobile {
+  color: #333 !important;
+  font-size: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.task-worker-mobile {
+  background: #e3f2fd;
+  color: #1565c0 !important;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.task-client-mobile {
+  background: #fff3cd;
+  color: #856404 !important;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.task-type-mobile {
+  color: #666 !important;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.task-content-mobile {
+  color: #333 !important;
+  font-size: 14px;
+  margin-top: 4px;
+  max-width: calc(100% - 40px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-summary .arrow {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #666 !important;
+  transition: transform 0.2s ease;
+}
+
+/* 기존 컬럼 스타일은 데스크탑에서만 사용 */
+.col-date, .col-staff, .col-client, .col-tasktype, .col-content {
+  display: none;
+}
+
+.task-detail {
+  padding: 22px 25px;
+  border-top: 2px solid #e6e6e6;
+  background: #f8f9fa !important;
+  color: #333 !important;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.task-detail > div {
+  margin-bottom: 12px;
+}
+
+.task-detail strong {
+  color: #333 !important;
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+.task-actions {
+  margin-top: 25px;
+  display: flex;
+  gap: 15px;
+}
+
+.task-actions button {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+  min-height: 52px;
+  touch-action: manipulation;
+}
+
+.task-actions button:hover, .task-actions button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
 }
 
 /* 반응형 디자인 - 모바일 우선 */
 @media (max-width: 768px) {
   body {
     padding: 15px;
-    font-size: 18px; /* 모바일에서 글씨 크기 유지 */
+    font-size: 18px;
+    background: #f4f6f8 !important;
+    color: #333 !important;
   }
   
   .header-bar {
@@ -209,10 +423,13 @@ body {
     flex-direction: column;
     gap: 15px;
     text-align: center;
+    background: #fff !important;
+    color: #333 !important;
   }
   
   .header-title {
     font-size: 1.4rem;
+    color: #333 !important;
   }
   
   .button-grid {
@@ -225,6 +442,8 @@ body {
     font-size: 18px;
     padding: 30px 10px;
     min-height: 100px;
+    background: #fff !important;
+    color: #219ebc !important;
   }
   
   .home-btn, .logout-btn {
@@ -237,24 +456,57 @@ body {
   .login-container {
     max-width: 320px;
     margin: 30px auto;
+    background: #fff !important;
+    color: #333 !important;
   }
   
   .login-container h3 {
     font-size: 1.5rem;
+    color: #333 !important;
+  }
+  
+  /* 모바일에서 작업 요약 스타일 조정 */
+  .task-summary {
+    padding: 16px 18px;
+    min-height: 70px;
+  }
+  
+  .task-date-mobile {
+    font-size: 14px;
+  }
+  
+  .task-info-mobile {
+    font-size: 15px;
+  }
+  
+  .task-worker-mobile, .task-client-mobile {
+    font-size: 13px;
+  }
+  
+  .task-type-mobile {
+    font-size: 13px;
+  }
+  
+  .task-content-mobile {
+    font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
   body {
     padding: 10px;
+    background: #f4f6f8 !important;
+    color: #333 !important;
   }
   
   .header-bar {
     padding: 15px;
+    background: #fff !important;
   }
   
   .header-title {
     font-size: 1.2rem;
+    color: #333 !important;
   }
   
   .button-grid {
@@ -267,6 +519,8 @@ body {
     font-size: 20px;
     padding: 25px 15px;
     min-height: 90px;
+    background: #fff !important;
+    color: #219ebc !important;
   }
   
   .worker-subtabs {
@@ -278,192 +532,14 @@ body {
   .worker-tab-btn {
     min-height: 55px;
     font-size: 17px;
+    background: #f8f9fa !important;
+    color: #333 !important;
   }
-}
-
-/* 박스 컨테이너 */
-.box {
-  background: white;
-  padding: 25px; /* 패딩 증가 */
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin-bottom: 20px;
-}
-
-/* 폼 요소 - 모바일 최적화 */
-input, textarea, select, button {
-  width: 100%;
-  padding: 16px 18px; /* 패딩 증가 */
-  margin: 10px 0; /* 마진 증가 */
-  font-size: 18px; /* 폰트 크기 증가 */
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: 2px solid #ddd; /* 테두리 두께 증가 */
-  font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  min-height: 52px; /* 최소 터치 영역 */
-  touch-action: manipulation;
-}
-
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: #8ecae6;
-  box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15);
-}
-
-button {
-  background: #8ecae6;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  min-height: 56px; /* 버튼 최소 높이 증가 */
-}
-
-button:hover, button:active {
-  background: #219ebc;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(33,158,188,0.2);
-}
-
-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* 작업 목록 - 모바일 최적화 */
-.task-list {
-  margin: 30px 0;
-}
-
-.task-item {
-  border: 2px solid #e6e6e6; /* 테두리 두께 증가 */
-  border-radius: 12px;
-  margin-bottom: 18px; /* 마진 증가 */
-  background: #fff;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.task-item:hover, .task-item:active {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 18px rgba(0,0,0,0.12);
-  border-color: #8ecae6;
-}
-
-.task-summary {
-  padding: 20px 22px; /* 패딩 증가 */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 18px; /* 폰트 크기 증가 */
-  gap: 15px;
-  min-height: 70px; /* 최소 터치 영역 */
-  touch-action: manipulation;
-}
-
-.task-summary .arrow {
-  margin-left: auto;
-  font-size: 22px; /* 화살표 크기 증가 */
-  transition: transform 0.2s ease;
-  color: #666;
-}
-
-.task-detail {
-  padding: 22px 25px; /* 패딩 증가 */
-  border-top: 2px solid #e6e6e6;
-  background: #f8f9fa;
-  font-size: 18px; /* 폰트 크기 증가 */
-  line-height: 1.6;
-}
-
-.task-detail > div {
-  margin-bottom: 12px; /* 마진 증가 */
-}
-
-.task-detail strong {
-  color: #333;
-  margin-right: 10px;
-  font-size: 18px; /* 라벨 폰트 크기 증가 */
-}
-
-.task-actions {
-  margin-top: 25px; /* 마진 증가 */
-  display: flex;
-  gap: 15px; /* 간격 증가 */
-}
-
-.task-actions button {
-  flex: 1;
-  padding: 14px 18px; /* 패딩 증가 */
-  border-radius: 10px;
-  border: none;
-  font-size: 17px; /* 폰트 크기 증가 */
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin: 0;
-  min-height: 52px; /* 최소 터치 영역 */
-  touch-action: manipulation;
-}
-
-.task-actions button:hover, .task-actions button:active {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-}
-
-/* 컬럼 스타일 - 모바일 최적화 */
-.col-date {
-  flex-basis: 160px;
-  min-width: 120px;
-  text-align: center;
-  font-weight: 600;
-  color: #555;
-  font-size: 17px; /* 폰트 크기 증가 */
-}
-
-.col-staff {
-  flex-basis: 140px;
-  min-width: 100px;
-  text-align: center;
-  color: #666;
-  font-size: 17px; /* 폰트 크기 증가 */
-}
-
-.col-client {
-  flex-basis: 160px;
-  min-width: 110px;
-  text-align: center;
-  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-  padding: 8px 14px; /* 패딩 증가 */
-  border-radius: 10px;
-  font-weight: 600;
-  color: #856404;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  font-size: 17px; /* 폰트 크기 증가 */
-}
-
-.col-tasktype {
-  flex-basis: 140px;
-  min-width: 100px;
-  text-align: center;
-  color: #666;
-  font-weight: 500;
-  font-size: 17px; /* 폰트 크기 증가 */
-}
-
-.col-content {
-  flex-basis: 220px;
-  min-width: 120px;
-  text-align: left;
-  color: #333;
-  font-size: 17px; /* 폰트 크기 증가 */
+  
+  .worker-tab-btn.active {
+    background: #219ebc !important;
+    color: #fff !important;
+  }
 }
 
 /* 탭 스타일 */
@@ -474,34 +550,35 @@ button:disabled {
   overflow: hidden;
   margin-bottom: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: #fff !important;
 }
 
 .tab button {
   flex: 1;
   border: none;
-  padding: 16px 14px; /* 패딩 증가 */
-  font-size: 17px; /* 폰트 크기 증가 */
+  padding: 16px 14px;
+  font-size: 17px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s ease;
   margin: 0;
-  min-height: 56px; /* 최소 터치 영역 */
+  min-height: 56px;
   touch-action: manipulation;
 }
 
 .tab button:nth-child(1) {
-  background: #219ebc;
-  color: white;
+  background: #219ebc !important;
+  color: white !important;
 }
 
 .tab button:nth-child(2) {
-  background: #d0bfff;
-  color: #333;
+  background: #d0bfff !important;
+  color: #333 !important;
 }
 
 .tab button:nth-child(3) {
-  background: #9b5de5;
-  color: white;
+  background: #9b5de5 !important;
+  color: white !important;
 }
 
 .tab button.active {
@@ -524,317 +601,145 @@ button:disabled {
 .task-subtabs button {
   flex: 1;
   border-radius: 10px;
-  padding: 16px 14px; /* 패딩 증가 */
-  font-size: 17px; /* 폰트 크기 증가 */
+  padding: 16px 14px;
+  font-size: 17px;
   font-weight: bold;
   border: 2px solid #dee2e6;
   cursor: pointer;
-  background: #f8f9fa;
-  color: #333;
+  background: #f8f9fa !important;
+  color: #333 !important;
   transition: all 0.2s ease;
   margin: 0;
-  min-height: 56px; /* 최소 터치 영역 */
+  min-height: 56px;
   touch-action: manipulation;
 }
 
 .task-subtabs button.active, .task-subtabs button:focus {
-  background: #219ebc;
+  background: #219ebc !important;
   border-color: #219ebc;
-  color: #fff;
+  color: #fff !important;
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(33,158,188,0.2);
 }
 
-/* 검색 박스 - 모바일 최적화 */
-#doneSearchBox, #reserveSearchBox, #doneSearchContainer {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  max-width: 100%;
-  margin: 0 auto 25px auto;
-  background: white;
-  padding: 18px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-#doneSearchBox input, #reserveSearchBox input, #doneSearchContainer input {
-  min-height: 50px; /* 높이 증가 */
-  font-size: 17px; /* 폰트 크기 증가 */
-  border-radius: 10px;
-  border: 2px solid #ddd;
-  margin: 0;
-  flex: 1;
-  padding: 14px 16px; /* 패딩 증가 */
-}
-
-#doneSearchBox button, #reserveSearchBox button, #doneSearchContainer button {
-  min-height: 50px; /* 높이 증가 */
-  background: #8ecae6;
-  color: #fff;
-  font-weight: 600;
-  border-radius: 10px;
-  border: none;
-  padding: 0 24px; /* 패딩 증가 */
-  margin: 0;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 16px; /* 폰트 크기 증가 */
-  touch-action: manipulation;
-}
-
-#doneSearchBox button:hover, #reserveSearchBox button:hover, #doneSearchContainer button:hover,
-#doneSearchBox button:active, #reserveSearchBox button:active, #doneSearchContainer button:active {
-  background: #219ebc;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(33,158,188,0.2);
-}
-
-/* 모바일에서 검색박스 최적화 */
-@media (max-width: 768px) {
-  #doneSearchBox, #reserveSearchBox, #doneSearchContainer {
-    flex-direction: column;
-    gap: 12px;
-    padding: 15px;
+/* 다크모드 완전 제거 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #f4f6f8 !important;
+    color: #333 !important;
   }
   
-  #doneSearchBox input, #reserveSearchBox input, #doneSearchContainer input,
-  #doneSearchBox button, #reserveSearchBox button, #doneSearchContainer button {
-    width: 100%;
-    min-height: 48px;
-    font-size: 16px;
+  .box, .task-item, .header-bar {
+    background: #fff !important;
+    color: #333 !important;
+    border-color: #e6e6e6 !important;
   }
   
-  .task-subtabs {
-    flex-direction: column;
-    gap: 10px;
-    padding: 0 5px;
+  input, textarea, select {
+    background: #fff !important;
+    color: #333 !important;
+    border-color: #ddd !important;
   }
   
-  .task-subtabs button {
-    min-height: 52px;
-    font-size: 16px;
+  input:focus, textarea:focus, select:focus {
+    border-color: #8ecae6 !important;
+    background: #fff !important;
+    color: #333 !important;
   }
   
-  .worker-subtabs {
-    flex-direction: column;
-    gap: 10px;
-    padding: 0 5px;
+  .menu-button {
+    background: #fff !important;
+    color: #219ebc !important;
   }
   
   .worker-tab-btn {
-    min-height: 52px;
-    font-size: 16px;
+    background: #f8f9fa !important;
+    color: #333 !important;
+  }
+  
+  .worker-tab-btn.active {
+    background: #219ebc !important;
+    color: #fff !important;
+  }
+  
+  .task-subtabs button {
+    background: #f8f9fa !important;
+    color: #333 !important;
+  }
+  
+  .task-subtabs button.active {
+    background: #219ebc !important;
+    color: #fff !important;
   }
 }
 
-/* 수수료 필드 스타일 */
-input[name="fee"].auto-calculated {
-  background-color: #e8f5e8 !important;
-  border-color: #4caf50 !important;
-  color: #2e7d32 !important;
-}
-
-.fee-info {
-  font-size: 15px; /* 폰트 크기 증가 */
-  color: #666;
-  margin-top: -5px;
-  margin-bottom: 12px;
-  font-style: italic;
-  display: none;
-  padding: 10px 14px; /* 패딩 증가 */
-  background: #f0f8ff;
-  border-radius: 8px;
-  border-left: 4px solid #8ecae6;
-}
-
-/* 탭 제목 */
-#tab-title {
-  margin: 15px 0 0 0;
-}
-
-/* 로딩 스피너 */
-#loading-spinner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-.spinner {
-  width: 50px; /* 크기 증가 */
-  height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #8ecae6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-#loading-spinner p {
-  color: white;
-  font-size: 18px; /* 폰트 크기 증가 */
-  font-weight: 600;
-  margin: 0;
-}
-
-/* 에러 메시지 - 모바일 최적화 */
-#error-message {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  right: 20px; /* 모바일에서 전체 너비 사용 */
-  background: #f8d7da;
-  color: #721c24;
-  padding: 18px 22px; /* 패딩 증가 */
-  border-radius: 10px;
-  border: 2px solid #f5c6cb;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  z-index: 1000;
-  font-weight: 500;
-  font-size: 16px; /* 폰트 크기 증가 */
-  transform: translateY(-100%);
-  transition: transform 0.3s ease;
-  max-width: none; /* 모바일에서 최대 너비 제한 제거 */
-}
-
-#error-message.show {
-  transform: translateY(0);
-}
-
-#error-message.success {
-  background: #d4edda;
-  color: #155724;
-  border-color: #c3e6cb;
-}
-
-/* 데스크탑에서는 기존 스타일 유지 */
+/* 데스크탑에서는 기존 레이아웃 유지 */
 @media (min-width: 769px) {
-  #error-message {
-    top: 20px;
-    right: 20px;
-    left: auto;
-    max-width: 400px;
-  }
-}
-
-/* 접근성 개선 */
-button:focus, input:focus, select:focus, textarea:focus {
-  outline: 3px solid #8ecae6; /* 아웃라인 두께 증가 */
-  outline-offset: 2px;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* 애니메이션 */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.task-item {
-  animation: fadeIn 0.3s ease;
-}
-
-/* 프린트 스타일 */
-@media print {
-  .header-bar, .home-btn, .logout-btn, .task-actions, #loading-spinner, #error-message,
-  .worker-subtabs, .task-subtabs {
-    display: none !important;
-  }
-  
-  body {
-    background: white;
-    padding: 0;
-    font-size: 14px; /* 프린트용 폰트 크기 */
-  }
-  
-  .task-item {
-    box-shadow: none;
-    border: 1px solid #ccc;
-    break-inside: avoid;
-  }
-  
-  .task-summary, .task-detail {
-    font-size: 14px; /* 프린트용 폰트 크기 */
-  }
-}
-
-/* 추가 모바일 최적화 */
-@media (max-width: 480px) {
-  /* 매우 작은 화면에서 추가 최적화 */
-  .task-summary {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 18px;
-  }
-  
-  .task-summary .arrow {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    margin: 0;
+  .task-summary-mobile {
+    display: none;
   }
   
   .col-date, .col-staff, .col-client, .col-tasktype, .col-content {
-    flex-basis: auto;
-    min-width: auto;
-    text-align: left;
-    font-size: 16px;
-    margin-bottom: 5px;
+    display: block;
+  }
+  
+  .task-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .col-date {
+    flex-basis: 160px;
+    min-width: 120px;
+    text-align: center;
+    font-weight: 600;
+    color: #555 !important;
+    font-size: 17px;
+  }
+  
+  .col-staff {
+    flex-basis: 140px;
+    min-width: 100px;
+    text-align: center;
+    color: #666 !important;
+    font-size: 17px;
   }
   
   .col-client {
-    align-self: flex-start;
-    padding: 6px 10px;
+    flex-basis: 160px;
+    min-width: 110px;
+    text-align: center;
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    color: #856404 !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-size: 17px;
   }
-}
-
-/* 터치 디바이스 최적화 */
-@media (hover: none) and (pointer: coarse) {
-  /* 터치 전용 디바이스에서 호버 효과 제거하고 액티브 효과로 대체 */
-  .menu-button:hover, .worker-tab-btn:hover, .task-subtabs button:hover,
-  button:hover, .task-item:hover, .task-actions button:hover {
+  
+  .col-tasktype {
+    flex-basis: 140px;
+    min-width: 100px;
+    text-align: center;
+    color: #666 !important;
+    font-weight: 500;
+    font-size: 17px;
+  }
+  
+  .col-content {
+    flex-basis: 220px;
+    min-width: 120px;
+    text-align: left;
+    color: #333 !important;
+    font-size: 17px;
+  }
+  
+  .task-summary .arrow {
+    position: static;
     transform: none;
-    box-shadow: inherit;
-  }
-  
-  .menu-button:active, .worker-tab-btn:active, .task-subtabs button:active,
-  button:active, .task-item:active, .task-actions button:active {
-    transform: scale(0.98);
-    transition: transform 0.1s ease;
-  }
-  
-  /* 터치 디바이스에서 더 큰 터치 영역 */
-  .task-summary {
-    min-height: 80px;
-  }
-  
-  .task-actions button {
-    min-height: 56px;
+    margin-left: auto;
   }
 }
