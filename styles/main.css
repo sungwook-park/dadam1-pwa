@@ -284,11 +284,11 @@ button:disabled {
 
 /* 모바일 최적화된 한 줄 요약 */
 .task-summary {
-  padding: 20px 22px;
+  padding: 24px 25px; /* 패딩 증가 */
   cursor: pointer;
   font-weight: 500;
-  font-size: 16px;
-  min-height: 60px;
+  font-size: 18px; /* 기본 폰트 크기 증가 */
+  min-height: 80px; /* 높이 증가 */
   touch-action: manipulation;
   background: #fff !important;
   color: #333 !important;
@@ -297,65 +297,67 @@ button:disabled {
 
 .task-summary-mobile {
   display: block;
-  line-height: 1.5;
+  line-height: 1.6; /* 줄 간격 증가 */
 }
 
 .task-date-mobile {
   font-weight: 600;
   color: #219ebc !important;
-  font-size: 15px;
-  margin-bottom: 4px;
+  font-size: 18px; /* 날짜 폰트 크기 증가 */
+  margin-bottom: 8px; /* 마진 증가 */
 }
 
 .task-info-mobile {
   color: #333 !important;
-  font-size: 16px;
+  font-size: 17px; /* 정보 폰트 크기 증가 */
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px; /* 간격 증가 */
   align-items: center;
+  margin-bottom: 6px; /* 마진 추가 */
 }
 
 .task-worker-mobile {
   background: #e3f2fd;
   color: #1565c0 !important;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 4px 10px; /* 패딩 증가 */
+  border-radius: 8px; /* 라운드 증가 */
+  font-size: 16px; /* 폰트 크기 증가 */
   font-weight: 600;
 }
 
 .task-client-mobile {
   background: #fff3cd;
   color: #856404 !important;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 14px;
+  padding: 4px 10px; /* 패딩 증가 */
+  border-radius: 8px; /* 라운드 증가 */
+  font-size: 16px; /* 폰트 크기 증가 */
   font-weight: 600;
 }
 
 .task-type-mobile {
   color: #666 !important;
-  font-size: 14px;
+  font-size: 16px; /* 폰트 크기 증가 */
   font-weight: 500;
 }
 
 .task-content-mobile {
   color: #333 !important;
-  font-size: 14px;
-  margin-top: 4px;
-  max-width: calc(100% - 40px);
+  font-size: 16px; /* 폰트 크기 증가 */
+  margin-top: 6px; /* 마진 증가 */
+  max-width: calc(100% - 50px); /* 화살표 공간 확보 */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500; /* 글씨 두께 증가 */
 }
 
 .task-summary .arrow {
   position: absolute;
   top: 50%;
-  right: 20px;
+  right: 25px; /* 오른쪽 여백 증가 */
   transform: translateY(-50%);
-  font-size: 20px;
+  font-size: 24px; /* 화살표 크기 증가 */
   color: #666 !important;
   transition: transform 0.2s ease;
 }
@@ -467,28 +469,29 @@ button:disabled {
   
   /* 모바일에서 작업 요약 스타일 조정 */
   .task-summary {
-    padding: 16px 18px;
-    min-height: 70px;
+    padding: 20px 22px;
+    min-height: 85px; /* 높이 증가 */
+    font-size: 17px; /* 기본 폰트 크기 조정 */
   }
   
   .task-date-mobile {
-    font-size: 14px;
+    font-size: 17px; /* 날짜 폰트 크기 조정 */
   }
   
   .task-info-mobile {
-    font-size: 15px;
+    font-size: 16px; /* 정보 폰트 크기 조정 */
   }
   
   .task-worker-mobile, .task-client-mobile {
-    font-size: 13px;
+    font-size: 15px; /* 작업자/거래처 폰트 크기 조정 */
   }
   
   .task-type-mobile {
-    font-size: 13px;
+    font-size: 15px; /* 작업구분 폰트 크기 조정 */
   }
   
   .task-content-mobile {
-    font-size: 13px;
+    font-size: 15px; /* 작업내용 폰트 크기 조정 */
   }
 }
 
