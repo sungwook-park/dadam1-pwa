@@ -105,24 +105,210 @@ export function getTaskListHTML() {
 
 export function getReserveTabHTML() {
   return `
-    <div id="reserveSearchBox" style="display:flex;gap:12px;margin-bottom:20px;background:white;padding:18px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-      <input type="date" id="reserve-date" style="flex:1;margin:0;padding:14px 16px;font-size:16px;border-radius:10px;border:2px solid #ddd;min-height:48px;">
-      <input type="text" id="reserve-search" placeholder="검색어 입력" style="flex:1;margin:0;padding:14px 16px;font-size:16px;border-radius:10px;border:2px solid #ddd;min-height:48px;">
-      <button id="reserve-search-btn" style="flex:0 0 auto;margin:0;padding:0 24px;font-size:16px;border-radius:10px;min-height:48px;white-space:nowrap;">검색</button>
+    <div id="reserveSearchBox" class="reserve-search-container">
+      <input type="date" id="reserve-date" class="reserve-search-input">
+      <input type="text" id="reserve-search" placeholder="검색어 입력" class="reserve-search-input">
+      <button id="reserve-search-btn" class="reserve-search-btn">검색</button>
     </div>
     ${getTaskListHTML()}
+    
+    <style>
+      .reserve-search-container {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        background: white;
+        padding: 18px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      
+      .reserve-search-input {
+        flex: 1;
+        margin: 0;
+        padding: 14px 16px;
+        font-size: 16px;
+        border-radius: 10px;
+        border: 2px solid #ddd;
+        min-height: 48px;
+        background: #fff !important;
+        color: #333 !important;
+        font-family: inherit;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        touch-action: manipulation;
+      }
+      
+      .reserve-search-input:focus {
+        outline: none;
+        border-color: #8ecae6;
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15);
+        background: #fff !important;
+        color: #333 !important;
+      }
+      
+      .reserve-search-btn {
+        flex: 1;
+        margin: 0;
+        padding: 0 24px;
+        font-size: 16px;
+        border-radius: 10px;
+        min-height: 48px;
+        white-space: nowrap;
+        background: #8ecae6 !important;
+        color: white !important;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+      }
+      
+      .reserve-search-btn:hover,
+      .reserve-search-btn:active {
+        background: #219ebc !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(33,158,188,0.2);
+      }
+      
+      /* 모바일 반응형 */
+      @media (max-width: 768px) {
+        .reserve-search-container {
+          flex-direction: column;
+          gap: 10px;
+          padding: 15px;
+        }
+        
+        .reserve-search-input,
+        .reserve-search-btn {
+          flex: none;
+          width: 100%;
+          min-height: 44px;
+          font-size: 16px;
+        }
+        
+        .reserve-search-btn {
+          padding: 12px 20px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .reserve-search-container {
+          padding: 12px;
+          gap: 8px;
+        }
+        
+        .reserve-search-input,
+        .reserve-search-btn {
+          min-height: 42px;
+          font-size: 15px;
+        }
+      }
+    </style>
   `;
 }
 
 export function getDoneTabHTML() {
   return `
     ${getTaskSubTabsHTML('done')}
-    <div id="doneSearchContainer" style="display:flex;gap:12px;margin-bottom:20px;background:white;padding:18px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-      <input type="date" id="done-date" style="flex:1;margin:0;padding:14px 16px;font-size:16px;border-radius:10px;border:2px solid #ddd;min-height:48px;">
-      <input type="text" id="done-search" placeholder="검색어 입력" style="flex:1;margin:0;padding:14px 16px;font-size:16px;border-radius:10px;border:2px solid #ddd;min-height:48px;">
-      <button id="done-search-btn" style="flex:1;margin:0;padding:0 24px;font-size:16px;border-radius:10px;min-height:48px;white-space:nowrap;">검색</button>
+    <div id="doneSearchContainer" class="done-search-container">
+      <input type="date" id="done-date" class="done-search-input">
+      <input type="text" id="done-search" placeholder="검색어 입력" class="done-search-input">
+      <button id="done-search-btn" class="done-search-btn">검색</button>
     </div>
     ${getTaskListHTML()}
+    
+    <style>
+      .done-search-container {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        background: white;
+        padding: 18px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      
+      .done-search-input {
+        flex: 1;
+        margin: 0;
+        padding: 14px 16px;
+        font-size: 16px;
+        border-radius: 10px;
+        border: 2px solid #ddd;
+        min-height: 48px;
+        background: #fff !important;
+        color: #333 !important;
+        font-family: inherit;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        touch-action: manipulation;
+      }
+      
+      .done-search-input:focus {
+        outline: none;
+        border-color: #8ecae6;
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15);
+        background: #fff !important;
+        color: #333 !important;
+      }
+      
+      .done-search-btn {
+        flex: 1;
+        margin: 0;
+        padding: 0 24px;
+        font-size: 16px;
+        border-radius: 10px;
+        min-height: 48px;
+        white-space: nowrap;
+        background: #8ecae6 !important;
+        color: white !important;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+      }
+      
+      .done-search-btn:hover,
+      .done-search-btn:active {
+        background: #219ebc !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(33,158,188,0.2);
+      }
+      
+      /* 모바일 반응형 */
+      @media (max-width: 768px) {
+        .done-search-container {
+          flex-direction: column;
+          gap: 10px;
+          padding: 15px;
+        }
+        
+        .done-search-input,
+        .done-search-btn {
+          flex: none;
+          width: 100%;
+          min-height: 44px;
+          font-size: 16px;
+        }
+        
+        .done-search-btn {
+          padding: 12px 20px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .done-search-container {
+          padding: 12px;
+          gap: 8px;
+        }
+        
+        .done-search-input,
+        .done-search-btn {
+          min-height: 42px;
+          font-size: 15px;
+        }
+      }
+    </style>
   `;
 }
 
@@ -188,7 +374,7 @@ export function getTaskItemHTML(task, id, tabType) {
           <div class="task-actions">
             ${tabType === 'today' ? `<button onclick="completeTask('${id}')" style="background:#28a745 !important;">완료</button>` : ''}
             <button onclick="editTask('${id}', '${tabType}')" style="background:#ffc107 !important;color:#333 !important;">수정</button>
-            ${window.isCurrentUserAdmin && window.isCurrentUserAdmin() ? `<button onclick="deleteTask('${id}', '${tabType}')" style="background:#dc3545 !important;">삭제</button>` : ''}
+            <button onclick="deleteTask('${id}', '${tabType}')" style="background:#dc3545 !important;">삭제</button>
           </div>
         </div>
       </div>
@@ -217,7 +403,7 @@ export function getTaskItemHTML(task, id, tabType) {
           <div class="task-actions">
             ${tabType === 'today' ? `<button onclick="completeTask('${id}')" style="background:#28a745 !important;">완료</button>` : ''}
             <button onclick="editTask('${id}', '${tabType}')" style="background:#ffc107 !important;color:#333 !important;">수정</button>
-            ${window.isCurrentUserAdmin && window.isCurrentUserAdmin() ? `<button onclick="deleteTask('${id}', '${tabType}')" style="background:#dc3545 !important;">삭제</button>` : ''}
+            <button onclick="deleteTask('${id}', '${tabType}')" style="background:#dc3545 !important;">삭제</button>
           </div>
         </div>
       </div>
