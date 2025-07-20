@@ -21,8 +21,43 @@ import {
 
 // 현재 사용자가 관리자인지 확인
 function isCurrentUserAdmin() {
-  const user = window.auth?.currentUser;
-  return user && window.isAdmin && window.isAdmin(user.email);
+  const userInfo = window.getCurrentUserInfo();
+  return window.isAdmin && window.isAdmin(userInfo);
+}
+
+// 작업 필터링 함수 (작업자별)
+function filterTasksForCurrentUser(tasks) {
+  const userInfo = window.getCurrentUserInfo();
+  
+  // 관리자는 모든 작업 표시
+  if (isCurrentUserAdmin()) {
+    console.log('👑 관리자 - 모든 작업 표시:', tasks.length + '개');
+    return tasks;
+  }
+  
+  // 작업자는 본인 작업만 표시
+  if (!userInfo || !userInfo.name) {
+    console.warn('⚠️ 사용자 정보 없음 - 빈 배열 반환');
+    return [];
+  }
+  
+  const userName = userInfo.name;
+  const filteredTasks = tasks.filter(task => {
+    if (!task.worker) return false;
+    
+    // 작업자 필드에 현재 사용자 이름이 포함되어 있는지 확인
+    // 예: "박성욱, 박성호" -> 박성욱이 로그인하면 true
+    const isAssigned = task.worker.includes(userName);
+    
+    if (isAssigned) {
+      console.log(`✅ ${userName} 작업 발견:`, task.items || task.client);
+    }
+    
+    return isAssigned;
+  });
+  
+  console.log(`👷 작업자(${userName}) - 필터링된 작업:`, filteredTasks.length + '개');
+  return filteredTasks;
 }
 
 // 수수료 자동 계산 함수
@@ -247,6 +282,8 @@ window.loadTodayTasks = async function() {
   }
   
   try {
+    console.log('📅 오늘 작업 로드 시작');
+    
     const q = query(
       collection(db, "tasks"),
       where("date", ">=", getTodayStart()),
@@ -254,12 +291,27 @@ window.loadTodayTasks = async function() {
       where("done", "==", false),
       orderBy("date", "asc")
     );
+    
     const querySnapshot = await getDocs(q);
-    let html = "";
+    let allTasks = [];
+    
     querySnapshot.forEach(docu => {
-      const t = docu.data();
-      const id = docu.id;
-      html += getTaskItemHTML(t, id, 'today');
+      const taskData = docu.data();
+      allTasks.push({
+        id: docu.id,
+        ...taskData
+      });
+    });
+    
+    console.log('📋 전체 오늘 작업 수:', allTasks.length);
+    
+    // 작업자별 필터링 적용
+    const filteredTasks = filterTasksForCurrentUser(allTasks);
+    
+    // HTML 생성
+    let html = "";
+    filteredTasks.forEach(task => {
+      html += getTaskItemHTML(task, task.id, 'today');
     });
     
     const taskListElement = document.querySelector('.task-list');
@@ -272,8 +324,10 @@ window.loadTodayTasks = async function() {
       adjustWorkerTaskButtons();
     }
     
+    console.log('✅ 오늘 작업 로드 완료');
+    
   } catch (error) {
-    console.error('오늘 작업 로드 오류:', error);
+    console.error('❌ 오늘 작업 로드 오류:', error);
     alert('작업 목록을 불러오는 중 오류가 발생했습니다.');
   }
 };
@@ -289,49 +343,59 @@ window.loadReserveTasks = async function() {
   body.innerHTML = getReserveTabHTML();
 
   try {
+    console.log('📅 예약 작업 로드 시작');
+    
     const q = query(
       collection(db, "tasks"),
       where("date", ">=", getTomorrowStart()),
       where("done", "==", false),
       orderBy("date", "asc")
     );
+    
     const querySnapshot = await getDocs(q);
-
-    let taskArr = [];
+    let allTasks = [];
+    
     querySnapshot.forEach(docu => {
-      const t = docu.data();
-      t._id = docu.id;
-      taskArr.push(t);
+      const taskData = docu.data();
+      allTasks.push({
+        id: docu.id,
+        ...taskData
+      });
     });
+    
+    console.log('📋 전체 예약 작업 수:', allTasks.length);
+    
+    // 관리자는 모든 예약 작업을 볼 수 있지만, 혹시 필요하다면 필터링도 가능
+    const filteredTasks = filterTasksForCurrentUser(allTasks);
 
-    const renderList = (arr) => {
+    const renderList = (tasks) => {
       let html = "";
-      arr.forEach(t => {
-        const id = t._id;
-        html += getTaskItemHTML(t, id, 'reserve');
+      tasks.forEach(task => {
+        html += getTaskItemHTML(task, task.id, 'reserve');
       });
       document.querySelector('.task-list').innerHTML = html;
     };
 
-    renderList(taskArr);
+    renderList(filteredTasks);
 
     // 검색 이벤트 연결
     document.getElementById('reserve-search-btn').onclick = function() {
       const dateVal = document.getElementById('reserve-date').value;
       const keyword = document.getElementById('reserve-search').value.trim();
-      let filtered = taskArr;
+      
+      let searchFiltered = filteredTasks; // 이미 필터링된 데이터 사용
       
       if (dateVal) {
-        filtered = filtered.filter(t => (t.date && t.date.startsWith(dateVal)));
+        searchFiltered = searchFiltered.filter(t => (t.date && t.date.startsWith(dateVal)));
       }
       if (keyword) {
-        filtered = filtered.filter(t =>
+        searchFiltered = searchFiltered.filter(t =>
           (t.client && t.client.includes(keyword)) ||
           (t.worker && t.worker.includes(keyword)) ||
           (t.note && t.note.includes(keyword))
         );
       }
-      renderList(filtered);
+      renderList(searchFiltered);
     };
 
     document.getElementById('reserve-search').addEventListener("keydown", function(e) {
@@ -345,8 +409,10 @@ window.loadReserveTasks = async function() {
       document.getElementById('reserve-search-btn').click();
     });
     
+    console.log('✅ 예약 작업 로드 완료');
+    
   } catch (error) {
-    console.error('예약 작업 로드 오류:', error);
+    console.error('❌ 예약 작업 로드 오류:', error);
     alert('예약 작업 목록을 불러오는 중 오류가 발생했습니다.');
   }
 };
@@ -367,26 +433,40 @@ window.loadDoneTasks = async function() {
   }
 
   try {
+    console.log('✅ 완료 작업 로드 시작');
+    
     const q = query(
       collection(db, "tasks"),
       where("done", "==", true),
       orderBy("date", "desc")
     );
+    
     const querySnapshot = await getDocs(q);
-    let taskArr = [];
+    let allTasks = [];
+    
     querySnapshot.forEach(docu => {
-      const t = docu.data();
-      t._id = docu.id;
-      taskArr.push(t);
-    });
-
-    function renderList(arr) {
-      let html = "";
-      arr.forEach(t => {
-        const id = t._id;
-        html += getTaskItemHTML(t, id, 'done');
+      const taskData = docu.data();
+      allTasks.push({
+        id: docu.id,
+        ...taskData
       });
-      document.querySelector('.task-list').innerHTML = html;
+    });
+    
+    console.log('📋 전체 완료 작업 수:', allTasks.length);
+    
+    // 작업자별 필터링 적용
+    const filteredTasks = filterTasksForCurrentUser(allTasks);
+
+    function renderList(tasks) {
+      let html = "";
+      tasks.forEach(task => {
+        html += getTaskItemHTML(task, task.id, 'done');
+      });
+      
+      const taskListElement = document.querySelector('.task-list');
+      if (taskListElement) {
+        taskListElement.innerHTML = html;
+      }
       
       // 작업자의 경우 버튼 조정
       if (!isCurrentUserAdmin()) {
@@ -394,25 +474,27 @@ window.loadDoneTasks = async function() {
       }
     }
 
-    renderList(taskArr);
+    renderList(filteredTasks);
 
     // 관리자만 검색 이벤트 설정
     if (isCurrentUserAdmin()) {
       document.getElementById('done-search-btn').onclick = function() {
         const dateVal = document.getElementById('done-date').value;
         const keyword = document.getElementById('done-search').value.trim();
-        let filtered = taskArr;
+        
+        let searchFiltered = filteredTasks; // 이미 작업자별로 필터링된 데이터 사용
+        
         if (dateVal) {
-          filtered = filtered.filter(t => (t.date && t.date.startsWith(dateVal)));
+          searchFiltered = searchFiltered.filter(t => (t.date && t.date.startsWith(dateVal)));
         }
         if (keyword) {
-          filtered = filtered.filter(t =>
+          searchFiltered = searchFiltered.filter(t =>
             (t.client && t.client.includes(keyword)) ||
             (t.worker && t.worker.includes(keyword)) ||
             (t.note && t.note.includes(keyword))
           );
         }
-        renderList(filtered);
+        renderList(searchFiltered);
       };
 
       document.getElementById('done-search').addEventListener("keydown", function(e) {
@@ -423,8 +505,10 @@ window.loadDoneTasks = async function() {
       });
     }
     
+    console.log('✅ 완료 작업 로드 완료');
+    
   } catch (error) {
-    console.error('완료 작업 로드 오류:', error);
+    console.error('❌ 완료 작업 로드 오류:', error);
     alert('완료 작업 목록을 불러오는 중 오류가 발생했습니다.');
   }
 };
