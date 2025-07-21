@@ -77,8 +77,8 @@
       <button class="menu-button" id="settle-btn" aria-label="정산 관리">
         💰<br><span style="margin-top:8px; display:block;">정산</span>
       </button>
-      <button class="menu-button" id="backup-btn" aria-label="백업 관리">
-        🗄️<br><span style="margin-top:8px; display:block;">백업</span>
+      <button class="menu-button" id="company-funds-btn" aria-label="회사운영비 관리">
+        💸<br><span style="margin-top:8px; display:block;">회사운영비</span>
       </button>
       <button class="menu-button" id="inventory-btn" aria-label="입출고 관리">
         📦<br><span style="margin-top:8px; display:block;">입출고</span>
@@ -124,6 +124,7 @@
   <script type="module" src="scripts/settle.js"></script>
   <script type="module" src="scripts/backup.js"></script>
   <script type="module" src="scripts/inventory.js"></script>
+  <script type="module" src="scripts/company-funds.js"></script>
 
   <!-- 5. UI 컨트롤러 -->
   <script type="module" src="scripts/task-ui.js"></script>
@@ -177,9 +178,9 @@
             titleText = '정산';
             titleIcon = '💰';
             break;
-          case 'backup':
-            titleText = '백업';
-            titleIcon = '🗄️';
+          case 'company-funds':
+            titleText = '회사운영비';
+            titleIcon = '💸';
             break;
           case 'inventory':
             titleText = '입출고';
@@ -222,8 +223,8 @@
           tabBody.innerHTML = '<div id="settle-result"></div>';
           window.loadSettlement();
         }
-      } else if (name === 'backup' && window.loadBackup) {
-        window.loadBackup();
+      } else if (name === 'company-funds' && window.loadCompanyFunds) {
+        window.loadCompanyFunds();
       } else if (name === 'inventory' && window.loadInventoryManagement) {
         window.loadInventoryManagement();
       }
@@ -243,14 +244,14 @@
       const taskBtn = document.getElementById('task-btn');
       const reserveBtn = document.getElementById('reserve-btn');
       const settleBtn = document.getElementById('settle-btn');
-      const backupBtn = document.getElementById('backup-btn');
+      const companyFundsBtn = document.getElementById('company-funds-btn');
       const inventoryBtn = document.getElementById('inventory-btn');
       const holidayBtn = document.getElementById('holiday-btn');
       
       if (taskBtn) taskBtn.addEventListener('click', () => openTab('task'));
       if (reserveBtn) reserveBtn.addEventListener('click', () => openTab('reserve'));
       if (settleBtn) settleBtn.addEventListener('click', () => openTab('settle'));
-      if (backupBtn) backupBtn.addEventListener('click', () => openTab('backup'));
+      if (companyFundsBtn) companyFundsBtn.addEventListener('click', () => openTab('company-funds'));
       if (inventoryBtn) inventoryBtn.addEventListener('click', () => openTab('inventory'));
       if (holidayBtn) holidayBtn.addEventListener('click', () => openTab('holiday'));
       
