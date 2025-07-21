@@ -204,6 +204,14 @@ window.openTab = function(name) {
   else if (name === 'settle') {
     document.getElementById('tab-body').innerHTML = '<div id="settle-result"></div>';
     loadSettlement();
+  } else if (name === 'inventory') {
+    // 입출고 관리 로드
+    if (window.loadInventoryManagement) {
+      window.loadInventoryManagement();
+    } else {
+      console.error('❌ 입출고 관리 모듈을 찾을 수 없습니다.');
+      document.getElementById('tab-body').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">입출고 관리 모듈을 로드할 수 없습니다.</div>';
+    }
   }
 };
 

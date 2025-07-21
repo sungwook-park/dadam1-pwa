@@ -66,7 +66,7 @@ function setupUserInterface(userInfo) {
     if (homeButtons) homeButtons.style.display = 'grid';
     if (homeBtn) homeBtn.style.display = 'block';
     
-    console.log('👑 관리자 모드 활성화:', userInfo.name);
+    console.log('👑 관리자 모드 활성화:', userInfo?.name || userInfo?.email);
   } else {
     // 작업자: 홈 버튼과 메뉴 숨기고 바로 작업 화면으로
     if (homeButtons) homeButtons.style.display = 'none';
@@ -77,7 +77,7 @@ function setupUserInterface(userInfo) {
       showWorkerInterface(userInfo);
     }, 100);
     
-    console.log('👷 작업자 모드 활성화:', userInfo.name);
+    console.log('👷 작업자 모드 활성화:', userInfo?.name || userInfo?.email);
   }
 }
 
