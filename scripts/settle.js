@@ -266,19 +266,19 @@ function getDailySettlementHTML(tasks, selectedDate) {
         <div class="breakdown-card">
           <h4>💰 순이익 배분</h4>
           <div class="breakdown-item">
-            <span>회사자금 (20%):</span>
+            <span>회사자금:</span>
             <span>${dayStats.company.toLocaleString()}원</span>
           </div>
           <div class="breakdown-item">
-            <span>성욱 (40%):</span>
+            <span>🤠성욱:</span>
             <span>${dayStats.sungwook.toLocaleString()}원</span>
           </div>
           <div class="breakdown-item">
-            <span>성호 (30%):</span>
+            <span>💪성호:</span>
             <span>${dayStats.sungho.toLocaleString()}원</span>
           </div>
           <div class="breakdown-item">
-            <span>희종 (30%):</span>
+            <span>🙉희종:</span>
             <span>${dayStats.heejong.toLocaleString()}원</span>
           </div>
         </div>
