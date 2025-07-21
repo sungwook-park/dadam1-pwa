@@ -13,7 +13,7 @@ export const PARTS_LIST = [
   {name: '사운드바', price: 20000},
   {name: '가벽키트', price: 20000},
   {name: '하부커버40', price: 20000},
-  {name: '하부커버85', price: 3000},
+  {name: '하부커버85', price: 30000},
   {name: '정품', price: 100000}, // 기타는 별도 입력
 ];
 
