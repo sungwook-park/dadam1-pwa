@@ -230,6 +230,49 @@
       }
     }
 
+    // 회사운영비 전용 함수 (직접 호출용)
+    function loadCompanyFundsTab() {
+      console.log('💸 회사운영비 직접 로드');
+      
+      // 화면 전환
+      const homeButtons = document.getElementById('home-buttons');
+      const tabContent = document.getElementById('tab-content');
+      
+      if (homeButtons) homeButtons.style.display = 'none';
+      if (tabContent) tabContent.style.display = 'block';
+      
+      // 제목 설정
+      const tabTitleElement = document.getElementById('tab-title');
+      if (tabTitleElement) {
+        tabTitleElement.innerHTML = `
+          <div style="
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+            border-left: 4px solid #8ecae6;
+          ">
+            <h3 style="
+              margin: 0;
+              font-size: 1.4rem;
+              color: #333;
+              font-weight: 600;
+            ">💸 회사운영비</h3>
+          </div>
+        `;
+      }
+      
+      // 내용 로드
+      if (window.loadCompanyFunds) {
+        console.log('💸 loadCompanyFunds 실행');
+        window.loadCompanyFunds();
+      } else {
+        console.error('❌ loadCompanyFunds 함수 없음');
+      }
+    }
+
     // DOM이 로드된 후 이벤트 리스너 등록
     document.addEventListener('DOMContentLoaded', () => {
       console.log('📱 DOM 로드 완료');
@@ -240,20 +283,41 @@
         homeBtn.addEventListener('click', backToHome);
       }
       
-      // 메뉴 버튼들 이벤트
-      const taskBtn = document.getElementById('task-btn');
-      const reserveBtn = document.getElementById('reserve-btn');
-      const settleBtn = document.getElementById('settle-btn');
-      const companyFundsBtn = document.getElementById('company-funds-btn');
-      const inventoryBtn = document.getElementById('inventory-btn');
-      const holidayBtn = document.getElementById('holiday-btn');
-      
-      if (taskBtn) taskBtn.addEventListener('click', () => openTab('task'));
-      if (reserveBtn) reserveBtn.addEventListener('click', () => openTab('reserve'));
-      if (settleBtn) settleBtn.addEventListener('click', () => openTab('settle'));
-      if (companyFundsBtn) companyFundsBtn.addEventListener('click', () => openTab('company-funds'));
-      if (inventoryBtn) inventoryBtn.addEventListener('click', () => openTab('inventory'));
-      if (holidayBtn) holidayBtn.addEventListener('click', () => openTab('holiday'));
+      // 메뉴 버튼들 이벤트 - 확실한 연결을 위해 지연 추가
+      setTimeout(() => {
+        const taskBtn = document.getElementById('task-btn');
+        const reserveBtn = document.getElementById('reserve-btn');
+        const settleBtn = document.getElementById('settle-btn');
+        const companyFundsBtn = document.getElementById('company-funds-btn');
+        const inventoryBtn = document.getElementById('inventory-btn');
+        const holidayBtn = document.getElementById('holiday-btn');
+        
+        if (taskBtn) {
+          taskBtn.addEventListener('click', () => openTab('task'));
+          console.log('✅ 작업지시 버튼 이벤트 연결');
+        }
+        if (reserveBtn) {
+          reserveBtn.addEventListener('click', () => openTab('reserve'));
+          console.log('✅ 예약 버튼 이벤트 연결');
+        }
+        if (settleBtn) {
+          settleBtn.addEventListener('click', () => openTab('settle'));
+          console.log('✅ 정산 버튼 이벤트 연결');
+        }
+        if (companyFundsBtn) {
+          // 회사운영비는 전용 함수 사용
+          companyFundsBtn.addEventListener('click', loadCompanyFundsTab);
+          console.log('✅ 회사운영비 버튼 이벤트 연결');
+        }
+        if (inventoryBtn) {
+          inventoryBtn.addEventListener('click', () => openTab('inventory'));
+          console.log('✅ 입출고 버튼 이벤트 연결');
+        }
+        if (holidayBtn) {
+          holidayBtn.addEventListener('click', () => openTab('holiday'));
+          console.log('✅ 휴무관리 버튼 이벤트 연결');
+        }
+      }, 300);
       
       // 온라인/오프라인 상태 감지
       function updateOnlineStatus() {
@@ -348,6 +412,7 @@
     // 전역 함수를 window에 등록
     window.backToHome = backToHome;
     window.openTab = openTab;
+    window.loadCompanyFundsTab = loadCompanyFundsTab;
   </script>
 
   <!-- PWA 및 모바일 전용 스타일 -->

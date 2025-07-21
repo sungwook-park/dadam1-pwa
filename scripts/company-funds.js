@@ -1,10 +1,14 @@
-// scripts/company-funds.js - 회사운영비 관리 시스템
+// scripts/company-funds.js - 회사운영비 관리 시스템 (완전한 디버그 버전)
+
+console.log('💰 company-funds.js 로드 시작');
 
 import { db } from './firebase-config.js';
 import {
   collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc,
   orderBy, Timestamp, writeBatch, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+console.log('✅ Firebase 모듈 임포트 완료');
 
 // 지출 카테고리 정의
 const EXPENSE_CATEGORIES = {
@@ -27,17 +31,39 @@ let initialFundsSet = false;
 
 // 회사운영비 메인 로드 함수
 window.loadCompanyFunds = async function() {
-  console.log('💰 회사운영비 관리 로드');
+  console.log('💰 회사운영비 관리 로드 시작');
   
-  const tabBody = document.getElementById('tab-body');
-  if (tabBody) {
+  try {
+    // Firebase 연결 확인
+    if (!db) {
+      console.error('❌ Firebase DB가 연결되지 않았습니다.');
+      showError('데이터베이스 연결 오류');
+      return;
+    }
+    console.log('✅ Firebase DB 연결 확인됨');
+    
+    const tabBody = document.getElementById('tab-body');
+    if (!tabBody) {
+      console.error('❌ tab-body 요소를 찾을 수 없습니다.');
+      return;
+    }
+    console.log('✅ tab-body 요소 찾음');
+    
+    // HTML 삽입
     tabBody.innerHTML = getCompanyFundsHTML();
+    console.log('✅ HTML 삽입 완료');
     
     // 데이터 로드
     await loadInitialData();
     
     // 이벤트 리스너 설정
     setupEventListeners();
+    
+    console.log('✅ 회사운영비 로드 완료');
+    
+  } catch (error) {
+    console.error('❌ 회사운영비 로드 오류:', error);
+    showError('회사운영비 로드 중 오류가 발생했습니다: ' + error.message);
   }
 };
 
@@ -63,13 +89,15 @@ async function loadInitialData() {
     
   } catch (error) {
     console.error('❌ 데이터 로드 오류:', error);
-    showError('데이터를 불러오는 중 오류가 발생했습니다.');
+    showError('데이터를 불러오는 중 오류가 발생했습니다: ' + error.message);
   }
 }
 
 // 초기 자금 설정 확인
 async function checkInitialFunds() {
   try {
+    console.log('💰 초기 자금 설정 확인 중...');
+    
     const fundsDoc = await getDoc(doc(db, "company_settings", "initial_funds"));
     
     if (fundsDoc.exists()) {
@@ -78,23 +106,31 @@ async function checkInitialFunds() {
       console.log('💰 초기 자금 설정됨:', data.amount?.toLocaleString() + '원');
     } else {
       initialFundsSet = false;
-      console.log('⚠️ 초기 자금 미설정');
-      showInitialFundsModal();
+      console.log('⚠️ 초기 자금 미설정 - 모달 표시');
+      
+      // 잠깐 기다린 후 모달 표시
+      setTimeout(() => {
+        showInitialFundsModal();
+      }, 1000);
     }
   } catch (error) {
     console.error('❌ 초기 자금 확인 오류:', error);
+    showError('초기 자금 확인 중 오류: ' + error.message);
   }
 }
 
 // 현재 회사자금 계산
 async function calculateCurrentFunds() {
   try {
+    console.log('💰 현재 회사자금 계산 시작');
+    
     let totalFunds = 0;
     
     // 1. 초기 자금
     const initialDoc = await getDoc(doc(db, "company_settings", "initial_funds"));
     if (initialDoc.exists()) {
       totalFunds += initialDoc.data().amount || 0;
+      console.log('💰 초기 자금:', (initialDoc.data().amount || 0).toLocaleString() + '원');
     }
     
     // 2. 정산 순이익 누적 (기존 정산 시스템에서)
@@ -106,8 +142,8 @@ async function calculateCurrentFunds() {
     const tasksSnapshot = await getDocs(completedTasksQuery);
     let totalProfit = 0;
     
-    tasksSnapshot.forEach(doc => {
-      const task = doc.data();
+    tasksSnapshot.forEach(docSnapshot => {
+      const task = docSnapshot.data();
       const amount = task.amount || 0;
       const partSpend = calculatePartsSpend(task.parts);
       const fee = calculateFee(task.client, amount);
@@ -116,18 +152,20 @@ async function calculateCurrentFunds() {
     });
     
     totalFunds += totalProfit;
+    console.log('💰 누적 순이익:', totalProfit.toLocaleString() + '원');
     
     // 3. 운영비 지출 차감
     const expensesQuery = query(collection(db, "company_expenses"));
     const expensesSnapshot = await getDocs(expensesQuery);
     let totalExpenses = 0;
     
-    expensesSnapshot.forEach(doc => {
-      const expense = doc.data();
+    expensesSnapshot.forEach(docSnapshot => {
+      const expense = docSnapshot.data();
       totalExpenses += expense.amount || 0;
     });
     
     totalFunds -= totalExpenses;
+    console.log('💸 총 운영비 지출:', totalExpenses.toLocaleString() + '원');
     
     currentFunds = totalFunds;
     console.log('💰 현재 회사자금:', currentFunds.toLocaleString() + '원');
@@ -141,6 +179,8 @@ async function calculateCurrentFunds() {
 // 이번달 지출 로드
 async function loadMonthlyExpenses() {
   try {
+    console.log('📊 이번달 지출 로드 시작');
+    
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -155,10 +195,10 @@ async function loadMonthlyExpenses() {
     const snapshot = await getDocs(expensesQuery);
     monthlyExpenses = [];
     
-    snapshot.forEach(doc => {
+    snapshot.forEach(docSnapshot => {
       monthlyExpenses.push({
-        id: doc.id,
-        ...doc.data()
+        id: docSnapshot.id,
+        ...docSnapshot.data()
       });
     });
     
@@ -210,34 +250,43 @@ function calculateFee(client, amount) {
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
+  console.log('🎯 이벤트 리스너 설정 시작');
+  
   // 지출 입력 폼 제출
   const expenseForm = document.getElementById('expense-form');
   if (expenseForm) {
     expenseForm.addEventListener('submit', handleExpenseSubmit);
+    console.log('✅ 지출 폼 이벤트 리스너 설정');
   }
   
   // 카테고리 변경 시 권한 체크
   const categorySelect = document.getElementById('expense-category');
   if (categorySelect) {
     categorySelect.addEventListener('change', checkCategoryPermission);
+    console.log('✅ 카테고리 선택 이벤트 리스너 설정');
   }
   
   // 월별 검색
   const monthFilter = document.getElementById('month-filter');
   if (monthFilter) {
     monthFilter.addEventListener('change', filterByMonth);
+    console.log('✅ 월별 필터 이벤트 리스너 설정');
   }
   
   // 초기 자금 설정 버튼
   const setFundsBtn = document.getElementById('set-initial-funds-btn');
   if (setFundsBtn) {
     setFundsBtn.addEventListener('click', showInitialFundsModal);
+    console.log('✅ 초기 자금 설정 버튼 이벤트 리스너 설정');
   }
+  
+  console.log('✅ 이벤트 리스너 설정 완료');
 }
 
 // 지출 입력 처리
 async function handleExpenseSubmit(event) {
   event.preventDefault();
+  console.log('💸 지출 입력 처리 시작');
   
   try {
     const formData = new FormData(event.target);
@@ -253,6 +302,8 @@ async function handleExpenseSubmit(event) {
       createdByName: userInfo?.name || '',
       createdAt: Timestamp.now()
     };
+    
+    console.log('💸 지출 데이터:', expenseData);
     
     // 유효성 검사
     if (!expenseData.date || !expenseData.category || expenseData.amount <= 0) {
@@ -280,7 +331,7 @@ async function handleExpenseSubmit(event) {
     
   } catch (error) {
     console.error('❌ 지출 저장 오류:', error);
-    showError('지출 저장 중 오류가 발생했습니다.');
+    showError('지출 저장 중 오류가 발생했습니다: ' + error.message);
   }
 }
 
@@ -318,6 +369,14 @@ function checkCategoryPermission() {
 
 // 초기 자금 설정 모달 표시
 function showInitialFundsModal() {
+  console.log('💰 초기 자금 설정 모달 표시');
+  
+  // 기존 모달 제거
+  const existingModal = document.querySelector('.initial-funds-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
   const modal = document.createElement('div');
   modal.className = 'initial-funds-modal';
   modal.innerHTML = `
@@ -325,7 +384,7 @@ function showInitialFundsModal() {
     <div class="modal-content">
       <h3>💰 초기 회사자금 설정</h3>
       <p>현재 보유하고 있는 회사자금을 입력해주세요.</p>
-      <input type="number" id="initial-amount" placeholder="금액 입력 (원)" min="0" style="width: 100%; margin: 20px 0;">
+      <input type="number" id="initial-amount" placeholder="금액 입력 (원)" min="0" style="width: 100%; margin: 20px 0; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
       <div class="modal-buttons">
         <button onclick="closeInitialFundsModal()" class="cancel-btn">취소</button>
         <button onclick="saveInitialFunds()" class="save-btn">설정</button>
@@ -334,10 +393,20 @@ function showInitialFundsModal() {
   `;
   
   document.body.appendChild(modal);
+  
+  // 입력 필드에 포커스
+  setTimeout(() => {
+    const input = document.getElementById('initial-amount');
+    if (input) input.focus();
+  }, 100);
+  
+  console.log('✅ 초기 자금 모달 표시 완료');
 }
 
 // 초기 자금 설정 저장
 window.saveInitialFunds = async function() {
+  console.log('💰 초기 자금 저장 시작');
+  
   try {
     const amountInput = document.getElementById('initial-amount');
     const amount = parseFloat(amountInput.value);
@@ -361,11 +430,13 @@ window.saveInitialFunds = async function() {
     showSuccess('초기 자금이 설정되었습니다.');
     
     closeInitialFundsModal();
+    
+    // 데이터 다시 로드
     await loadInitialData();
     
   } catch (error) {
     console.error('❌ 초기 자금 설정 오류:', error);
-    showError('초기 자금 설정 중 오류가 발생했습니다.');
+    showError('초기 자금 설정 중 오류가 발생했습니다: ' + error.message);
   }
 };
 
@@ -374,6 +445,7 @@ window.closeInitialFundsModal = function() {
   const modal = document.querySelector('.initial-funds-modal');
   if (modal) {
     modal.remove();
+    console.log('💰 초기 자금 모달 닫힘');
   }
 };
 
@@ -383,6 +455,7 @@ async function filterByMonth() {
   if (!monthFilter) return;
   
   const selectedMonth = monthFilter.value;
+  console.log('📅 월별 필터링:', selectedMonth);
   
   if (!selectedMonth) {
     await loadMonthlyExpenses();
@@ -410,10 +483,10 @@ async function loadExpensesByMonth(monthString) {
     const snapshot = await getDocs(expensesQuery);
     monthlyExpenses = [];
     
-    snapshot.forEach(doc => {
+    snapshot.forEach(docSnapshot => {
       monthlyExpenses.push({
-        id: doc.id,
-        ...doc.data()
+        id: docSnapshot.id,
+        ...docSnapshot.data()
       });
     });
     
@@ -427,17 +500,21 @@ async function loadExpensesByMonth(monthString) {
 
 // 자금 현황 표시 업데이트
 function updateFundsDisplay() {
+  console.log('🖥️ 자금 현황 표시 업데이트');
+  
   const fundsAmountElement = document.getElementById('current-funds-amount');
   const monthlyTotalElement = document.getElementById('monthly-total');
   
   if (fundsAmountElement) {
     fundsAmountElement.textContent = currentFunds.toLocaleString() + '원';
     fundsAmountElement.className = 'funds-amount ' + (currentFunds >= 0 ? 'positive' : 'negative');
+    console.log('💰 현재 자금 표시 업데이트:', currentFunds.toLocaleString() + '원');
   }
   
   if (monthlyTotalElement) {
     const monthlyTotal = monthlyExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
     monthlyTotalElement.textContent = monthlyTotal.toLocaleString() + '원';
+    console.log('📊 월별 총액 표시 업데이트:', monthlyTotal.toLocaleString() + '원');
   }
   
   // 카테고리별 집계 업데이트
@@ -446,6 +523,8 @@ function updateFundsDisplay() {
 
 // 카테고리별 집계 업데이트
 function updateCategorySummary() {
+  console.log('📈 카테고리별 집계 업데이트');
+  
   const summaryContainer = document.getElementById('category-summary');
   if (!summaryContainer) return;
   
@@ -478,10 +557,13 @@ function updateCategorySummary() {
   }
   
   summaryContainer.innerHTML = summaryHTML;
+  console.log('✅ 카테고리별 집계 HTML 업데이트 완료');
 }
 
 // 지출 목록 업데이트
 function updateExpensesList() {
+  console.log('📋 지출 목록 업데이트');
+  
   const expensesContainer = document.getElementById('expenses-list');
   if (!expensesContainer) return;
   
@@ -515,10 +597,13 @@ function updateExpensesList() {
   });
   
   expensesContainer.innerHTML = expensesHTML;
+  console.log('✅ 지출 목록 HTML 업데이트 완료');
 }
 
 // HTML 템플릿 생성
 function getCompanyFundsHTML() {
+  console.log('🎨 HTML 템플릿 생성');
+  
   const userInfo = window.getCurrentUserInfo();
   const isAdmin = window.isAdmin && window.isAdmin(userInfo);
   
@@ -960,10 +1045,12 @@ window.deleteExpense = async function(expenseId) {
 
 // 유틸리티 함수들
 function showError(message) {
+  console.error('ERROR:', message);
   alert('❌ ' + message);
 }
 
 function showSuccess(message) {
+  console.log('SUCCESS:', message);
   alert('✅ ' + message);
 }
 
