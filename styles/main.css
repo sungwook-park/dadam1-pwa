@@ -309,7 +309,7 @@ button:disabled {
 
 .task-info-mobile {
   color: #333 !important;
-  font-size: 17px; /* 정보 폰트 크기 증가 */
+  font-size: 18px; /* 정보 폰트 크기 증가 */
   display: flex;
   flex-wrap: wrap;
   gap: 10px; /* 간격 증가 */
@@ -322,7 +322,7 @@ button:disabled {
   color: #1565c0 !important;
   padding: 4px 10px; /* 패딩 증가 */
   border-radius: 8px; /* 라운드 증가 */
-  font-size: 16px; /* 폰트 크기 증가 */
+  font-size: 18px; /* 폰트 크기 증가 */
   font-weight: 600;
 }
 
@@ -331,19 +331,19 @@ button:disabled {
   color: #856404 !important;
   padding: 4px 10px; /* 패딩 증가 */
   border-radius: 8px; /* 라운드 증가 */
-  font-size: 16px; /* 폰트 크기 증가 */
+  font-size: 18px; /* 폰트 크기 증가 */
   font-weight: 600;
 }
 
 .task-type-mobile {
   color: #666 !important;
-  font-size: 16px; /* 폰트 크기 증가 */
+  font-size: 18px; /* 폰트 크기 증가 */
   font-weight: 500;
 }
 
 .task-content-mobile {
   color: #333 !important;
-  font-size: 16px; /* 폰트 크기 증가 */
+  font-size: 18px; /* 폰트 크기 증가 */
   margin-top: 6px; /* 마진 증가 */
   max-width: calc(100% - 50px); /* 화살표 공간 확보 */
   overflow: hidden;
@@ -470,7 +470,7 @@ button:disabled {
   /* 모바일에서 작업 요약 스타일 조정 */
   .task-summary {
     padding: 20px 22px;
-    min-height: 85px; /* 높이 증가 */
+    min-height: 80px; /* 요청된 높이로 설정 */
     font-size: 17px; /* 기본 폰트 크기 조정 */
   }
   
@@ -479,19 +479,19 @@ button:disabled {
   }
   
   .task-info-mobile {
-    font-size: 16px; /* 정보 폰트 크기 조정 */
+    font-size: 18px; /* 정보 폰트 크기 18px */
   }
   
   .task-worker-mobile, .task-client-mobile {
-    font-size: 15px; /* 작업자/거래처 폰트 크기 조정 */
+    font-size: 18px; /* 작업자/거래처 폰트 크기 18px */
   }
   
   .task-type-mobile {
-    font-size: 15px; /* 작업구분 폰트 크기 조정 */
+    font-size: 18px; /* 작업구분 폰트 크기 18px */
   }
   
   .task-content-mobile {
-    font-size: 15px; /* 작업내용 폰트 크기 조정 */
+    font-size: 18px; /* 작업내용 폰트 크기 18px */
   }
 }
 
@@ -744,5 +744,386 @@ button:disabled {
     position: static;
     transform: none;
     margin-left: auto;
+  }
+}
+
+/* 백업 시스템 전용 CSS */
+
+.backup-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.backup-header {
+  background: linear-gradient(135deg, #8ecae6, #219ebc);
+  color: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(33, 158, 188, 0.2);
+}
+
+.backup-header h3 {
+  margin: 0 0 10px 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.backup-header p {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.backup-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.backup-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+
+.backup-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  border-color: #8ecae6;
+}
+
+.backup-card h4 {
+  margin: 0 0 15px 0;
+  font-size: 1.3rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.backup-card p {
+  margin: 0 0 20px 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.backup-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.backup-controls select {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  color: #333;
+  min-width: 80px;
+}
+
+.backup-controls select:focus {
+  outline: none;
+  border-color: #8ecae6;
+}
+
+.backup-btn {
+  background: linear-gradient(135deg, #8ecae6, #219ebc);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(33, 158, 188, 0.2);
+}
+
+.backup-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(33, 158, 188, 0.3);
+}
+
+.backup-btn:active {
+  transform: translateY(0);
+}
+
+.backup-btn.full-backup {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  box-shadow: 0 2px 5px rgba(40, 167, 69, 0.2);
+}
+
+.backup-btn.full-backup:hover {
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.backup-btn.parts-backup {
+  background: linear-gradient(135deg, #ffc107, #fd7e14);
+  color: #333;
+  box-shadow: 0 2px 5px rgba(255, 193, 7, 0.2);
+}
+
+.backup-btn.parts-backup:hover {
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+/* 백업 진행 상황 */
+.backup-progress {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  border-left: 4px solid #8ecae6;
+}
+
+.progress-header h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8ecae6, #219ebc);
+  width: 0%;
+  transition: width 0.3s ease;
+  border-radius: 6px;
+}
+
+#progress-text {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.backup-log {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #495057;
+  line-height: 1.4;
+}
+
+.backup-log div {
+  margin-bottom: 4px;
+  padding: 2px 0;
+  border-bottom: 1px dotted #dee2e6;
+}
+
+/* 백업 결과 */
+.backup-result {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  border-left: 4px solid #28a745;
+}
+
+.backup-result h4 {
+  margin: 0 0 20px 0;
+  color: #28a745;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-item {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 3px solid #8ecae6;
+}
+
+.stat-label {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.backup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.download-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 8px rgba(40, 167, 69, 0.2);
+}
+
+.download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+.delete-option {
+  border-top: 2px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+.warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-left: 4px solid #ffc107;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  color: #856404;
+  line-height: 1.5;
+}
+
+.warning-box strong {
+  color: #d39e00;
+}
+
+.warning-box small {
+  display: block;
+  margin-top: 8px;
+  opacity: 0.8;
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(220, 53, 69, 0.2);
+}
+
+.delete-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  background: linear-gradient(135deg, #c82333, #a71e2a);
+}
+
+.delete-btn:active {
+  transform: translateY(0);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .backup-container {
+    padding: 15px;
+  }
+  
+  .backup-header {
+    padding: 20px;
+  }
+  
+  .backup-header h3 {
+    font-size: 1.5rem;
+  }
+  
+  .backup-options {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .backup-card {
+    padding: 20px;
+  }
+  
+  .backup-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .backup-controls select,
+  .backup-btn {
+    width: 100%;
+    margin: 5px 0;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .backup-actions {
+    gap: 15px;
+  }
+  
+  .download-btn,
+  .delete-btn {
+    width: 100%;
+    padding: 12px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .backup-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .backup-header p {
+    font-size: 1rem;
+  }
+  
+  .backup-card h4 {
+    font-size: 1.1rem;
+  }
+  
+  .backup-card p {
+    font-size: 14px;
+  }
+  
+  .stat-item {
+    padding: 12px;
+  }
+  
+  .stat-value {
+    font-size: 16px;
   }
 }
