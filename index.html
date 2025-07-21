@@ -77,8 +77,8 @@
       <button class="menu-button" id="settle-btn" aria-label="정산 관리">
         💰<br><span style="margin-top:8px; display:block;">정산</span>
       </button>
-      <button class="menu-button" id="spend-btn" aria-label="지출 관리">
-        💸<br><span style="margin-top:8px; display:block;">지출</span>
+      <button class="menu-button" id="backup-btn" aria-label="백업 관리">
+        🗄️<br><span style="margin-top:8px; display:block;">백업</span>
       </button>
       <button class="menu-button" id="inventory-btn" aria-label="입출고 관리">
         📦<br><span style="margin-top:8px; display:block;">입출고</span>
@@ -116,14 +116,19 @@
   <!-- 2. 데이터 모델 -->
   <script type="module" src="scripts/parts-list.js"></script>
 
-  <!-- 3. 비즈니스 로직 -->
+  <!-- 3. 템플릿 (UI 먼저) -->
+  <script type="module" src="scripts/templates/inventory-templates.js"></script>
+
+  <!-- 4. 비즈니스 로직 -->
   <script type="module" src="scripts/task-save.js"></script>
   <script type="module" src="scripts/settle.js"></script>
+  <script type="module" src="scripts/backup.js"></script>
+  <script type="module" src="scripts/inventory.js"></script>
 
-  <!-- 4. UI 컨트롤러 -->
+  <!-- 5. UI 컨트롤러 -->
   <script type="module" src="scripts/task-ui.js"></script>
 
-  <!-- 5. 인증 (마지막) -->
+  <!-- 6. 인증 (마지막) -->
   <script type="module" src="scripts/auth.js"></script>
 
   <!-- 메인 앱 로직 -->
@@ -172,9 +177,9 @@
             titleText = '정산';
             titleIcon = '💰';
             break;
-          case 'spend':
-            titleText = '지출';
-            titleIcon = '💸';
+          case 'backup':
+            titleText = '백업';
+            titleIcon = '🗄️';
             break;
           case 'inventory':
             titleText = '입출고';
@@ -217,6 +222,10 @@
           tabBody.innerHTML = '<div id="settle-result"></div>';
           window.loadSettlement();
         }
+      } else if (name === 'backup' && window.loadBackup) {
+        window.loadBackup();
+      } else if (name === 'inventory' && window.loadInventoryManagement) {
+        window.loadInventoryManagement();
       }
     }
 
@@ -234,14 +243,14 @@
       const taskBtn = document.getElementById('task-btn');
       const reserveBtn = document.getElementById('reserve-btn');
       const settleBtn = document.getElementById('settle-btn');
-      const spendBtn = document.getElementById('spend-btn');
+      const backupBtn = document.getElementById('backup-btn');
       const inventoryBtn = document.getElementById('inventory-btn');
       const holidayBtn = document.getElementById('holiday-btn');
       
       if (taskBtn) taskBtn.addEventListener('click', () => openTab('task'));
       if (reserveBtn) reserveBtn.addEventListener('click', () => openTab('reserve'));
       if (settleBtn) settleBtn.addEventListener('click', () => openTab('settle'));
-      if (spendBtn) spendBtn.addEventListener('click', () => openTab('spend'));
+      if (backupBtn) backupBtn.addEventListener('click', () => openTab('backup'));
       if (inventoryBtn) inventoryBtn.addEventListener('click', () => openTab('inventory'));
       if (holidayBtn) holidayBtn.addEventListener('click', () => openTab('holiday'));
       
@@ -403,6 +412,69 @@
       --vh: 1vh;
       --safe-area-inset-top: env(safe-area-inset-top);
       --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* 로딩 스피너 */
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #219ebc;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 에러 메시지 */
+    #error-message {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #dc3545;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      font-weight: 600;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    #error-message.success {
+      background: #28a745;
+    }
+
+    #error-message.show {
+      display: block !important;
+    }
+
+    /* 로딩 스피너 전역 */
+    #loading-spinner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #loading-spinner p {
+      margin-top: 20px;
+      color: #666;
+      font-size: 16px;
+      font-weight: 600;
     }
   </style>
 
