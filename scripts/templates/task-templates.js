@@ -1,7 +1,6 @@
 // scripts/templates/task-templates.js - 경로 수정된 버전
-// 상대 경로를 scripts 폴더 기준으로 수정
 
-// 날짜 포맷 함수 (임시로 여기에 정의)
+// 유틸리티 함수들
 function formatKoreanDate(dateString) {
   if (!dateString) return '';
   
@@ -19,6 +18,80 @@ function formatKoreanDate(dateString) {
     console.error('날짜 포맷팅 오류:', error);
     return '';
   }
+}
+
+// 연락처를 전화 링크로 변환하는 함수
+function formatPhoneLink(contact) {
+  if (!contact || !contact.trim()) {
+    return '';
+  }
+  
+  // 전화번호 정리 (공백, 하이픈 제거)
+  const cleanNumber = contact.replace(/[\s\-\(\)]/g, '');
+  
+  // 전화번호 형태인지 확인 (숫자로만 구성되고 10자리 이상)
+  if (/^\d{10,11}$/.test(cleanNumber)) {
+    return `<a href="tel:${cleanNumber}" class="phone-link" onclick="event.stopPropagation();">${contact}</a>`;
+  }
+  
+  // 전화번호가 아니면 일반 텍스트로 반환
+  return contact;
+}
+
+// 전화 링크 스타일 추가 함수
+function addPhoneStyles() {
+  if (document.getElementById('phone-link-styles')) {
+    return; // 이미 추가됨
+  }
+  
+  const phoneStyles = `
+    <style>
+      .phone-link {
+        color: #219ebc !important;
+        text-decoration: none;
+        font-weight: 600;
+        border-bottom: 1px dotted #219ebc;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      
+      .phone-link:hover {
+        color: #1a7a96 !important;
+        border-bottom-style: solid;
+        background-color: rgba(33, 158, 188, 0.1);
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+      
+      .phone-link:active {
+        background-color: rgba(33, 158, 188, 0.2);
+      }
+      
+      /* 모바일에서 터치 피드백 */
+      @media (max-width: 768px) {
+        .phone-link {
+          padding: 4px 6px;
+          border-radius: 4px;
+          background-color: rgba(33, 158, 188, 0.05);
+          border-bottom: none;
+          display: inline-block;
+          min-height: 44px;
+          line-height: 36px;
+        }
+        
+        .phone-link:active {
+          background-color: rgba(33, 158, 188, 0.2);
+          transform: scale(0.98);
+        }
+      }
+    </style>
+  `;
+
+  // 스타일을 문서에 추가
+  const styleElement = document.createElement('div');
+  styleElement.id = 'phone-link-styles';
+  styleElement.innerHTML = phoneStyles;
+  document.head.appendChild(styleElement);
 }
 
 export function getTaskSubTabsHTML(activeType) {
@@ -365,7 +438,7 @@ export function getTaskItemHTML(task, id, tabType) {
         <div id="detail-${id}" class="task-detail" style="display:none;">
           ${task.removeAddress ? `<div><strong>철거:</strong> ${task.removeAddress}</div>` : ''}
           <div><strong>설치:</strong> ${task.installAddress || ''}</div>
-          <div><strong>연락처:</strong> ${task.contact || ''}</div>
+          <div><strong>연락처:</strong> ${formatPhoneLink(task.contact)}</div>
           <div><strong>작업구분:</strong> ${task.taskType || ''}</div>
           <div><strong>금액:</strong> ${parseInt(task.amount || 0).toLocaleString()}원</div>
           ${task.fee ? `<div><strong>수수료:</strong> ${parseInt(task.fee).toLocaleString()}원</div>` : ''}
@@ -394,7 +467,7 @@ export function getTaskItemHTML(task, id, tabType) {
         <div id="detail-${id}" class="task-detail" style="display:none;">
           ${task.removeAddress ? `<div><strong>철거:</strong> ${task.removeAddress}</div>` : ''}
           <div><strong>설치:</strong> ${task.installAddress || ''}</div>
-          <div><strong>연락처:</strong> ${task.contact || ''}</div>
+          <div><strong>연락처:</strong> ${formatPhoneLink(task.contact)}</div>
           <div><strong>작업구분:</strong> ${task.taskType || ''}</div>
           <div><strong>금액:</strong> ${parseInt(task.amount || 0).toLocaleString()}원</div>
           ${task.fee ? `<div><strong>수수료:</strong> ${parseInt(task.fee).toLocaleString()}원</div>` : ''}
@@ -436,6 +509,37 @@ window.toggleTaskDetail = function(taskId) {
   }
 };
 
+// 유틸리티 함수들
+function formatPartsForDisplay(partsData) {
+  if (!partsData) return '<span style="color: #999;">부품 사용 없음</span>';
+  
+  try {
+    if (typeof partsData === 'string') {
+      try {
+        const parsed = JSON.parse(partsData);
+        if (Array.isArray(parsed)) {
+          return parsed.map(part => 
+            `<span class="part-item">${part.name || part}: ${part.quantity || 1}개</span>`
+          ).join(', ');
+        } else {
+          return `<span class="part-item">${partsData}</span>`;
+        }
+      } catch (e) {
+        // JSON 파싱 실패 시 텍스트로 처리
+        return `<span class="part-item">${partsData}</span>`;
+      }
+    } else if (Array.isArray(partsData)) {
+      return partsData.map(part => 
+        `<span class="part-item">${part.name || part}: ${part.quantity || 1}개</span>`
+      ).join(', ');
+    } else {
+      return `<span class="part-item">${String(partsData)}</span>`;
+    }
+  } catch (error) {
+    return '<span style="color: #999;">부품 정보 오류</span>';
+  }
+}
+
 // 화면 크기 변경 감지하여 리스트 다시 렌더링
 window.addEventListener('resize', () => {
   // 리사이즈 디바운싱
@@ -465,3 +569,11 @@ window.addEventListener('resize', () => {
     }
   }, 300);
 });
+
+// DOM 로드 시 스타일 추가
+document.addEventListener('DOMContentLoaded', addPhoneStyles);
+
+// 전역 함수 등록
+window.formatDate = formatKoreanDate;
+window.formatPartsForDisplay = formatPartsForDisplay;
+window.formatPhoneLink = formatPhoneLink;
