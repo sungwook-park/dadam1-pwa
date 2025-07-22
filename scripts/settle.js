@@ -1,6 +1,14 @@
 // scripts/settle.js (ES6 모듈) - 서브탭 추가 및 분석 기능
 import { PARTS_LIST } from './parts-list.js';
 
+// 오늘 날짜 문자열 반환 함수
+function getTodayString() {
+  const today = new Date();
+  return today.getFullYear() + '-' + 
+    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(today.getDate()).padStart(2, '0');
+}
+
 // 현재 활성 서브탭
 let currentSettleSubTab = 'daily';
 
@@ -182,13 +190,12 @@ window.showSettleSubTab = async function(tabType) {
   }
 };
 
-// 1. 일별정산 로드 (오늘만, 날짜 필터링 가능)
+// 1. 일별정산 로드 (오늘만, 날짜 범위 필터링 가능)
 async function loadDailySettlement() {
   console.log('일별정산 로드');
   
   // 오늘 날짜
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = getTodayString();
   
   // 오늘 작업만 필터링
   todayTasks = allCompletedTasks.filter(task => {
@@ -197,23 +204,31 @@ async function loadDailySettlement() {
   });
   
   const contentDiv = document.getElementById('settlement-content');
-  contentDiv.innerHTML = getDailySettlementHTML(todayTasks, todayStr);
+  contentDiv.innerHTML = getDailySettlementHTML(todayTasks, todayStr, todayStr);
 }
 
 // 일별정산 HTML
-function getDailySettlementHTML(tasks, selectedDate) {
+function getDailySettlementHTML(tasks, startDate, endDate = null) {
   const dayStats = calculateDayStats(tasks);
+  const monthStats = calculateMonthStats();
+  const displayDate = endDate && endDate !== startDate ? `${startDate} ~ ${endDate}` : startDate;
   
   return `
     <div class="daily-settlement-container">
       <div class="settlement-header">
         <h3>📊 일별정산</h3>
         <div class="date-filter-container">
-          <label>📅 날짜:</label>
-          <input type="date" id="daily-date-filter" value="${selectedDate}">
-          <button onclick="filterDailyByDate()" class="filter-btn">검색</button>
+          <label>📅 기간:</label>
+          <input type="date" id="daily-start-date" value="${startDate}">
+          <span>~</span>
+          <input type="date" id="daily-end-date" value="${endDate || startDate}">
+          <button onclick="filterDailyByDateRange()" class="filter-btn">검색</button>
           <button onclick="resetDailyFilter()" class="reset-btn">오늘</button>
         </div>
+      </div>
+      
+      <div class="period-info">
+        <h4>📅 선택 기간: ${displayDate} (${tasks.length}건)</h4>
       </div>
       
       <div class="daily-stats">
@@ -266,20 +281,53 @@ function getDailySettlementHTML(tasks, selectedDate) {
         <div class="breakdown-card">
           <h4>💰 순이익 배분</h4>
           <div class="breakdown-item">
-            <span>회사자금:</span>
+            <span>회사자금 (20%):</span>
             <span>${dayStats.company.toLocaleString()}원</span>
           </div>
           <div class="breakdown-item">
-            <span>🤠성욱:</span>
+            <span>성욱 (40%):</span>
             <span>${dayStats.sungwook.toLocaleString()}원</span>
           </div>
           <div class="breakdown-item">
-            <span>💪성호:</span>
+            <span>성호 (30%):</span>
             <span>${dayStats.sungho.toLocaleString()}원</span>
           </div>
           <div class="breakdown-item">
-            <span>🙉희종:</span>
+            <span>희종 (30%):</span>
             <span>${dayStats.heejong.toLocaleString()}원</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 월별 정산 추가 -->
+      <div class="monthly-section">
+        <h3>📊 이번 달 정산</h3>
+        <div class="monthly-stats">
+          <div class="monthly-card">
+            <div class="monthly-icon">📅</div>
+            <div class="monthly-info">
+              <div class="monthly-label">이번 달 총 매출</div>
+              <div class="monthly-value">${monthStats.total.toLocaleString()}원</div>
+              <div class="monthly-subtitle">${monthStats.taskCount}건 완료</div>
+            </div>
+          </div>
+          
+          <div class="monthly-card">
+            <div class="monthly-icon">💸</div>
+            <div class="monthly-info">
+              <div class="monthly-label">이번 달 총 지출</div>
+              <div class="monthly-value">${monthStats.spend.toLocaleString()}원</div>
+              <div class="monthly-subtitle">부품비 + 수수료</div>
+            </div>
+          </div>
+          
+          <div class="monthly-card profit">
+            <div class="monthly-icon">💰</div>
+            <div class="monthly-info">
+              <div class="monthly-label">이번 달 순이익</div>
+              <div class="monthly-value">${monthStats.profit.toLocaleString()}원</div>
+              <div class="monthly-subtitle">매출 - 지출</div>
+            </div>
           </div>
         </div>
       </div>
@@ -294,7 +342,7 @@ function getDailySettlementHTML(tasks, selectedDate) {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         padding-bottom: 15px;
         border-bottom: 2px solid #e6e6e6;
       }
@@ -323,6 +371,11 @@ function getDailySettlementHTML(tasks, selectedDate) {
         font-size: 14px;
       }
       
+      .date-filter-container span {
+        font-weight: 600;
+        color: #666;
+      }
+      
       .filter-btn, .reset-btn {
         padding: 8px 16px;
         border: none;
@@ -348,6 +401,20 @@ function getDailySettlementHTML(tasks, selectedDate) {
       
       .reset-btn:hover {
         background: #5a6268;
+      }
+      
+      .period-info {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #e3f2fd;
+        border-radius: 8px;
+        border-left: 4px solid #219ebc;
+      }
+      
+      .period-info h4 {
+        margin: 0;
+        color: #1565c0;
+        font-size: 1.1rem;
       }
       
       .daily-stats {
@@ -406,6 +473,7 @@ function getDailySettlementHTML(tasks, selectedDate) {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 20px;
+        margin-bottom: 30px;
       }
       
       .breakdown-card {
@@ -438,6 +506,63 @@ function getDailySettlementHTML(tasks, selectedDate) {
         color: #219ebc;
       }
       
+      /* 월별 정산 스타일 */
+      .monthly-section {
+        border-top: 2px solid #e6e6e6;
+        padding-top: 30px;
+        margin-top: 30px;
+      }
+      
+      .monthly-section h3 {
+        margin: 0 0 20px 0;
+        color: #333;
+        font-size: 1.3rem;
+      }
+      
+      .monthly-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+      }
+      
+      .monthly-card {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 25px;
+        background: linear-gradient(135deg, #fff8e1, #ffecb3);
+        border-radius: 12px;
+        border-left: 4px solid #ffa000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      
+      .monthly-card.profit {
+        background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+        border-left: 4px solid #4caf50;
+      }
+      
+      .monthly-icon {
+        font-size: 2.2rem;
+      }
+      
+      .monthly-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+      
+      .monthly-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 3px;
+      }
+      
+      .monthly-subtitle {
+        font-size: 12px;
+        color: #888;
+      }
+      
       @media (max-width: 768px) {
         .daily-settlement-container {
           padding: 15px;
@@ -451,14 +576,20 @@ function getDailySettlementHTML(tasks, selectedDate) {
         
         .date-filter-container {
           justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
         }
         
-        .daily-stats {
+        .date-filter-container input {
+          min-width: 120px;
+        }
+        
+        .daily-stats, .monthly-stats {
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 15px;
         }
         
-        .stat-card {
+        .stat-card, .monthly-card {
           flex-direction: column;
           text-align: center;
           gap: 10px;
@@ -477,50 +608,74 @@ function getDailySettlementHTML(tasks, selectedDate) {
 async function loadWorkerAnalysis() {
   console.log('직원별분석 로드');
   
+  // 오늘 날짜
+  const todayStr = getTodayString();
+  
+  // 오늘 작업만 필터링
+  const todayWorkerTasks = allCompletedTasks.filter(task => {
+    if (!task.date) return false;
+    return task.date.startsWith(todayStr);
+  });
+  
   const contentDiv = document.getElementById('settlement-content');
-  contentDiv.innerHTML = getWorkerAnalysisHTML();
+  contentDiv.innerHTML = getWorkerAnalysisHTML(todayWorkerTasks, todayStr, todayStr);
 }
 
 // 직원별분석 HTML
-function getWorkerAnalysisHTML() {
-  const workerStats = calculateWorkerStats();
+function getWorkerAnalysisHTML(tasks, startDate, endDate = null) {
+  const workerStats = calculateWorkerStatsNew(tasks);
+  const displayDate = endDate && endDate !== startDate ? `${startDate} ~ ${endDate}` : startDate;
   
   return `
     <div class="worker-analysis-container">
       <div class="analysis-header">
         <h3>👷 직원별 분석</h3>
-        <p>각 직원별 작업량과 매출 기여도를 분석합니다.</p>
+        <div class="worker-date-filter">
+          <label>📅 기간:</label>
+          <input type="date" id="worker-start-date" value="${startDate}">
+          <span>~</span>
+          <input type="date" id="worker-end-date" value="${endDate || startDate}">
+          <button onclick="filterWorkerByDateRange()" class="filter-btn">검색</button>
+          <button onclick="resetWorkerFilter()" class="reset-btn">오늘</button>
+        </div>
+      </div>
+      
+      <div class="period-info">
+        <h4>📅 선택 기간: ${displayDate} (총 ${tasks.length}건)</h4>
       </div>
       
       <div class="worker-stats-grid">
-        ${Object.entries(workerStats).map(([worker, stats]) => `
-          <div class="worker-card">
-            <div class="worker-header">
-              <div class="worker-icon">👤</div>
-              <div class="worker-info">
-                <div class="worker-name">${worker}</div>
-                <div class="worker-subtitle">${stats.taskCount}건 완료</div>
-              </div>
-            </div>
-            
-            <div class="worker-metrics">
-              <div class="metric-item">
-                <div class="metric-label">총 매출</div>
-                <div class="metric-value revenue">${stats.totalAmount.toLocaleString()}원</div>
+        ${Object.entries(workerStats).length > 0 ? 
+          Object.entries(workerStats).map(([worker, stats]) => `
+            <div class="worker-card">
+              <div class="worker-header">
+                <div class="worker-icon">👤</div>
+                <div class="worker-info">
+                  <div class="worker-name">${worker}</div>
+                  <div class="worker-subtitle">${stats.taskCount}건 완료</div>
+                </div>
               </div>
               
-              <div class="metric-item">
-                <div class="metric-label">평균 작업단가</div>
-                <div class="metric-value">${Math.round(stats.totalAmount / (stats.taskCount || 1)).toLocaleString()}원</div>
-              </div>
-              
-              <div class="metric-item">
-                <div class="metric-label">매출 기여도</div>
-                <div class="metric-value percentage">${stats.percentage.toFixed(1)}%</div>
+              <div class="worker-metrics">
+                <div class="metric-item">
+                  <div class="metric-label">총 금액</div>
+                  <div class="metric-value revenue">${Math.round(stats.totalAmount).toLocaleString()}원</div>
+                </div>
+                
+                <div class="worker-clients">
+                  <div class="clients-label">거래처별 내역:</div>
+                  ${Object.entries(stats.clientDetails).map(([client, detail]) => `
+                    <div class="client-item">
+                      <span class="client-name">${client}</span>
+                      <span class="client-stats">${detail.count}건 / ${Math.round(detail.amount).toLocaleString()}원</span>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
             </div>
-          </div>
-        `).join('')}
+          `).join('') :
+          '<div class="no-worker-data">선택한 기간에 완료된 작업이 없습니다.</div>'
+        }
       </div>
     </div>
     
@@ -530,26 +685,60 @@ function getWorkerAnalysisHTML() {
       }
       
       .analysis-header {
-        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
         padding-bottom: 15px;
         border-bottom: 2px solid #e6e6e6;
       }
       
       .analysis-header h3 {
-        margin: 0 0 8px 0;
+        margin: 0;
         color: #333;
         font-size: 1.4rem;
       }
       
-      .analysis-header p {
-        margin: 0;
-        color: #666;
+      .worker-date-filter {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      
+      .worker-date-filter label {
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .worker-date-filter input {
+        padding: 8px 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
         font-size: 14px;
+      }
+      
+      .worker-date-filter span {
+        font-weight: 600;
+        color: #666;
+      }
+      
+      .period-info {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #e3f2fd;
+        border-radius: 8px;
+        border-left: 4px solid #219ebc;
+      }
+      
+      .period-info h4 {
+        margin: 0;
+        color: #1565c0;
+        font-size: 1.1rem;
       }
       
       .worker-stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
         gap: 20px;
       }
       
@@ -600,24 +789,25 @@ function getWorkerAnalysisHTML() {
       .worker-metrics {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 15px;
       }
       
       .metric-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
+        padding: 12px 0;
+        border-bottom: 1px dotted #ddd;
       }
       
       .metric-label {
-        font-size: 14px;
+        font-size: 16px;
         color: #666;
-        font-weight: 500;
+        font-weight: 600;
       }
       
       .metric-value {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 700;
         color: #333;
       }
@@ -626,13 +816,74 @@ function getWorkerAnalysisHTML() {
         color: #219ebc;
       }
       
-      .metric-value.percentage {
-        color: #28a745;
+      .worker-clients {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 3px solid #8ecae6;
+      }
+      
+      .clients-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+      }
+      
+      .client-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px dotted #ddd;
+      }
+      
+      .client-item:last-child {
+        border-bottom: none;
+      }
+      
+      .client-name {
+        font-weight: 600;
+        color: #333;
+        background: #fff3cd;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 13px;
+      }
+      
+      .client-stats {
+        font-size: 13px;
+        color: #666;
+        font-weight: 500;
+      }
+      
+      .no-worker-data {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+        font-style: italic;
+        grid-column: 1 / -1;
       }
       
       @media (max-width: 768px) {
         .worker-analysis-container {
           padding: 15px;
+        }
+        
+        .analysis-header {
+          flex-direction: column;
+          gap: 15px;
+          align-items: stretch;
+        }
+        
+        .worker-date-filter {
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        
+        .worker-date-filter input {
+          min-width: 120px;
         }
         
         .worker-stats-grid {
@@ -658,19 +909,40 @@ function getWorkerAnalysisHTML() {
 async function loadFeeAnalysis() {
   console.log('수수료분석 로드');
   
+  // 오늘 날짜
+  const todayStr = getTodayString();
+  
+  // 오늘 작업만 필터링
+  const todayFeeTasks = allCompletedTasks.filter(task => {
+    if (!task.date) return false;
+    return task.date.startsWith(todayStr);
+  });
+  
   const contentDiv = document.getElementById('settlement-content');
-  contentDiv.innerHTML = getFeeAnalysisHTML();
+  contentDiv.innerHTML = getFeeAnalysisHTML(todayFeeTasks, todayStr, todayStr);
 }
 
 // 수수료분석 HTML
-function getFeeAnalysisHTML() {
-  const feeStats = calculateFeeStats();
+function getFeeAnalysisHTML(tasks, startDate, endDate = null) {
+  const feeStats = calculateFeeStatsNew(tasks);
+  const displayDate = endDate && endDate !== startDate ? `${startDate} ~ ${endDate}` : startDate;
   
   return `
     <div class="fee-analysis-container">
       <div class="analysis-header">
         <h3>💳 수수료 분석</h3>
-        <p>공간/공간티비와 기타 업체별 수수료 내역을 분석합니다.</p>
+        <div class="fee-date-filter">
+          <label>📅 기간:</label>
+          <input type="date" id="fee-start-date" value="${startDate}">
+          <span>~</span>
+          <input type="date" id="fee-end-date" value="${endDate || startDate}">
+          <button onclick="filterFeeByDateRange()" class="filter-btn">검색</button>
+          <button onclick="resetFeeFilter()" class="reset-btn">오늘</button>
+        </div>
+      </div>
+      
+      <div class="period-info">
+        <h4>📅 선택 기간: ${displayDate} (총 ${tasks.length}건)</h4>
       </div>
       
       <!-- 수수료 요약 -->
@@ -726,6 +998,9 @@ function getFeeAnalysisHTML() {
               '<div class="no-data">공간/공간티비 수수료 내역이 없습니다.</div>'
             }
           </div>
+          ${feeStats.gongganTasks.length > 0 ? 
+            `<div class="fee-total">총 수수료: <strong>${feeStats.gongganTotal.toLocaleString()}원</strong></div>` : ''
+          }
         </div>
         
         <div class="details-card">
@@ -749,6 +1024,9 @@ function getFeeAnalysisHTML() {
               '<div class="no-data">기타 업체 수수료 내역이 없습니다.</div>'
             }
           </div>
+          ${feeStats.othersTasks.length > 0 ? 
+            `<div class="fee-total">총 수수료: <strong>${feeStats.othersTotal.toLocaleString()}원</strong></div>` : ''
+          }
         </div>
       </div>
     </div>
@@ -756,6 +1034,44 @@ function getFeeAnalysisHTML() {
     <style>
       .fee-analysis-container {
         padding: 25px;
+      }
+      
+      .analysis-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e6e6e6;
+      }
+      
+      .analysis-header h3 {
+        margin: 0;
+        color: #333;
+        font-size: 1.4rem;
+      }
+      
+      .fee-date-filter {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      
+      .fee-date-filter label {
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .fee-date-filter input {
+        padding: 8px 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      
+      .fee-date-filter span {
+        font-weight: 600;
+        color: #666;
       }
       
       .fee-summary {
@@ -832,6 +1148,7 @@ function getFeeAnalysisHTML() {
       .fee-list {
         max-height: 400px;
         overflow-y: auto;
+        margin-bottom: 15px;
       }
       
       .fee-item {
@@ -907,6 +1224,19 @@ function getFeeAnalysisHTML() {
         font-size: 14px;
       }
       
+      .fee-total {
+        text-align: right;
+        padding: 10px 0;
+        border-top: 2px solid #8ecae6;
+        font-size: 16px;
+        color: #333;
+      }
+      
+      .fee-total strong {
+        color: #219ebc;
+        font-size: 18px;
+      }
+      
       .no-data {
         text-align: center;
         padding: 40px;
@@ -917,6 +1247,22 @@ function getFeeAnalysisHTML() {
       @media (max-width: 768px) {
         .fee-analysis-container {
           padding: 15px;
+        }
+        
+        .analysis-header {
+          flex-direction: column;
+          gap: 15px;
+          align-items: stretch;
+        }
+        
+        .fee-date-filter {
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        
+        .fee-date-filter input {
+          min-width: 120px;
         }
         
         .fee-summary {
@@ -950,39 +1296,103 @@ function getFeeAnalysisHTML() {
   `;
 }
 
-// 날짜별 필터링
-window.filterDailyByDate = async function() {
-  const dateInput = document.getElementById('daily-date-filter');
-  const selectedDate = dateInput.value;
+// 날짜 범위 필터링 함수들
+window.filterDailyByDateRange = async function() {
+  const startDateInput = document.getElementById('daily-start-date');
+  const endDateInput = document.getElementById('daily-end-date');
+  const startDate = startDateInput.value;
+  const endDate = endDateInput.value;
   
-  if (!selectedDate) {
-    alert('날짜를 선택해주세요.');
+  if (!startDate) {
+    alert('시작 날짜를 선택해주세요.');
     return;
   }
   
-  console.log('날짜별 필터링:', selectedDate);
+  if (!endDate) {
+    alert('종료 날짜를 선택해주세요.');
+    return;
+  }
   
-  // 선택한 날짜의 작업 필터링
+  console.log('일별정산 날짜 범위 필터링:', startDate, '~', endDate);
+  
+  // 선택한 날짜 범위의 작업 필터링
   const filteredTasks = allCompletedTasks.filter(task => {
     if (!task.date) return false;
-    return task.date.startsWith(selectedDate);
+    const taskDate = task.date.split('T')[0];
+    return taskDate >= startDate && taskDate <= endDate;
   });
   
   // HTML 업데이트
   const contentDiv = document.getElementById('settlement-content');
-  contentDiv.innerHTML = getDailySettlementHTML(filteredTasks, selectedDate);
+  contentDiv.innerHTML = getDailySettlementHTML(filteredTasks, startDate, endDate);
 };
 
-// 오늘로 필터 리셋
-window.resetDailyFilter = async function() {
-  const today = new Date().toISOString().split('T')[0];
-  const dateInput = document.getElementById('daily-date-filter');
-  if (dateInput) {
-    dateInput.value = today;
+window.filterWorkerByDateRange = async function() {
+  const startDateInput = document.getElementById('worker-start-date');
+  const endDateInput = document.getElementById('worker-end-date');
+  const startDate = startDateInput.value;
+  const endDate = endDateInput.value;
+  
+  if (!startDate || !endDate) {
+    alert('시작 날짜와 종료 날짜를 모두 선택해주세요.');
+    return;
   }
   
-  // 오늘 데이터로 다시 로드
+  console.log('직원별분석 날짜 범위 필터링:', startDate, '~', endDate);
+  
+  const filteredTasks = allCompletedTasks.filter(task => {
+    if (!task.date) return false;
+    const taskDate = task.date.split('T')[0];
+    return taskDate >= startDate && taskDate <= endDate;
+  });
+  
+  const contentDiv = document.getElementById('settlement-content');
+  contentDiv.innerHTML = getWorkerAnalysisHTML(filteredTasks, startDate, endDate);
+};
+
+window.filterFeeByDateRange = async function() {
+  const startDateInput = document.getElementById('fee-start-date');
+  const endDateInput = document.getElementById('fee-end-date');
+  const startDate = startDateInput.value;
+  const endDate = endDateInput.value;
+  
+  if (!startDate || !endDate) {
+    alert('시작 날짜와 종료 날짜를 모두 선택해주세요.');
+    return;
+  }
+  
+  console.log('수수료분석 날짜 범위 필터링:', startDate, '~', endDate);
+  
+  const filteredTasks = allCompletedTasks.filter(task => {
+    if (!task.date) return false;
+    const taskDate = task.date.split('T')[0];
+    return taskDate >= startDate && taskDate <= endDate;
+  });
+  
+  const contentDiv = document.getElementById('settlement-content');
+  contentDiv.innerHTML = getFeeAnalysisHTML(filteredTasks, startDate, endDate);
+};
+
+// 필터 리셋 함수들
+window.resetDailyFilter = async function() {
+  const todayStr = getTodayString();
+  document.getElementById('daily-start-date').value = todayStr;
+  document.getElementById('daily-end-date').value = todayStr;
   await loadDailySettlement();
+};
+
+window.resetWorkerFilter = async function() {
+  const todayStr = getTodayString();
+  document.getElementById('worker-start-date').value = todayStr;
+  document.getElementById('worker-end-date').value = todayStr;
+  await loadWorkerAnalysis();
+};
+
+window.resetFeeFilter = async function() {
+  const todayStr = getTodayString();
+  document.getElementById('fee-start-date').value = todayStr;
+  document.getElementById('fee-end-date').value = todayStr;
+  await loadFeeAnalysis();
 };
 
 // 일별 통계 계산 (수정된 수수료 계산 포함)
@@ -1057,49 +1467,74 @@ function calculateDayStats(tasks) {
   return dayStats;
 }
 
-// 직원별 통계 계산
-function calculateWorkerStats() {
-  const workerStats = {};
-  let totalAmount = 0;
+// 월별 정산 계산
+function calculateMonthStats() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
   
-  allCompletedTasks.forEach(task => {
-    if (!task.worker) return;
-    
-    const workers = task.worker.split(',').map(w => w.trim());
-    const amount = Number(task.amount) || 0;
-    totalAmount += amount;
-    
-    workers.forEach(worker => {
-      if (!workerStats[worker]) {
-        workerStats[worker] = {
-          taskCount: 0,
-          totalAmount: 0
-        };
-      }
-      
-      workerStats[worker].taskCount += 1;
-      // 여러 작업자가 있는 경우 균등 분할
-      workerStats[worker].totalAmount += amount / workers.length;
-    });
+  // 이번 달 첫날과 마지막날
+  const startOfMonth = new Date(currentYear, currentMonth, 1);
+  const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+  
+  const monthTasks = allCompletedTasks.filter(task => {
+    if (!task.date) return false;
+    const taskDate = new Date(task.date);
+    return taskDate >= startOfMonth && taskDate <= endOfMonth;
   });
   
-  // 매출 기여도 계산
-  Object.keys(workerStats).forEach(worker => {
-    workerStats[worker].percentage = totalAmount > 0 ? 
-      (workerStats[worker].totalAmount / totalAmount) * 100 : 0;
+  return calculateDayStats(monthTasks);
+}
+
+// 직원별 통계 계산 (수정됨 - 팀장 기준, 거래처별 분류)
+function calculateWorkerStatsNew(tasks) {
+  const workerStats = {};
+  
+  tasks.forEach(task => {
+    if (!task.worker) return;
+    
+    // 작업자가 여러명인 경우 첫 번째 작업자를 팀장으로 간주
+    const workers = task.worker.split(',').map(w => w.trim());
+    const teamLeader = workers[0]; // 첫 번째 작업자 = 팀장
+    
+    if (!workerStats[teamLeader]) {
+      workerStats[teamLeader] = {
+        taskCount: 0,
+        totalAmount: 0,
+        clientDetails: {}
+      };
+    }
+    
+    const amount = Number(task.amount) || 0;
+    const client = task.client || '미분류';
+    
+    // 팀장 기준으로 집계
+    workerStats[teamLeader].taskCount += 1;
+    workerStats[teamLeader].totalAmount += amount;
+    
+    // 거래처별 분류
+    if (!workerStats[teamLeader].clientDetails[client]) {
+      workerStats[teamLeader].clientDetails[client] = {
+        count: 0,
+        amount: 0
+      };
+    }
+    
+    workerStats[teamLeader].clientDetails[client].count += 1;
+    workerStats[teamLeader].clientDetails[client].amount += amount;
   });
   
   return workerStats;
 }
 
-// 수수료 통계 계산
-function calculateFeeStats() {
+// 수수료 통계 계산 (새로운 버전)
+function calculateFeeStatsNew(tasks) {
   const gongganTasks = [];
   const othersTasks = [];
   let gongganTotal = 0;
   let othersTotal = 0;
   
-  allCompletedTasks.forEach(task => {
+  tasks.forEach(task => {
     const amount = Number(task.amount) || 0;
     
     if (task.client && task.client.includes("공간")) {
@@ -1129,7 +1564,7 @@ function calculateFeeStats() {
   };
 }
 
-// 날짜 포맷팅 함수 (수정됨 - 날짜 표시 오류 해결)
+// 날짜 포맷팅 함수
 function formatDate(dateString) {
   if (!dateString) return '';
   
@@ -1149,8 +1584,12 @@ function formatDate(dateString) {
   }
 }
 
-// 기존 전역 함수와의 호환성을 위해 window에 등록
+// 전역 함수 등록
 window.loadSettlement = loadSettlement;
 window.showSettleSubTab = showSettleSubTab;
-window.filterDailyByDate = filterDailyByDate;
+window.filterDailyByDateRange = filterDailyByDateRange;
 window.resetDailyFilter = resetDailyFilter;
+window.filterWorkerByDateRange = filterWorkerByDateRange;
+window.resetWorkerFilter = resetWorkerFilter;
+window.filterFeeByDateRange = filterFeeByDateRange;
+window.resetFeeFilter = resetFeeFilter;

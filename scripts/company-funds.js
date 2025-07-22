@@ -133,26 +133,27 @@ async function calculateCurrentFunds() {
       console.log('💰 초기 자금:', (initialDoc.data().amount || 0).toLocaleString() + '원');
     }
     
-    // 2. 정산 순이익 누적 (기존 정산 시스템에서)
+    // 2. 정산에서 회사자금 몫 (순이익의 20%)
     const completedTasksQuery = query(
       collection(db, "tasks"),
       where("done", "==", true)
     );
     
     const tasksSnapshot = await getDocs(completedTasksQuery);
-    let totalProfit = 0;
+    let totalCompanyShare = 0;
     
     tasksSnapshot.forEach(docSnapshot => {
       const task = docSnapshot.data();
       const amount = task.amount || 0;
       const partSpend = calculatePartsSpend(task.parts);
-      const fee = calculateFee(task.client, amount);
+      const fee = calculateFee(task.client, amount, task.fee); // 수정된 함수 사용
       const profit = amount - partSpend - fee;
-      totalProfit += profit;
+      const companyShare = Math.round(profit * 0.2); // 순이익의 20%만
+      totalCompanyShare += companyShare;
     });
     
-    totalFunds += totalProfit;
-    console.log('💰 누적 순이익:', totalProfit.toLocaleString() + '원');
+    totalFunds += totalCompanyShare;
+    console.log('💰 회사자금 몫 (순이익):', totalCompanyShare.toLocaleString() + '원');
     
     // 3. 운영비 지출 차감
     const expensesQuery = query(collection(db, "company_expenses"));
@@ -175,6 +176,8 @@ async function calculateCurrentFunds() {
     currentFunds = 0;
   }
 }
+
+
 
 // 이번달 지출 로드
 async function loadMonthlyExpenses() {
