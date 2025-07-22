@@ -1,4 +1,4 @@
-// scripts/task-ui.js - 수정 폼 개선 및 모바일 최적화
+// scripts/task-ui.js - 수정 폼 개선 및 모바일 최적화 (코드 정리 버전)
 import { db } from './firebase-config.js';
 import {
   collection, query, where, getDocs, updateDoc, doc, deleteDoc, orderBy, getDoc
@@ -729,7 +729,7 @@ window.deleteTask = async function(id, tabType) {
   }
 };
 
-// 작업 수정 - 관리자와 작업자 모두 동일한 폼 사용
+// 작업 수정 - 관리자와 작업자 통합 (관리자 폼 재사용)
 window.editTask = async function(id, tabType) {
   console.log('=== 편집 시작 ===');
   console.log('편집할 작업 ID:', id);
@@ -759,7 +759,7 @@ window.editTask = async function(id, tabType) {
           populateEditForm(data, id, tabType);
         }, 200);
       } else {
-        // 작업자: 전용 수정 폼 표시
+        // 작업자: 관리자와 동일한 폼 사용하지만 작업자용 헤더/버튼
         console.log('→ 작업자 수정 모드');
         showWorkerEditForm(data, id, tabType);
       }
@@ -852,7 +852,7 @@ function populateEditForm(data, id, tabType) {
   console.log('✅ 관리자 수정 폼 설정 완료');
 }
 
-// 작업자용 수정 폼 (관리자와 동일한 폼 사용)
+// 작업자용 수정 폼 (관리자 폼 재사용)
 function showWorkerEditForm(data, id, tabType) {
   console.log('=== 작업자 수정 폼 표시 ===');
   console.log('데이터:', data);
@@ -866,7 +866,7 @@ function showWorkerEditForm(data, id, tabType) {
     return;
   }
   
-  // 관리자와 동일한 폼 HTML 생성
+  // 관리자와 동일한 입력 폼 HTML 생성 (헤더와 버튼만 다름)
   const editFormHTML = `
     <div class="worker-edit-container">
       <div class="mobile-edit-header">
@@ -874,117 +874,151 @@ function showWorkerEditForm(data, id, tabType) {
         <button onclick="cancelWorkerEdit()" class="header-cancel-btn">❌</button>
       </div>
       
-      <form id="worker-edit-form" class="box" style="margin: 0;">
-        <input type="datetime-local" name="date" value="${data.date || ''}" required>
-        
-        <!-- 작업자 선택 (관리자와 동일) -->
-        <div style="margin: 10px 0;">
-          <label style="display: block; margin-bottom: 8px; font-size: 16px; color: #333; font-weight: 600;">작업자 선택</label>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-            <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-              <input type="checkbox" name="worker" value="박성욱" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;" ${data.worker && data.worker.includes('박성욱') ? 'checked' : ''}>
-              박성욱
-            </label>
-            <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-              <input type="checkbox" name="worker" value="박성호" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;" ${data.worker && data.worker.includes('박성호') ? 'checked' : ''}>
-              박성호
-            </label>
-            <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-              <input type="checkbox" name="worker" value="배희종" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;" ${data.worker && data.worker.includes('배희종') ? 'checked' : ''}>
-              배희종
-            </label>
-            <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-              <input type="checkbox" name="worker" value="오태희" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;" ${data.worker && data.worker.includes('오태희') ? 'checked' : ''}>
-              오태희
-            </label>
-            <div style="display: flex; gap: 8px; align-items: center; width: 100%; margin-top: 8px;">
-              <input type="text" id="edit-custom-worker" placeholder="작업자 추가" style="flex: 1; margin: 0; padding: 8px 12px; font-size: 16px; min-height: 40px;">
-              <button type="button" onclick="addEditCustomWorker()" style="width: auto; margin: 0; padding: 8px 16px; font-size: 14px; min-height: 40px;">추가</button>
-            </div>
-          </div>
-          <input type="hidden" name="worker" id="edit-selected-workers" value="${data.worker || ''}">
-        </div>
-        
-        <input type="text" name="client" value="${data.client || ''}" placeholder="거래처명 입력" id="edit-client-input">
-        <input type="text" name="removeAddress" value="${data.removeAddress || ''}" placeholder="철거 주소">
-        <input type="text" name="installAddress" value="${data.installAddress || ''}" placeholder="설치 주소">
-        <input type="text" name="contact" value="${data.contact || ''}" placeholder="연락처">
-        
-        <select name="taskType">
-          <option value="">작업구분</option>
-          <option value="이전설치" ${data.taskType === '이전설치' ? 'selected' : ''}>이전설치</option>
-          <option value="설치" ${data.taskType === '설치' ? 'selected' : ''}>설치</option>
-          <option value="철거" ${data.taskType === '철거' ? 'selected' : ''}>철거</option>
-          <option value="철거보관" ${data.taskType === '철거보관' ? 'selected' : ''}>철거보관</option>
-          <option value="보관설치" ${data.taskType === '보관설치' ? 'selected' : ''}>보관설치</option>
-          <option value="A/S" ${data.taskType === 'A/S' ? 'selected' : ''}>A/S</option>
-        </select>
-        
-        <input type="text" name="items" value="${data.items || ''}" placeholder="작업 내용">
-        <input type="number" name="amount" value="${data.amount || ''}" placeholder="금액" id="edit-amount-input">
-        <input type="number" name="fee" value="${data.fee || ''}" placeholder="수수료" id="edit-fee-input">
-        <div class="fee-info" id="edit-fee-info" style="font-size:14px;color:#666;margin-top:-5px;margin-bottom:10px;display:none;"></div>
-        
-        <textarea name="parts" placeholder="사용 부품" style="min-height: 80px;">${data.parts || ''}</textarea>
-        <textarea name="note" placeholder="비고" style="min-height: 80px;">${data.note || ''}</textarea>
-        
-        <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px;">
-          <button type="button" onclick="saveWorkerEdit('${id}', '${tabType}')" style="flex: 1; background: #28a745 !important; margin: 0;">
-            💾 저장
-          </button>
-          <button type="button" onclick="cancelWorkerEdit()" style="flex: 1; background: #6c757d !important; margin: 0;">
-            ❌ 취소
-          </button>
-        </div>
-      </form>
+      <div class="box" style="margin: 0;">
+        ${getTaskInputFormHTML(data.date || getNowYYYYMMDDHHMM())}
+      </div>
+      
+      <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px; padding: 0 25px;">
+        <button type="button" onclick="saveWorkerEdit('${id}', '${tabType}')" style="flex: 1; background: #28a745 !important; margin: 0;">
+          💾 저장
+        </button>
+        <button type="button" onclick="cancelWorkerEdit()" style="flex: 1; background: #6c757d !important; margin: 0;">
+          ❌ 취소
+        </button>
+      </div>
     </div>
   `;
   
   targetElement.innerHTML = editFormHTML;
   
-  // 수정 폼용 이벤트 리스너 추가
+  // 부품 입력 렌더링
   setTimeout(() => {
-    // 작업자 체크박스 이벤트
-    const editWorkerCheckboxes = document.querySelectorAll('#worker-edit-form input[name="worker"][type="checkbox"]');
-    editWorkerCheckboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', updateEditSelectedWorkers);
+    renderItemsInput('items-input');
+    
+    // 기존 데이터로 폼 채우기 (관리자와 동일한 로직 재사용)
+    populateFormData(data);
+    
+    // 이벤트 리스너 설정
+    setupFormEventListeners();
+    
+    // 스크롤을 상단으로
+    window.scrollTo(0, 0);
+    console.log('✅ 작업자 수정 폼 설정 완료');
+  }, 100);
+}
+
+// 폼 데이터 채우기 (공통 함수)
+function populateFormData(data) {
+  const form = document.getElementById('task-form');
+  if (!form) return;
+  
+  // 날짜 설정
+  if (form.date && data.date) {
+    form.date.value = data.date;
+  }
+  
+  // 작업자 체크박스 설정
+  const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
+  workerCheckboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  if (data.worker) {
+    const workers = data.worker.split(', ');
+    workers.forEach(workerName => {
+      const checkbox = document.querySelector(`input[name="worker"][value="${workerName.trim()}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
     });
     
-    // 수수료 자동 계산
-    const editClientInput = document.getElementById('edit-client-input');
-    const editAmountInput = document.getElementById('edit-amount-input');
-    
-    if (editClientInput) {
-      editClientInput.addEventListener('input', calculateEditFee);
-      editClientInput.addEventListener('blur', calculateEditFee);
+    const selectedWorkersInput = document.getElementById('selected-workers');
+    if (selectedWorkersInput) {
+      selectedWorkersInput.value = data.worker;
     }
-    if (editAmountInput) {
-      editAmountInput.addEventListener('input', calculateEditFee);
-    }
-    
-    // 초기 수수료 계산
-    calculateEditFee();
-  }, 100);
-  
-  // 스크롤을 상단으로
-  window.scrollTo(0, 0);
-  console.log('✅ 작업자 수정 폼 설정 완료');
-}
-
-// 수정 폼용 작업자 관리
-function updateEditSelectedWorkers() {
-  const checkboxes = document.querySelectorAll('#worker-edit-form input[name="worker"][type="checkbox"]:checked');
-  const selectedWorkers = Array.from(checkboxes).map(cb => cb.value);
-  const hiddenInput = document.getElementById('edit-selected-workers');
-  
-  if (hiddenInput) {
-    hiddenInput.value = selectedWorkers.join(', ');
   }
+  
+  // 나머지 필드들 설정
+  if (form.client) form.client.value = data.client || '';
+  if (form.removeAddress) form.removeAddress.value = data.removeAddress || '';
+  if (form.installAddress) form.installAddress.value = data.installAddress || '';
+  if (form.contact) form.contact.value = data.contact || '';
+  if (form.taskType) form.taskType.value = data.taskType || '';
+  if (form.items) form.items.value = data.items || '';
+  if (form.amount) form.amount.value = data.amount || '';
+  if (form.note) form.note.value = data.note || '';
+  
+  // 수수료 필드 설정
+  const feeInput = form.querySelector('[name="fee"]');
+  if (feeInput && data.fee) {
+    feeInput.value = data.fee;
+  }
+  
+  // 부품 필드 설정
+  if (form.parts) {
+    form.parts.value = data.parts || '';
+  }
+  
+  // 부품 데이터 로드
+  if (data.parts && window.loadExistingParts) {
+    window.loadExistingParts(data.parts);
+  }
+  
+  // 수수료 자동 계산
+  calculateFee();
 }
 
-// 수정 폼용 작업자 추가
+// 폼 이벤트 리스너 설정 (공통 함수)
+function setupFormEventListeners() {
+  // 수수료 계산을 위한 이벤트 리스너 추가
+  const clientInput = document.getElementById('client-input');
+  const amountInput = document.getElementById('amount-input');
+  
+  if (clientInput) {
+    clientInput.addEventListener('input', calculateFee);
+    clientInput.addEventListener('blur', calculateFee);
+  }
+  if (amountInput) {
+    amountInput.addEventListener('input', calculateFee);
+  }
+  
+  // 작업자 체크박스 이벤트 리스너 추가
+  const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
+  workerCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelectedWorkers);
+  });
+}
+
+// 작업자용 수정 저장
+window.saveWorkerEdit = async function(id, tabType) {
+  console.log('=== 작업자 수정 저장 ===');
+  console.log('편집 ID:', id);
+  console.log('탭 타입:', tabType);
+  
+  // 관리자와 동일한 저장 로직 사용
+  window.handleTaskSave(true, id, tabType);
+};
+
+// 작업자용 수정 취소
+window.cancelWorkerEdit = function() {
+  console.log('=== 작업자 수정 취소 ===');
+  
+  // 편집 상태 초기화
+  window.editingTaskId = null;
+  window.editingTabType = null;
+  
+  // 원래 화면으로 돌아가기
+  const activeTab = document.querySelector('.worker-tab-btn.active');
+  if (activeTab && activeTab.id === 'done-tab') {
+    window.loadWorkerDoneTasks();
+  } else {
+    window.loadWorkerTodayTasks();
+  }
+};
+
+// 수정 폼용 작업자 추가 (작업자용)
 window.addEditCustomWorker = function() {
-  const customInput = document.getElementById('edit-custom-worker');
+  const customInput = document.getElementById('custom-worker');
   if (!customInput || !customInput.value.trim()) {
     alert('작업자명을 입력해주세요.');
     return;
@@ -1003,7 +1037,7 @@ window.addEditCustomWorker = function() {
   newCheckbox.value = workerName;
   newCheckbox.checked = true;
   newCheckbox.style.cssText = 'width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;';
-  newCheckbox.addEventListener('change', updateEditSelectedWorkers);
+  newCheckbox.addEventListener('change', updateSelectedWorkers);
   
   newLabel.appendChild(newCheckbox);
   newLabel.appendChild(document.createTextNode(workerName));
@@ -1018,115 +1052,7 @@ window.addEditCustomWorker = function() {
   customInput.value = '';
   
   // 선택된 작업자 목록 업데이트
-  updateEditSelectedWorkers();
-};
-
-// 수정 폼용 수수료 계산
-function calculateEditFee() {
-  const clientInput = document.getElementById('edit-client-input');
-  const amountInput = document.getElementById('edit-amount-input');
-  const feeInput = document.getElementById('edit-fee-input');
-  const feeInfo = document.getElementById('edit-fee-info');
-  
-  if (!clientInput || !amountInput || !feeInput) return;
-  
-  const clientName = clientInput.value.trim();
-  const amount = parseFloat(amountInput.value) || 0;
-  
-  if ((clientName === '공간' || clientName === '공간티비') && amount > 0) {
-    const calculatedFee = Math.round(amount * 0.22);
-    feeInput.value = calculatedFee;
-    feeInput.style.backgroundColor = '#e8f5e8';
-    feeInput.style.borderColor = '#4caf50';
-    feeInput.readOnly = true;
-    
-    if (feeInfo) {
-      feeInfo.textContent = `${clientName}은 금액의 22%로 자동 계산됩니다.`;
-      feeInfo.style.display = 'block';
-    }
-  } else {
-    feeInput.style.backgroundColor = '';
-    feeInput.style.borderColor = '';
-    feeInput.readOnly = false;
-    
-    if (feeInfo) {
-      feeInfo.style.display = 'none';
-    }
-  }
-}
-
-// 작업자용 수정 저장
-window.saveWorkerEdit = async function(id, tabType) {
-  console.log('=== 작업자 수정 저장 ===');
-  console.log('편집 ID:', id);
-  console.log('탭 타입:', tabType);
-  
-  const form = document.getElementById('worker-edit-form');
-  if (!form) {
-    console.error('❌ 작업자 수정 폼을 찾을 수 없습니다.');
-    return;
-  }
-  
-  // FormData로 데이터 수집
-  const formData = new FormData(form);
-  const taskData = {
-    date: formData.get('date'),
-    worker: document.getElementById('edit-selected-workers')?.value || '',
-    client: formData.get('client'),
-    removeAddress: formData.get('removeAddress'),
-    installAddress: formData.get('installAddress'),
-    contact: formData.get('contact'),
-    taskType: formData.get('taskType'),
-    items: formData.get('items'),
-    amount: parseFloat(formData.get('amount')) || 0,
-    fee: parseFloat(formData.get('fee')) || 0,
-    parts: formData.get('parts'),
-    note: formData.get('note'),
-    updatedAt: new Date().toISOString(),
-    updatedBy: window.auth?.currentUser?.email || 'unknown'
-  };
-  
-  try {
-    console.log('💾 작업자 데이터 저장 중...');
-    await updateDoc(doc(db, "tasks", id), taskData);
-    console.log('✅ 작업자 수정 저장 완료');
-    alert('수정되었습니다!');
-    
-    // 편집 상태 초기화
-    window.editingTaskId = null;
-    window.editingTabType = null;
-    
-    // 원래 화면으로 돌아가기
-    console.log('📱 작업자 화면 복원:', tabType);
-    if (tabType === 'done') {
-      console.log('→ 완료작업탭으로 이동');
-      window.loadWorkerDoneTasks();
-    } else {
-      console.log('→ 오늘작업탭으로 이동');
-      window.loadWorkerTodayTasks();
-    }
-    
-  } catch (error) {
-    console.error('❌ 작업자 수정 저장 오류:', error);
-    alert('수정 저장 중 오류가 발생했습니다: ' + error.message);
-  }
-};
-
-// 작업자용 수정 취소
-window.cancelWorkerEdit = function() {
-  console.log('=== 작업자 수정 취소 ===');
-  
-  // 편집 상태 초기화
-  window.editingTaskId = null;
-  window.editingTabType = null;
-  
-  // 원래 화면으로 돌아가기
-  const activeTab = document.querySelector('.worker-tab-btn.active');
-  if (activeTab && activeTab.id === 'done-tab') {
-    window.loadWorkerDoneTasks();
-  } else {
-    window.loadWorkerTodayTasks();
-  }
+  updateSelectedWorkers();
 };
 
 // 모바일에서 작업 상세 토글 최적화
