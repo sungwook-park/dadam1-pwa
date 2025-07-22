@@ -588,28 +588,15 @@ async function updateStock(partName, quantity, unitPrice, type) {
   }
 }
 
-// 4. 입출고 내역 로드
+// 4. 입출고 내역 로드 (수정됨 - 검색해야만 표시)
 async function loadInventoryHistory() {
   console.log('📋 입출고 내역 로드');
   
   try {
-    // inventory 컬렉션에서 모든 입출고 내역 조회
-    const historyQuery = query(
-      collection(db, "inventory"),
-      orderBy("date", "desc")
-    );
-    
-    const historySnapshot = await getDocs(historyQuery);
+    // 기본적으로 빈 상태로 표시 (검색해야만 리스트 나타남)
     inventoryHistory = [];
     
-    historySnapshot.forEach(doc => {
-      inventoryHistory.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    console.log('📊 입출고 내역:', inventoryHistory.length + '건');
+    console.log('📊 입출고 내역: 검색 대기 상태');
     
     const contentDiv = document.getElementById('inventory-content');
     contentDiv.innerHTML = getInventoryHistoryHTML(inventoryHistory);
@@ -692,49 +679,49 @@ window.exportStock = function() {
   }
 };
 
-// 입출고 내역 검색
-window.searchHistory = async function() {
-  console.log('🔍 입출고 내역 검색');
+// 입출고 내역 검색 (수정됨 - 날짜 범위 필터)
+window.searchHistoryByRange = async function() {
+  console.log('🔍 입출고 내역 날짜 범위 검색');
   
   const startDate = document.getElementById('history-start-date')?.value;
   const endDate = document.getElementById('history-end-date')?.value;
-  const type = document.getElementById('history-type')?.value;
-  const searchKeyword = document.getElementById('history-search')?.value.trim();
   
-  let filteredHistory = [...inventoryHistory];
+  if (!startDate || !endDate) {
+    alert('시작 날짜와 종료 날짜를 모두 선택해주세요.');
+    return;
+  }
   
-  // 날짜 필터링
-  if (startDate) {
-    filteredHistory = filteredHistory.filter(item => 
-      item.date >= startDate + 'T00:00:00'
+  try {
+    console.log('🔍 입출고 내역 검색:', startDate, '~', endDate);
+    
+    // inventory 컬렉션에서 날짜 범위로 조회
+    const historyQuery = query(
+      collection(db, "inventory"),
+      where("date", ">=", startDate),
+      where("date", "<=", endDate + "T23:59:59"),
+      orderBy("date", "desc")
     );
+    
+    const historySnapshot = await getDocs(historyQuery);
+    inventoryHistory = [];
+    
+    historySnapshot.forEach(doc => {
+      inventoryHistory.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    console.log('📊 입출고 내역 검색 결과:', inventoryHistory.length + '건');
+    
+    // 검색 결과로 테이블 업데이트
+    const contentDiv = document.getElementById('inventory-content');
+    contentDiv.innerHTML = getInventoryHistoryHTML(inventoryHistory);
+    
+  } catch (error) {
+    console.error('❌ 입출고 내역 검색 오류:', error);
+    alert('입출고 내역 검색 중 오류가 발생했습니다.');
   }
-  
-  if (endDate) {
-    filteredHistory = filteredHistory.filter(item => 
-      item.date <= endDate + 'T23:59:59'
-    );
-  }
-  
-  // 타입 필터링
-  if (type) {
-    filteredHistory = filteredHistory.filter(item => item.type === type);
-  }
-  
-  // 키워드 검색
-  if (searchKeyword) {
-    filteredHistory = filteredHistory.filter(item => 
-      item.partName.includes(searchKeyword) ||
-      (item.worker && item.worker.includes(searchKeyword)) ||
-      (item.note && item.note.includes(searchKeyword))
-    );
-  }
-  
-  // 검색 결과로 테이블 업데이트
-  const contentDiv = document.getElementById('inventory-content');
-  contentDiv.innerHTML = getInventoryHistoryHTML(filteredHistory);
-  
-  console.log('🔍 검색 결과:', filteredHistory.length + '건');
 };
 
 // 입출고 내역 Excel 내보내기
@@ -793,9 +780,247 @@ window.showInventorySubTab = showInventorySubTab;
 window.resetInboundForm = resetInboundForm;
 window.refreshStock = refreshStock;
 window.exportStock = exportStock;
-window.searchHistory = searchHistory;
+window.searchHistoryByRange = searchHistoryByRange;
 window.exportHistory = exportHistory;
 window.processIndividualOutbound = processIndividualOutbound;
 window.processBatchOutbound = processBatchOutbound;
+
+// 재고 부족 알림 확인
+window.checkLowStock = async function() {
+  console.log('⚠️ 재고 부족 알림 확인');
+  
+  try {
+    const stockQuery = query(collection(db, "stock"));
+    const stockSnapshot = await getDocs(stockQuery);
+    
+    const lowStockItems = [];
+    stockSnapshot.forEach(doc => {
+      const data = doc.data();
+      const minStock = data.minStock || 5;
+      if ((data.currentStock || 0) <= minStock) {
+        lowStockItems.push({
+          partName: data.partName,
+          currentStock: data.currentStock || 0,
+          minStock: minStock
+        });
+      }
+    });
+    
+    if (lowStockItems.length > 0) {
+      const message = '⚠️ 재고 부족 알림\n\n' + 
+        lowStockItems.map(item => 
+          `${item.partName}: ${item.currentStock}개 (최소: ${item.minStock}개)`
+        ).join('\n');
+      
+      alert(message);
+    } else {
+      alert('✅ 모든 부품의 재고가 충분합니다.');
+    }
+    
+  } catch (error) {
+    console.error('❌ 재고 부족 확인 오류:', error);
+    alert('재고 확인 중 오류가 발생했습니다.');
+  }
+};
+
+// 재고 조정 (관리자 전용)
+window.adjustStock = async function(partName, currentStock) {
+  console.log('🔧 재고 조정:', partName);
+  
+  const userInfo = window.getCurrentUserInfo();
+  const isAdmin = window.isCurrentUserAdmin && window.isCurrentUserAdmin();
+  
+  if (!isAdmin) {
+    alert('재고 조정은 관리자만 가능합니다.');
+    return;
+  }
+  
+  const newStock = prompt(`${partName}의 현재 재고는 ${currentStock}개입니다.\n새로운 재고 수량을 입력하세요:`, currentStock);
+  
+  if (newStock === null || newStock === '') {
+    return; // 취소
+  }
+  
+  const adjustedStock = parseInt(newStock);
+  if (isNaN(adjustedStock) || adjustedStock < 0) {
+    alert('올바른 수량을 입력해주세요.');
+    return;
+  }
+  
+  const reason = prompt('재고 조정 사유를 입력하세요:', '재고조정');
+  if (!reason) {
+    alert('조정 사유를 입력해주세요.');
+    return;
+  }
+  
+  try {
+    // 재고 조정 내역 기록
+    const adjustmentQuantity = adjustedStock - currentStock;
+    const inventoryData = {
+      type: adjustmentQuantity > 0 ? 'in' : 'out',
+      partName: partName,
+      quantity: Math.abs(adjustmentQuantity),
+      unitPrice: 0,
+      totalAmount: 0,
+      reason: '재고조정 - ' + reason,
+      worker: userInfo?.name || '',
+      note: `${currentStock}개 → ${adjustedStock}개`,
+      date: new Date().toISOString(),
+      createdAt: Timestamp.now(),
+      createdBy: userInfo?.email || ''
+    };
+    
+    await addDoc(collection(db, "inventory"), inventoryData);
+    
+    // 재고 직접 업데이트
+    const stockQuery = query(
+      collection(db, "stock"),
+      where("partName", "==", partName)
+    );
+    
+    const stockSnapshot = await getDocs(stockQuery);
+    if (!stockSnapshot.empty) {
+      const stockDoc = stockSnapshot.docs[0];
+      await updateDoc(stockDoc.ref, {
+        currentStock: adjustedStock,
+        lastUpdated: Timestamp.now()
+      });
+    }
+    
+    alert(`재고 조정 완료!\n${partName}: ${currentStock}개 → ${adjustedStock}개`);
+    
+    // 재고 현황 새로고침
+    if (currentSubTab === 'stock') {
+      await loadStockStatus();
+    }
+    
+  } catch (error) {
+    console.error('❌ 재고 조정 오류:', error);
+    alert('재고 조정 중 오류가 발생했습니다: ' + error.message);
+  }
+};
+
+// 부품 마스터 관리 (관리자 전용)
+window.manageParts = async function() {
+  console.log('🔧 부품 마스터 관리');
+  
+  const userInfo = window.getCurrentUserInfo();
+  const isAdmin = window.isCurrentUserAdmin && window.isCurrentUserAdmin();
+  
+  if (!isAdmin) {
+    alert('부품 마스터 관리는 관리자만 가능합니다.');
+    return;
+  }
+  
+  // 간단한 부품 추가 모달 (실제로는 별도 화면으로 구현 가능)
+  const action = confirm('부품 마스터 관리\n\n확인: 새 부품 추가\n취소: 부품 목록 보기');
+  
+  if (action) {
+    // 새 부품 추가
+    const partName = prompt('새 부품명을 입력하세요:');
+    if (!partName) return;
+    
+    const partPrice = prompt('부품 단가를 입력하세요 (원):', '0');
+    const price = parseFloat(partPrice) || 0;
+    
+    const minStock = prompt('최소 재고량을 입력하세요 (개):', '5');
+    const minStockQty = parseInt(minStock) || 5;
+    
+    try {
+      // 재고에 새 부품 추가
+      const newStock = {
+        partName: partName,
+        currentStock: 0,
+        unitPrice: price,
+        minStock: minStockQty,
+        lastUpdated: Timestamp.now()
+      };
+      
+      await addDoc(collection(db, "stock"), newStock);
+      
+      alert(`새 부품이 추가되었습니다!\n\n${partName}\n단가: ${price.toLocaleString()}원\n최소재고: ${minStockQty}개`);
+      
+      // 재고 현황 새로고침
+      if (currentSubTab === 'stock') {
+        await loadStockStatus();
+      }
+      
+    } catch (error) {
+      console.error('❌ 부품 추가 오류:', error);
+      alert('부품 추가 중 오류가 발생했습니다.');
+    }
+    
+  } else {
+    // 부품 목록 보기
+    try {
+      const stockQuery = query(collection(db, "stock"), orderBy("partName", "asc"));
+      const stockSnapshot = await getDocs(stockQuery);
+      
+      let partsList = '📦 등록된 부품 목록\n\n';
+      stockSnapshot.forEach(doc => {
+        const data = doc.data();
+        partsList += `• ${data.partName} (${data.currentStock || 0}개)\n`;
+      });
+      
+      alert(partsList);
+      
+    } catch (error) {
+      console.error('❌ 부품 목록 조회 오류:', error);
+      alert('부품 목록 조회 중 오류가 발생했습니다.');
+    }
+  }
+};
+
+// 월별 입출고 요약 (관리자용)
+window.getMonthlyInventorySummary = async function() {
+  console.log('📊 월별 입출고 요약');
+  
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    const historyQuery = query(
+      collection(db, "inventory"),
+      where("date", ">=", startOfMonth.toISOString()),
+      where("date", "<", startOfNextMonth.toISOString())
+    );
+    
+    const historySnapshot = await getDocs(historyQuery);
+    
+    let inboundTotal = 0;
+    let outboundTotal = 0;
+    let inboundCount = 0;
+    let outboundCount = 0;
+    
+    historySnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.type === 'in') {
+        inboundTotal += data.totalAmount || 0;
+        inboundCount++;
+      } else {
+        outboundTotal += data.totalAmount || 0;
+        outboundCount++;
+      }
+    });
+    
+    const summary = `📊 ${now.getMonth() + 1}월 입출고 요약\n\n` +
+      `📥 입고: ${inboundCount}건 / ${inboundTotal.toLocaleString()}원\n` +
+      `📤 출고: ${outboundCount}건 / ${outboundTotal.toLocaleString()}원\n\n` +
+      `순 재고변동: ${(inboundTotal - outboundTotal).toLocaleString()}원`;
+    
+    alert(summary);
+    
+  } catch (error) {
+    console.error('❌ 월별 요약 조회 오류:', error);
+    alert('월별 요약 조회 중 오류가 발생했습니다.');
+  }
+};
+
+// 추가 전역 함수 등록
+window.checkLowStock = checkLowStock;
+window.adjustStock = adjustStock;
+window.manageParts = manageParts;
+window.getMonthlyInventorySummary = getMonthlyInventorySummary;
 
 console.log('📦 입출고 관리 모듈 로드 완료');

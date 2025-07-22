@@ -1,4 +1,4 @@
-// scripts/settle.js (ES6 모듈) - 서브탭 추가 및 분석 기능
+// scripts/settle.js (ES6 모듈) - 출고 부품비 반영 버전
 import { PARTS_LIST } from './parts-list.js';
 
 // 오늘 날짜 문자열 반환 함수
@@ -14,6 +14,7 @@ let currentSettleSubTab = 'daily';
 
 // 전역 데이터
 let allCompletedTasks = [];
+let allOutboundParts = []; // 출고 부품 데이터 추가
 let todayTasks = [];
 
 export async function loadSettlement() {
@@ -29,16 +30,35 @@ export async function loadSettlement() {
     }
 
     // 완료된 작업 가져오기
-    const q = query(collection(db, "tasks"), where("done", "==", true));
-    const querySnapshot = await getDocs(q);
+    const tasksQuery = query(collection(db, "tasks"), where("done", "==", true));
+    const tasksSnapshot = await getDocs(tasksQuery);
     
-    console.log(`완료된 작업 ${querySnapshot.size}개 발견`);
+    console.log(`완료된 작업 ${tasksSnapshot.size}개 발견`);
 
     // 전역 변수에 모든 작업 저장
     allCompletedTasks = [];
-    querySnapshot.forEach(doc => {
+    tasksSnapshot.forEach(doc => {
       const data = doc.data();
       allCompletedTasks.push({
+        id: doc.id,
+        ...data
+      });
+    });
+
+    // 출고 처리된 부품 데이터 가져오기 (새로 추가)
+    const outboundQuery = query(
+      collection(db, "inventory"), 
+      where("type", "==", "out"),
+      where("reason", "==", "작업사용")
+    );
+    const outboundSnapshot = await getDocs(outboundQuery);
+    
+    console.log(`출고 처리된 부품 ${outboundSnapshot.size}개 발견`);
+
+    allOutboundParts = [];
+    outboundSnapshot.forEach(doc => {
+      const data = doc.data();
+      allOutboundParts.push({
         id: doc.id,
         ...data
       });
@@ -207,7 +227,7 @@ async function loadDailySettlement() {
   contentDiv.innerHTML = getDailySettlementHTML(todayTasks, todayStr, todayStr);
 }
 
-// 일별정산 HTML
+// 일별정산 HTML (수정됨 - 출고 부품비 표시 추가)
 function getDailySettlementHTML(tasks, startDate, endDate = null) {
   const dayStats = calculateDayStats(tasks);
   const monthStats = calculateMonthStats();
@@ -267,14 +287,22 @@ function getDailySettlementHTML(tasks, startDate, endDate = null) {
       
       <div class="breakdown-section">
         <div class="breakdown-card">
-          <h4>💸 지출 내역</h4>
+          <h4>💸 지출 내역 (실제 출고비 반영)</h4>
           <div class="breakdown-item">
-            <span>부품비:</span>
-            <span>${dayStats.partSpend.toLocaleString()}원</span>
+            <span>부품비 (실제 출고):</span>
+            <span>${dayStats.actualPartSpend.toLocaleString()}원</span>
+          </div>
+          <div class="breakdown-item">
+            <span>부품비 (기존 계산):</span>
+            <span style="text-decoration: line-through; color: #999;">${dayStats.estimatedPartSpend.toLocaleString()}원</span>
           </div>
           <div class="breakdown-item">
             <span>수수료:</span>
             <span>${dayStats.fee.toLocaleString()}원</span>
+          </div>
+          <div class="breakdown-item total-item">
+            <strong>총 지출:</strong>
+            <strong>${dayStats.spend.toLocaleString()}원</strong>
           </div>
         </div>
         
@@ -299,7 +327,33 @@ function getDailySettlementHTML(tasks, startDate, endDate = null) {
         </div>
       </div>
       
-      <!-- 월별 정산 추가 -->
+      <!-- 출고 부품 상세 내역 (새로 추가) -->
+      ${dayStats.outboundDetails.length > 0 ? `
+        <div class="outbound-section">
+          <h3>📦 실제 출고 부품 내역</h3>
+          <div class="outbound-list">
+            ${dayStats.outboundDetails.map(part => `
+              <div class="outbound-item">
+                <div class="outbound-header">
+                  <span class="part-name">${part.partName}</span>
+                  <span class="part-quantity">${part.quantity}개</span>
+                  <span class="part-cost">${part.totalAmount.toLocaleString()}원</span>
+                </div>
+                <div class="outbound-details">
+                  <span class="outbound-date">${formatDate(part.date)}</span>
+                  <span class="outbound-worker">${part.worker}</span>
+                  <span class="outbound-task">${part.taskClient || ''} - ${part.note || ''}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="outbound-total">
+            총 출고 부품비: <strong>${dayStats.actualPartSpend.toLocaleString()}원</strong>
+          </div>
+        </div>
+      ` : ''}
+      
+      <!-- 월별 정산 -->
       <div class="monthly-section">
         <h3>📊 이번 달 정산</h3>
         <div class="monthly-stats">
@@ -317,7 +371,7 @@ function getDailySettlementHTML(tasks, startDate, endDate = null) {
             <div class="monthly-info">
               <div class="monthly-label">이번 달 총 지출</div>
               <div class="monthly-value">${monthStats.spend.toLocaleString()}원</div>
-              <div class="monthly-subtitle">부품비 + 수수료</div>
+              <div class="monthly-subtitle">실제 출고비 + 수수료</div>
             </div>
           </div>
           
@@ -326,7 +380,7 @@ function getDailySettlementHTML(tasks, startDate, endDate = null) {
             <div class="monthly-info">
               <div class="monthly-label">이번 달 순이익</div>
               <div class="monthly-value">${monthStats.profit.toLocaleString()}원</div>
-              <div class="monthly-subtitle">매출 - 지출</div>
+              <div class="monthly-subtitle">매출 - 실제지출</div>
             </div>
           </div>
         </div>
@@ -501,9 +555,125 @@ function getDailySettlementHTML(tasks, startDate, endDate = null) {
         border-bottom: none;
       }
       
+      .breakdown-item.total-item {
+        margin-top: 10px;
+        padding-top: 15px;
+        border-top: 2px solid #8ecae6;
+        border-bottom: none;
+      }
+      
       .breakdown-item span:last-child {
         font-weight: 600;
         color: #219ebc;
+      }
+      
+      /* 출고 부품 상세 스타일 */
+      .outbound-section {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 12px;
+        border-left: 4px solid #ff9800;
+        margin-bottom: 30px;
+      }
+      
+      .outbound-section h3 {
+        margin: 0 0 20px 0;
+        color: #333;
+        font-size: 1.2rem;
+      }
+      
+      .outbound-list {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+      }
+      
+      .outbound-item {
+        background: white;
+        border: 1px solid #e6e6e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+      }
+      
+      .outbound-item:hover {
+        border-color: #ff9800;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      
+      .outbound-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      
+      .part-name {
+        font-weight: 600;
+        color: #333;
+        background: #fff3e0;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 14px;
+      }
+      
+      .part-quantity {
+        background: #e3f2fd;
+        color: #1565c0;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      
+      .part-cost {
+        font-weight: 700;
+        color: #dc3545;
+        font-size: 14px;
+      }
+      
+      .outbound-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: #666;
+      }
+      
+      .outbound-date {
+        font-weight: 600;
+        color: #219ebc;
+      }
+      
+      .outbound-worker {
+        background: #e8f5e8;
+        color: #2e7d32;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      
+      .outbound-task {
+        flex: 1;
+        margin-left: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .outbound-total {
+        text-align: right;
+        padding: 15px 0;
+        border-top: 2px solid #ff9800;
+        font-size: 16px;
+        color: #333;
+      }
+      
+      .outbound-total strong {
+        color: #ff9800;
+        font-size: 18px;
       }
       
       /* 월별 정산 스타일 */
@@ -598,6 +768,18 @@ function getDailySettlementHTML(tasks, startDate, endDate = null) {
         .breakdown-section {
           grid-template-columns: 1fr;
           gap: 15px;
+        }
+        
+        .outbound-header,
+        .outbound-details {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 5px;
+        }
+        
+        .outbound-task {
+          margin-left: 0;
+          margin-top: 5px;
         }
       }
     </style>
@@ -864,43 +1046,6 @@ function getWorkerAnalysisHTML(tasks, startDate, endDate = null) {
         font-style: italic;
         grid-column: 1 / -1;
       }
-      
-      @media (max-width: 768px) {
-        .worker-analysis-container {
-          padding: 15px;
-        }
-        
-        .analysis-header {
-          flex-direction: column;
-          gap: 15px;
-          align-items: stretch;
-        }
-        
-        .worker-date-filter {
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        
-        .worker-date-filter input {
-          min-width: 120px;
-        }
-        
-        .worker-stats-grid {
-          grid-template-columns: 1fr;
-          gap: 15px;
-        }
-        
-        .worker-card {
-          padding: 15px;
-        }
-        
-        .worker-header {
-          flex-direction: column;
-          text-align: center;
-          gap: 10px;
-        }
-      }
     </style>
   `;
 }
@@ -1030,269 +1175,6 @@ function getFeeAnalysisHTML(tasks, startDate, endDate = null) {
         </div>
       </div>
     </div>
-    
-    <style>
-      .fee-analysis-container {
-        padding: 25px;
-      }
-      
-      .analysis-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #e6e6e6;
-      }
-      
-      .analysis-header h3 {
-        margin: 0;
-        color: #333;
-        font-size: 1.4rem;
-      }
-      
-      .fee-date-filter {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-      
-      .fee-date-filter label {
-        font-weight: 600;
-        color: #333;
-      }
-      
-      .fee-date-filter input {
-        padding: 8px 12px;
-        border: 2px solid #ddd;
-        border-radius: 6px;
-        font-size: 14px;
-      }
-      
-      .fee-date-filter span {
-        font-weight: 600;
-        color: #666;
-      }
-      
-      .fee-summary {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-      
-      .summary-card {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      }
-      
-      .summary-card.gonggan {
-        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-        border-left: 4px solid #2196f3;
-      }
-      
-      .summary-card.others {
-        background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-        border-left: 4px solid #ff9800;
-      }
-      
-      .summary-card.total {
-        background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
-        border-left: 4px solid #4caf50;
-      }
-      
-      .summary-icon {
-        font-size: 2rem;
-      }
-      
-      .summary-label {
-        font-size: 14px;
-        color: #666;
-        margin-bottom: 5px;
-      }
-      
-      .summary-value {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #333;
-      }
-      
-      .summary-subtitle {
-        font-size: 12px;
-        color: #888;
-      }
-      
-      .fee-details-section {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 20px;
-      }
-      
-      .details-card {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 12px;
-        border-left: 4px solid #8ecae6;
-      }
-      
-      .details-card h4 {
-        margin: 0 0 15px 0;
-        color: #333;
-        font-size: 1.1rem;
-      }
-      
-      .fee-list {
-        max-height: 400px;
-        overflow-y: auto;
-        margin-bottom: 15px;
-      }
-      
-      .fee-item {
-        background: white;
-        border: 1px solid #e6e6e6;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 10px;
-        transition: all 0.2s ease;
-      }
-      
-      .fee-item:hover {
-        border-color: #8ecae6;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      }
-      
-      .fee-item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-      }
-      
-      .fee-date {
-        font-weight: 600;
-        color: #219ebc;
-        font-size: 14px;
-      }
-      
-      .fee-client {
-        background: #fff3cd;
-        color: #856404;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-      }
-      
-      .fee-amount {
-        font-weight: 700;
-        color: #333;
-        font-size: 14px;
-      }
-      
-      .fee-item-details {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 13px;
-      }
-      
-      .fee-worker {
-        background: #e3f2fd;
-        color: #1565c0;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-      }
-      
-      .fee-content {
-        color: #666;
-        flex: 1;
-        margin: 0 10px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      
-      .fee-value {
-        font-weight: 700;
-        color: #dc3545;
-        font-size: 14px;
-      }
-      
-      .fee-total {
-        text-align: right;
-        padding: 10px 0;
-        border-top: 2px solid #8ecae6;
-        font-size: 16px;
-        color: #333;
-      }
-      
-      .fee-total strong {
-        color: #219ebc;
-        font-size: 18px;
-      }
-      
-      .no-data {
-        text-align: center;
-        padding: 40px;
-        color: #666;
-        font-style: italic;
-      }
-      
-      @media (max-width: 768px) {
-        .fee-analysis-container {
-          padding: 15px;
-        }
-        
-        .analysis-header {
-          flex-direction: column;
-          gap: 15px;
-          align-items: stretch;
-        }
-        
-        .fee-date-filter {
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        
-        .fee-date-filter input {
-          min-width: 120px;
-        }
-        
-        .fee-summary {
-          grid-template-columns: 1fr;
-          gap: 15px;
-        }
-        
-        .summary-card {
-          flex-direction: column;
-          text-align: center;
-          gap: 10px;
-        }
-        
-        .fee-details-section {
-          grid-template-columns: 1fr;
-          gap: 15px;
-        }
-        
-        .fee-item-header,
-        .fee-item-details {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 5px;
-        }
-        
-        .fee-content {
-          margin: 5px 0;
-        }
-      }
-    </style>
   `;
 }
 
@@ -1395,22 +1277,24 @@ window.resetFeeFilter = async function() {
   await loadFeeAnalysis();
 };
 
-// 일별 통계 계산 (수정된 수수료 계산 포함)
+// 일별 통계 계산 (수정됨 - 실제 출고 부품비 반영)
 function calculateDayStats(tasks) {
   let dayStats = {
     total: 0, 
     spend: 0, 
-    partSpend: 0, 
+    actualPartSpend: 0,     // 실제 출고 부품비
+    estimatedPartSpend: 0,  // 기존 계산 부품비  
     fee: 0, 
     profit: 0,
     company: 0, 
     sungwook: 0, 
     sungho: 0, 
     heejong: 0,
-    taskCount: tasks.length
+    taskCount: tasks.length,
+    outboundDetails: []     // 출고 부품 상세
   };
   
-  // 부품 단가 맵 생성
+  // 부품 단가 맵 생성 (기존 계산용)
   const priceMap = {};
   if (PARTS_LIST && Array.isArray(PARTS_LIST)) {
     PARTS_LIST.forEach(item => {
@@ -1420,13 +1304,51 @@ function calculateDayStats(tasks) {
     });
   }
   
+  // 선택된 기간의 출고 부품 찾기
+  const selectedTaskIds = tasks.map(task => task.id);
+  const relevantOutboundParts = allOutboundParts.filter(part => 
+    selectedTaskIds.includes(part.taskId)
+  );
+  
+  dayStats.outboundDetails = relevantOutboundParts;
+  
   tasks.forEach(task => {
     // 총매출
     const amount = Number(task.amount) || 0;
     dayStats.total += amount;
 
-    // 부품지출 계산
-    let partSpend = 0;
+    // 실제 출고 부품비 계산 (우선)
+    const taskOutboundParts = allOutboundParts.filter(part => part.taskId === task.id);
+    let actualPartSpend = 0;
+    
+    if (taskOutboundParts.length > 0) {
+      // 출고 처리된 부품이 있으면 실제 출고 금액 사용
+      actualPartSpend = taskOutboundParts.reduce((sum, part) => {
+        return sum + (part.totalAmount || 0);
+      }, 0);
+      console.log(`작업 ${task.id} 실제 출고 부품비:`, actualPartSpend);
+    } else {
+      // 출고 처리되지 않은 경우 기존 방식으로 계산
+      if (task.parts) {
+        const parts = task.parts.split(',');
+        parts.forEach(part => {
+          const trimmedPart = part.trim();
+          if (trimmedPart) {
+            const [name, count] = trimmedPart.split(':');
+            const partName = name ? name.trim() : '';
+            const partCount = Number(count) || 1;
+            const partPrice = priceMap[partName] || 0;
+            
+            actualPartSpend += partPrice * partCount;
+          }
+        });
+      }
+    }
+    
+    dayStats.actualPartSpend += actualPartSpend;
+
+    // 기존 방식 부품비 계산 (비교용)
+    let estimatedPartSpend = 0;
     if (task.parts) {
       const parts = task.parts.split(',');
       parts.forEach(part => {
@@ -1437,13 +1359,13 @@ function calculateDayStats(tasks) {
           const partCount = Number(count) || 1;
           const partPrice = priceMap[partName] || 0;
           
-          partSpend += partPrice * partCount;
+          estimatedPartSpend += partPrice * partCount;
         }
       });
     }
-    dayStats.partSpend += partSpend;
+    dayStats.estimatedPartSpend += estimatedPartSpend;
 
-    // 수수료 계산 (수정됨)
+    // 수수료 계산
     let fee = 0;
     if (task.client && task.client.includes("공간")) {
       // 공간/공간티비인 경우 금액의 22%
@@ -1455,8 +1377,8 @@ function calculateDayStats(tasks) {
     dayStats.fee += fee;
   });
 
-  // 최종 계산
-  dayStats.spend = dayStats.partSpend + dayStats.fee;
+  // 최종 계산 (실제 출고 부품비 사용)
+  dayStats.spend = dayStats.actualPartSpend + dayStats.fee;
   dayStats.profit = dayStats.total - dayStats.spend;
   dayStats.company = Math.round(dayStats.profit * 0.2);
   const remain = dayStats.profit - dayStats.company;
@@ -1467,7 +1389,7 @@ function calculateDayStats(tasks) {
   return dayStats;
 }
 
-// 월별 정산 계산
+// 월별 정산 계산 (실제 출고 부품비 반영)
 function calculateMonthStats() {
   const now = new Date();
   const currentYear = now.getFullYear();

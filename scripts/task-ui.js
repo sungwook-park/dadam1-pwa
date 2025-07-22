@@ -19,6 +19,23 @@ import {
   getTaskItemHTML 
 } from './templates/task-templates.js';
 
+// 오늘 날짜 문자열 생성
+function getTodayString() {
+  const today = new Date();
+  return today.getFullYear() + '-' + 
+    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(today.getDate()).padStart(2, '0');
+}
+
+// 내일 날짜 문자열 생성
+function getTomorrowString() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.getFullYear() + '-' + 
+    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(tomorrow.getDate()).padStart(2, '0');
+}
+
 // 현재 사용자가 관리자인지 확인
 function isCurrentUserAdmin() {
   const userInfo = window.getCurrentUserInfo();
@@ -292,10 +309,11 @@ window.loadTodayTasks = async function() {
   try {
     console.log('📅 오늘 작업 로드 시작');
     
+    const todayStr = getTodayString();
     const q = query(
       collection(db, "tasks"),
-      where("date", ">=", getTodayStart()),
-      where("date", "<", getTomorrowStart()),
+      where("date", ">=", todayStr + "T00:00:00"),
+      where("date", "<=", todayStr + "T23:59:59"),
       where("done", "==", false),
       orderBy("date", "asc")
     );
@@ -340,7 +358,7 @@ window.loadTodayTasks = async function() {
   }
 };
 
-// 예약 작업 로드 (관리자만)
+// 예약 작업 로드 (관리자만) - 내일 작업만 기본 표시
 window.loadReserveTasks = async function() {
   if (!isCurrentUserAdmin()) {
     console.log('❌ 작업자는 예약 작업 접근 불가');
@@ -353,9 +371,12 @@ window.loadReserveTasks = async function() {
   try {
     console.log('📅 예약 작업 로드 시작');
     
+    // 내일 작업만 필터링
+    const tomorrowStr = getTomorrowString();
     const q = query(
       collection(db, "tasks"),
-      where("date", ">=", getTomorrowStart()),
+      where("date", ">=", tomorrowStr + "T00:00:00"),
+      where("date", "<=", tomorrowStr + "T23:59:59"),
       where("done", "==", false),
       orderBy("date", "asc")
     );
@@ -371,7 +392,7 @@ window.loadReserveTasks = async function() {
       });
     });
     
-    console.log('📋 전체 예약 작업 수:', allTasks.length);
+    console.log('📋 내일 예약 작업 수:', allTasks.length);
     
     // 관리자는 모든 예약 작업을 볼 수 있지만, 혹시 필요하다면 필터링도 가능
     const filteredTasks = filterTasksForCurrentUser(allTasks);
@@ -388,34 +409,25 @@ window.loadReserveTasks = async function() {
 
     // 검색 이벤트 연결
     document.getElementById('reserve-search-btn').onclick = function() {
-      const dateVal = document.getElementById('reserve-date').value;
-      const keyword = document.getElementById('reserve-search').value.trim();
+      const startDate = document.getElementById('reserve-start-date').value;
+      const endDate = document.getElementById('reserve-end-date').value;
       
-      let searchFiltered = filteredTasks; // 이미 필터링된 데이터 사용
+      if (!startDate || !endDate) {
+        alert('시작 날짜와 종료 날짜를 모두 선택해주세요.');
+        return;
+      }
       
-      if (dateVal) {
-        searchFiltered = searchFiltered.filter(t => (t.date && t.date.startsWith(dateVal)));
-      }
-      if (keyword) {
-        searchFiltered = searchFiltered.filter(t =>
-          (t.client && t.client.includes(keyword)) ||
-          (t.worker && t.worker.includes(keyword)) ||
-          (t.note && t.note.includes(keyword))
-        );
-      }
-      renderList(searchFiltered);
+      // 날짜 범위로 검색
+      searchReserveTasksByDateRange(startDate, endDate);
     };
 
-    document.getElementById('reserve-search').addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        document.getElementById('reserve-search-btn').click();
-      }
-    });
-    
-    document.getElementById('reserve-date').addEventListener("change", function(e) {
-      document.getElementById('reserve-search-btn').click();
-    });
+    // 리셋 버튼 이벤트
+    window.resetReserveFilter = function() {
+      const tomorrowStr = getTomorrowString();
+      document.getElementById('reserve-start-date').value = tomorrowStr;
+      document.getElementById('reserve-end-date').value = tomorrowStr;
+      loadReserveTasks();
+    };
     
     console.log('✅ 예약 작업 로드 완료');
     
@@ -425,7 +437,48 @@ window.loadReserveTasks = async function() {
   }
 };
 
-// 완료 작업 로드
+// 예약 작업 날짜 범위 검색
+async function searchReserveTasksByDateRange(startDate, endDate) {
+  try {
+    console.log('🔍 예약 작업 날짜 범위 검색:', startDate, '~', endDate);
+    
+    const q = query(
+      collection(db, "tasks"),
+      where("date", ">=", startDate + "T00:00:00"),
+      where("date", "<=", endDate + "T23:59:59"),
+      where("done", "==", false),
+      orderBy("date", "asc")
+    );
+    
+    const querySnapshot = await getDocs(q);
+    let allTasks = [];
+    
+    querySnapshot.forEach(docu => {
+      const taskData = docu.data();
+      allTasks.push({
+        id: docu.id,
+        ...taskData
+      });
+    });
+    
+    const filteredTasks = filterTasksForCurrentUser(allTasks);
+    
+    let html = "";
+    filteredTasks.forEach(task => {
+      html += getTaskItemHTML(task, task.id, 'reserve');
+    });
+    
+    document.querySelector('.task-list').innerHTML = html;
+    
+    console.log('✅ 예약 작업 검색 완료:', filteredTasks.length + '건');
+    
+  } catch (error) {
+    console.error('❌ 예약 작업 검색 오류:', error);
+    alert('예약 작업 검색 중 오류가 발생했습니다.');
+  }
+}
+
+// 완료 작업 로드 - 오늘 완료된 작업만 기본 표시
 window.loadDoneTasks = async function() {
   const body = document.getElementById('tab-body');
   
@@ -443,9 +496,13 @@ window.loadDoneTasks = async function() {
   try {
     console.log('✅ 완료 작업 로드 시작');
     
+    // 오늘 완료된 작업만 필터링
+    const todayStr = getTodayString();
     const q = query(
       collection(db, "tasks"),
       where("done", "==", true),
+      where("date", ">=", todayStr + "T00:00:00"),
+      where("date", "<=", todayStr + "T23:59:59"),
       orderBy("date", "desc")
     );
     
@@ -460,7 +517,7 @@ window.loadDoneTasks = async function() {
       });
     });
     
-    console.log('📋 전체 완료 작업 수:', allTasks.length);
+    console.log('📋 오늘 완료 작업 수:', allTasks.length);
     
     // 작업자별 필터링 적용
     const filteredTasks = filterTasksForCurrentUser(allTasks);
@@ -487,30 +544,25 @@ window.loadDoneTasks = async function() {
     // 관리자만 검색 이벤트 설정
     if (isCurrentUserAdmin()) {
       document.getElementById('done-search-btn').onclick = function() {
-        const dateVal = document.getElementById('done-date').value;
-        const keyword = document.getElementById('done-search').value.trim();
+        const startDate = document.getElementById('done-start-date').value;
+        const endDate = document.getElementById('done-end-date').value;
         
-        let searchFiltered = filteredTasks; // 이미 작업자별로 필터링된 데이터 사용
+        if (!startDate || !endDate) {
+          alert('시작 날짜와 종료 날짜를 모두 선택해주세요.');
+          return;
+        }
         
-        if (dateVal) {
-          searchFiltered = searchFiltered.filter(t => (t.date && t.date.startsWith(dateVal)));
-        }
-        if (keyword) {
-          searchFiltered = searchFiltered.filter(t =>
-            (t.client && t.client.includes(keyword)) ||
-            (t.worker && t.worker.includes(keyword)) ||
-            (t.note && t.note.includes(keyword))
-          );
-        }
-        renderList(searchFiltered);
+        // 날짜 범위로 검색
+        searchDoneTasksByDateRange(startDate, endDate);
       };
 
-      document.getElementById('done-search').addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          document.getElementById('done-search-btn').click();
-        }
-      });
+      // 리셋 버튼 이벤트
+      window.resetDoneFilter = function() {
+        const todayStr = getTodayString();
+        document.getElementById('done-start-date').value = todayStr;
+        document.getElementById('done-end-date').value = todayStr;
+        loadDoneTasks();
+      };
     }
     
     console.log('✅ 완료 작업 로드 완료');
@@ -520,6 +572,55 @@ window.loadDoneTasks = async function() {
     alert('완료 작업 목록을 불러오는 중 오류가 발생했습니다.');
   }
 };
+
+// 완료 작업 날짜 범위 검색
+async function searchDoneTasksByDateRange(startDate, endDate) {
+  try {
+    console.log('🔍 완료 작업 날짜 범위 검색:', startDate, '~', endDate);
+    
+    const q = query(
+      collection(db, "tasks"),
+      where("done", "==", true),
+      where("date", ">=", startDate + "T00:00:00"),
+      where("date", "<=", endDate + "T23:59:59"),
+      orderBy("date", "desc")
+    );
+    
+    const querySnapshot = await getDocs(q);
+    let allTasks = [];
+    
+    querySnapshot.forEach(docu => {
+      const taskData = docu.data();
+      allTasks.push({
+        id: docu.id,
+        ...taskData
+      });
+    });
+    
+    const filteredTasks = filterTasksForCurrentUser(allTasks);
+    
+    let html = "";
+    filteredTasks.forEach(task => {
+      html += getTaskItemHTML(task, task.id, 'done');
+    });
+    
+    const taskListElement = document.querySelector('.task-list');
+    if (taskListElement) {
+      taskListElement.innerHTML = html;
+    }
+    
+    // 작업자의 경우 버튼 조정
+    if (!isCurrentUserAdmin()) {
+      adjustWorkerDoneTaskButtons();
+    }
+    
+    console.log('✅ 완료 작업 검색 완료:', filteredTasks.length + '건');
+    
+  } catch (error) {
+    console.error('❌ 완료 작업 검색 오류:', error);
+    alert('완료 작업 검색 중 오류가 발생했습니다.');
+  }
+}
 
 // 작업자용 작업 버튼 조정 (오늘작업 - 완료, 수정, 삭제 모두 표시)
 function adjustWorkerTaskButtons() {

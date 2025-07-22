@@ -20,6 +20,23 @@ function formatKoreanDate(dateString) {
   }
 }
 
+// 내일 날짜 문자열 생성
+function getTomorrowString() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.getFullYear() + '-' + 
+    String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(tomorrow.getDate()).padStart(2, '0');
+}
+
+// 오늘 날짜 문자열 생성
+function getTodayString() {
+  const today = new Date();
+  return today.getFullYear() + '-' + 
+    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(today.getDate()).padStart(2, '0');
+}
+
 // 연락처를 전화 링크로 변환하는 함수
 function formatPhoneLink(contact) {
   if (!contact || !contact.trim()) {
@@ -177,11 +194,15 @@ export function getTaskListHTML() {
 }
 
 export function getReserveTabHTML() {
+  const tomorrow = getTomorrowString();
+  
   return `
     <div id="reserveSearchBox" class="reserve-search-container">
-      <input type="date" id="reserve-date" class="reserve-search-input">
-      <input type="text" id="reserve-search" placeholder="검색어 입력" class="reserve-search-input">
-      <button id="reserve-search-btn" class="reserve-search-btn">검색</button>
+      <input type="date" id="reserve-start-date" value="${tomorrow}" class="reserve-search-input">
+      <span class="date-separator">~</span>
+      <input type="date" id="reserve-end-date" value="${tomorrow}" class="reserve-search-input">
+      <button id="reserve-search-btn" class="reserve-search-btn">🔍 검색</button>
+      <button onclick="resetReserveFilter()" class="reset-btn">내일</button>
     </div>
     ${getTaskListHTML()}
     
@@ -194,6 +215,8 @@ export function getReserveTabHTML() {
         padding: 18px;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        align-items: center;
+        flex-wrap: wrap;
       }
       
       .reserve-search-input {
@@ -209,6 +232,7 @@ export function getReserveTabHTML() {
         font-family: inherit;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         touch-action: manipulation;
+        min-width: 140px;
       }
       
       .reserve-search-input:focus {
@@ -219,16 +243,19 @@ export function getReserveTabHTML() {
         color: #333 !important;
       }
       
-      .reserve-search-btn {
-        flex: 1;
+      .date-separator {
+        font-weight: 600;
+        color: #666;
+        margin: 0 5px;
+      }
+      
+      .reserve-search-btn, .reset-btn {
+        padding: 12px 20px;
         margin: 0;
-        padding: 0 24px;
         font-size: 16px;
         border-radius: 10px;
         min-height: 48px;
         white-space: nowrap;
-        background: #8ecae6 !important;
-        color: white !important;
         border: none;
         cursor: pointer;
         font-weight: 600;
@@ -236,11 +263,26 @@ export function getReserveTabHTML() {
         touch-action: manipulation;
       }
       
+      .reserve-search-btn {
+        background: #219ebc !important;
+        color: white !important;
+      }
+      
       .reserve-search-btn:hover,
       .reserve-search-btn:active {
-        background: #219ebc !important;
+        background: #1a7a96 !important;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(33,158,188,0.2);
+      }
+      
+      .reset-btn {
+        background: #6c757d !important;
+        color: white !important;
+      }
+      
+      .reset-btn:hover {
+        background: #5a6268 !important;
+        transform: translateY(-1px);
       }
       
       /* 모바일 반응형 */
@@ -252,15 +294,21 @@ export function getReserveTabHTML() {
         }
         
         .reserve-search-input,
-        .reserve-search-btn {
+        .reserve-search-btn,
+        .reset-btn {
           flex: none;
           width: 100%;
           min-height: 44px;
           font-size: 16px;
         }
         
-        .reserve-search-btn {
+        .reserve-search-btn,
+        .reset-btn {
           padding: 12px 20px;
+        }
+        
+        .date-separator {
+          display: none;
         }
       }
       
@@ -271,7 +319,8 @@ export function getReserveTabHTML() {
         }
         
         .reserve-search-input,
-        .reserve-search-btn {
+        .reserve-search-btn,
+        .reset-btn {
           min-height: 42px;
           font-size: 15px;
         }
@@ -281,12 +330,16 @@ export function getReserveTabHTML() {
 }
 
 export function getDoneTabHTML() {
+  const today = getTodayString();
+  
   return `
     ${getTaskSubTabsHTML('done')}
     <div id="doneSearchContainer" class="done-search-container">
-      <input type="date" id="done-date" class="done-search-input">
-      <input type="text" id="done-search" placeholder="검색어 입력" class="done-search-input">
-      <button id="done-search-btn" class="done-search-btn">검색</button>
+      <input type="date" id="done-start-date" value="${today}" class="done-search-input">
+      <span class="date-separator">~</span>
+      <input type="date" id="done-end-date" value="${today}" class="done-search-input">
+      <button id="done-search-btn" class="done-search-btn">🔍 검색</button>
+      <button onclick="resetDoneFilter()" class="reset-btn">오늘</button>
     </div>
     ${getTaskListHTML()}
     
@@ -299,6 +352,8 @@ export function getDoneTabHTML() {
         padding: 18px;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        align-items: center;
+        flex-wrap: wrap;
       }
       
       .done-search-input {
@@ -314,6 +369,7 @@ export function getDoneTabHTML() {
         font-family: inherit;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         touch-action: manipulation;
+        min-width: 140px;
       }
       
       .done-search-input:focus {
@@ -324,16 +380,19 @@ export function getDoneTabHTML() {
         color: #333 !important;
       }
       
-      .done-search-btn {
-        flex: 1;
+      .date-separator {
+        font-weight: 600;
+        color: #666;
+        margin: 0 5px;
+      }
+      
+      .done-search-btn, .reset-btn {
+        padding: 12px 20px;
         margin: 0;
-        padding: 0 24px;
         font-size: 16px;
         border-radius: 10px;
         min-height: 48px;
         white-space: nowrap;
-        background: #8ecae6 !important;
-        color: white !important;
         border: none;
         cursor: pointer;
         font-weight: 600;
@@ -341,11 +400,26 @@ export function getDoneTabHTML() {
         touch-action: manipulation;
       }
       
+      .done-search-btn {
+        background: #219ebc !important;
+        color: white !important;
+      }
+      
       .done-search-btn:hover,
       .done-search-btn:active {
-        background: #219ebc !important;
+        background: #1a7a96 !important;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(33,158,188,0.2);
+      }
+      
+      .reset-btn {
+        background: #6c757d !important;
+        color: white !important;
+      }
+      
+      .reset-btn:hover {
+        background: #5a6268 !important;
+        transform: translateY(-1px);
       }
       
       /* 모바일 반응형 */
@@ -357,15 +431,21 @@ export function getDoneTabHTML() {
         }
         
         .done-search-input,
-        .done-search-btn {
+        .done-search-btn,
+        .reset-btn {
           flex: none;
           width: 100%;
           min-height: 44px;
           font-size: 16px;
         }
         
-        .done-search-btn {
+        .done-search-btn,
+        .reset-btn {
           padding: 12px 20px;
+        }
+        
+        .date-separator {
+          display: none;
         }
       }
       
@@ -376,7 +456,8 @@ export function getDoneTabHTML() {
         }
         
         .done-search-input,
-        .done-search-btn {
+        .done-search-btn,
+        .reset-btn {
           min-height: 42px;
           font-size: 15px;
         }

@@ -1,14 +1,10 @@
-// scripts/company-funds.js - 회사운영비 관리 시스템 (완전한 디버그 버전)
-
-console.log('💰 company-funds.js 로드 시작');
+// scripts/company-funds.js - 회사운영비 관리 시스템 (오류 수정 버전)
 
 import { db } from './firebase-config.js';
 import {
   collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc,
-  orderBy, Timestamp, writeBatch, getDoc, setDoc
+  orderBy, Timestamp, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-console.log('✅ Firebase 모듈 임포트 완료');
 
 // 지출 카테고리 정의
 const EXPENSE_CATEGORIES = {
@@ -21,124 +17,67 @@ const EXPENSE_CATEGORIES = {
   '기타': { icon: '📋', allowWorker: false }
 };
 
-// 결제 방법 정의
 const PAYMENT_METHODS = ['현금', '카드', '계좌이체', '기타'];
 
-// 전역 변수
 let currentFunds = 0;
 let monthlyExpenses = [];
 let initialFundsSet = false;
 
-// 회사운영비 메인 로드 함수
+// 메인 로드 함수
 window.loadCompanyFunds = async function() {
-  console.log('💰 회사운영비 관리 로드 시작');
-  
   try {
-    // Firebase 연결 확인
-    if (!db) {
-      console.error('❌ Firebase DB가 연결되지 않았습니다.');
-      showError('데이터베이스 연결 오류');
-      return;
-    }
-    console.log('✅ Firebase DB 연결 확인됨');
-    
     const tabBody = document.getElementById('tab-body');
-    if (!tabBody) {
-      console.error('❌ tab-body 요소를 찾을 수 없습니다.');
-      return;
-    }
-    console.log('✅ tab-body 요소 찾음');
+    if (!tabBody) return;
     
-    // HTML 삽입
     tabBody.innerHTML = getCompanyFundsHTML();
-    console.log('✅ HTML 삽입 완료');
-    
-    // 데이터 로드
     await loadInitialData();
-    
-    // 이벤트 리스너 설정
     setupEventListeners();
-    
-    console.log('✅ 회사운영비 로드 완료');
-    
   } catch (error) {
-    console.error('❌ 회사운영비 로드 오류:', error);
-    showError('회사운영비 로드 중 오류가 발생했습니다: ' + error.message);
+    console.error('회사운영비 로드 오류:', error);
+    alert('로드 중 오류: ' + error.message);
   }
 };
 
 // 초기 데이터 로드
 async function loadInitialData() {
   try {
-    console.log('📊 회사운영비 데이터 로드 시작');
-    
-    // 초기 자금 설정 확인
     await checkInitialFunds();
-    
-    // 현재 회사자금 계산
     await calculateCurrentFunds();
-    
-    // 이번달 지출 로드
     await loadMonthlyExpenses();
-    
-    // UI 업데이트
     updateFundsDisplay();
-    updateExpensesList();
-    
-    console.log('✅ 회사운영비 데이터 로드 완료');
-    
   } catch (error) {
-    console.error('❌ 데이터 로드 오류:', error);
-    showError('데이터를 불러오는 중 오류가 발생했습니다: ' + error.message);
+    console.error('데이터 로드 오류:', error);
   }
 }
 
-// 초기 자금 설정 확인
+// 초기 자금 확인
 async function checkInitialFunds() {
   try {
-    console.log('💰 초기 자금 설정 확인 중...');
-    
     const fundsDoc = await getDoc(doc(db, "company_settings", "initial_funds"));
-    
     if (fundsDoc.exists()) {
-      const data = fundsDoc.data();
       initialFundsSet = true;
-      console.log('💰 초기 자금 설정됨:', data.amount?.toLocaleString() + '원');
     } else {
       initialFundsSet = false;
-      console.log('⚠️ 초기 자금 미설정 - 모달 표시');
-      
-      // 잠깐 기다린 후 모달 표시
-      setTimeout(() => {
-        showInitialFundsModal();
-      }, 1000);
+      setTimeout(() => showInitialFundsModal(), 1000);
     }
   } catch (error) {
-    console.error('❌ 초기 자금 확인 오류:', error);
-    showError('초기 자금 확인 중 오류: ' + error.message);
+    console.error('초기 자금 확인 오류:', error);
   }
 }
 
 // 현재 회사자금 계산
 async function calculateCurrentFunds() {
   try {
-    console.log('💰 현재 회사자금 계산 시작');
-    
     let totalFunds = 0;
     
-    // 1. 초기 자금
+    // 초기 자금
     const initialDoc = await getDoc(doc(db, "company_settings", "initial_funds"));
     if (initialDoc.exists()) {
       totalFunds += initialDoc.data().amount || 0;
-      console.log('💰 초기 자금:', (initialDoc.data().amount || 0).toLocaleString() + '원');
     }
     
-    // 2. 정산에서 회사자금 몫 (순이익의 20%)
-    const completedTasksQuery = query(
-      collection(db, "tasks"),
-      where("done", "==", true)
-    );
-    
+    // 정산에서 회사자금 몫
+    const completedTasksQuery = query(collection(db, "tasks"), where("done", "==", true));
     const tasksSnapshot = await getDocs(completedTasksQuery);
     let totalCompanyShare = 0;
     
@@ -146,16 +85,15 @@ async function calculateCurrentFunds() {
       const task = docSnapshot.data();
       const amount = task.amount || 0;
       const partSpend = calculatePartsSpend(task.parts);
-      const fee = calculateFee(task.client, amount, task.fee); // 수정된 함수 사용
+      const fee = calculateFee(task.client, amount, task.fee);
       const profit = amount - partSpend - fee;
-      const companyShare = Math.round(profit * 0.2); // 순이익의 20%만
+      const companyShare = Math.round(profit * 0.2);
       totalCompanyShare += companyShare;
     });
     
     totalFunds += totalCompanyShare;
-    console.log('💰 회사자금 몫 (순이익):', totalCompanyShare.toLocaleString() + '원');
     
-    // 3. 운영비 지출 차감
+    // 운영비 지출 차감
     const expensesQuery = query(collection(db, "company_expenses"));
     const expensesSnapshot = await getDocs(expensesQuery);
     let totalExpenses = 0;
@@ -166,24 +104,16 @@ async function calculateCurrentFunds() {
     });
     
     totalFunds -= totalExpenses;
-    console.log('💸 총 운영비 지출:', totalExpenses.toLocaleString() + '원');
-    
     currentFunds = totalFunds;
-    console.log('💰 현재 회사자금:', currentFunds.toLocaleString() + '원');
-    
   } catch (error) {
-    console.error('❌ 회사자금 계산 오류:', error);
+    console.error('회사자금 계산 오류:', error);
     currentFunds = 0;
   }
 }
 
-
-
 // 이번달 지출 로드
 async function loadMonthlyExpenses() {
   try {
-    console.log('📊 이번달 지출 로드 시작');
-    
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -204,16 +134,13 @@ async function loadMonthlyExpenses() {
         ...docSnapshot.data()
       });
     });
-    
-    console.log('📊 이번달 지출:', monthlyExpenses.length + '건');
-    
   } catch (error) {
-    console.error('❌ 월별 지출 로드 오류:', error);
+    console.error('월별 지출 로드 오류:', error);
     monthlyExpenses = [];
   }
 }
 
-// 부품비 계산 (기존 정산 로직 재사용)
+// 부품비 계산
 function calculatePartsSpend(partsData) {
   if (!partsData) return 0;
   
@@ -228,9 +155,8 @@ function calculatePartsSpend(partsData) {
           const partName = name ? name.trim() : '';
           const partCount = Number(count) || 1;
           
-          // 부품 가격 찾기
-          const partInfo = window.PARTS_LIST?.find(p => p.name === partName);
-          const partPrice = partInfo?.price || 0;
+          const partInfo = window.PARTS_LIST ? window.PARTS_LIST.find(p => p.name === partName) : null;
+          const partPrice = partInfo ? partInfo.price || 0 : 0;
           
           partSpend += partPrice * partCount;
         }
@@ -243,57 +169,41 @@ function calculatePartsSpend(partsData) {
   return partSpend;
 }
 
-// 수수료 계산 (기존 로직 재사용)
-function calculateFee(client, amount) {
+// 수수료 계산
+function calculateFee(client, amount, inputFee) {
   if (client && client.includes("공간")) {
     return Math.round(amount * 0.22);
+  } else if (inputFee && inputFee > 0) {
+    return Number(inputFee);
   }
   return 0;
 }
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
-  console.log('🎯 이벤트 리스너 설정 시작');
-  
-  // 지출 입력 폼 제출
   const expenseForm = document.getElementById('expense-form');
   if (expenseForm) {
     expenseForm.addEventListener('submit', handleExpenseSubmit);
-    console.log('✅ 지출 폼 이벤트 리스너 설정');
   }
   
-  // 카테고리 변경 시 권한 체크
   const categorySelect = document.getElementById('expense-category');
   if (categorySelect) {
     categorySelect.addEventListener('change', checkCategoryPermission);
-    console.log('✅ 카테고리 선택 이벤트 리스너 설정');
   }
   
-  // 월별 검색
-  const monthFilter = document.getElementById('month-filter');
-  if (monthFilter) {
-    monthFilter.addEventListener('change', filterByMonth);
-    console.log('✅ 월별 필터 이벤트 리스너 설정');
-  }
-  
-  // 초기 자금 설정 버튼
   const setFundsBtn = document.getElementById('set-initial-funds-btn');
   if (setFundsBtn) {
     setFundsBtn.addEventListener('click', showInitialFundsModal);
-    console.log('✅ 초기 자금 설정 버튼 이벤트 리스너 설정');
   }
-  
-  console.log('✅ 이벤트 리스너 설정 완료');
 }
 
 // 지출 입력 처리
 async function handleExpenseSubmit(event) {
   event.preventDefault();
-  console.log('💸 지출 입력 처리 시작');
   
   try {
     const formData = new FormData(event.target);
-    const userInfo = window.getCurrentUserInfo();
+    const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
     
     const expenseData = {
       date: formData.get('date'),
@@ -301,52 +211,40 @@ async function handleExpenseSubmit(event) {
       amount: parseFloat(formData.get('amount')),
       paymentMethod: formData.get('paymentMethod'),
       note: formData.get('note') || '',
-      createdBy: userInfo?.email || '',
-      createdByName: userInfo?.name || '',
+      createdBy: userInfo.email || 'unknown',
+      createdByName: userInfo.name || 'unknown',
       createdAt: Timestamp.now()
     };
     
-    console.log('💸 지출 데이터:', expenseData);
-    
-    // 유효성 검사
     if (!expenseData.date || !expenseData.category || expenseData.amount <= 0) {
-      showError('모든 필수 항목을 입력해주세요.');
+      alert('모든 필수 항목을 입력해주세요.');
       return;
     }
     
-    // 권한 검사
     if (!checkUserPermission(expenseData.category)) {
-      showError('이 카테고리는 입력 권한이 없습니다.');
+      alert('이 카테고리는 입력 권한이 없습니다.');
       return;
     }
     
-    // 저장
     await addDoc(collection(db, "company_expenses"), expenseData);
+    alert('지출이 등록되었습니다.');
     
-    console.log('✅ 지출 저장 완료:', expenseData);
-    showSuccess('지출이 등록되었습니다.');
-    
-    // 데이터 새로고침
     await loadInitialData();
-    
-    // 폼 초기화
     event.target.reset();
-    
   } catch (error) {
-    console.error('❌ 지출 저장 오류:', error);
-    showError('지출 저장 중 오류가 발생했습니다: ' + error.message);
+    console.error('지출 저장 오류:', error);
+    alert('지출 저장 중 오류: ' + error.message);
   }
 }
 
 // 사용자 권한 확인
 function checkUserPermission(category) {
-  const userInfo = window.getCurrentUserInfo();
-  const isAdmin = window.isAdmin && window.isAdmin(userInfo);
+  const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
+  const isAdmin = window.isCurrentUserAdmin ? window.isCurrentUserAdmin() : false;
   
-  if (isAdmin) return true; // 관리자는 모든 카테고리 가능
+  if (isAdmin) return true;
   
-  // 작업자는 특정 카테고리만 가능
-  return EXPENSE_CATEGORIES[category]?.allowWorker || false;
+  return EXPENSE_CATEGORIES[category] ? EXPENSE_CATEGORIES[category].allowWorker || false : false;
 }
 
 // 카테고리 권한 체크 UI
@@ -359,7 +257,7 @@ function checkCategoryPermission() {
   const selectedCategory = categorySelect.value;
   const hasPermission = checkUserPermission(selectedCategory);
   
-  if (!hasPermission) {
+  if (!hasPermission && selectedCategory) {
     submitButton.disabled = true;
     submitButton.textContent = '권한 없음';
     submitButton.style.background = '#ccc';
@@ -370,11 +268,8 @@ function checkCategoryPermission() {
   }
 }
 
-// 초기 자금 설정 모달 표시
+// 초기 자금 설정 모달
 function showInitialFundsModal() {
-  console.log('💰 초기 자금 설정 모달 표시');
-  
-  // 기존 모달 제거
   const existingModal = document.querySelector('.initial-funds-modal');
   if (existingModal) {
     existingModal.remove();
@@ -397,143 +292,75 @@ function showInitialFundsModal() {
   
   document.body.appendChild(modal);
   
-  // 입력 필드에 포커스
   setTimeout(() => {
     const input = document.getElementById('initial-amount');
     if (input) input.focus();
   }, 100);
-  
-  console.log('✅ 초기 자금 모달 표시 완료');
 }
 
-// 초기 자금 설정 저장
+// 초기 자금 저장
 window.saveInitialFunds = async function() {
-  console.log('💰 초기 자금 저장 시작');
-  
   try {
     const amountInput = document.getElementById('initial-amount');
     const amount = parseFloat(amountInput.value);
     
     if (isNaN(amount) || amount < 0) {
-      showError('올바른 금액을 입력해주세요.');
+      alert('올바른 금액을 입력해주세요.');
       return;
     }
     
-    const userInfo = window.getCurrentUserInfo();
+    const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
     const fundsData = {
       amount: amount,
       setDate: new Date().toISOString(),
-      setBy: userInfo?.email || '',
-      setByName: userInfo?.name || ''
+      setBy: userInfo.email || 'unknown',
+      setByName: userInfo.name || 'unknown'
     };
     
     await setDoc(doc(db, "company_settings", "initial_funds"), fundsData);
-    
-    console.log('✅ 초기 자금 설정 완료:', amount.toLocaleString() + '원');
-    showSuccess('초기 자금이 설정되었습니다.');
+    alert('초기 자금이 설정되었습니다.');
     
     closeInitialFundsModal();
-    
-    // 데이터 다시 로드
     await loadInitialData();
-    
   } catch (error) {
-    console.error('❌ 초기 자금 설정 오류:', error);
-    showError('초기 자금 설정 중 오류가 발생했습니다: ' + error.message);
+    console.error('초기 자금 설정 오류:', error);
+    alert('초기 자금 설정 중 오류: ' + error.message);
   }
 };
 
-// 초기 자금 설정 모달 닫기
+// 초기 자금 모달 닫기
 window.closeInitialFundsModal = function() {
   const modal = document.querySelector('.initial-funds-modal');
   if (modal) {
     modal.remove();
-    console.log('💰 초기 자금 모달 닫힘');
   }
 };
 
-// 월별 필터링
-async function filterByMonth() {
-  const monthFilter = document.getElementById('month-filter');
-  if (!monthFilter) return;
-  
-  const selectedMonth = monthFilter.value;
-  console.log('📅 월별 필터링:', selectedMonth);
-  
-  if (!selectedMonth) {
-    await loadMonthlyExpenses();
-  } else {
-    await loadExpensesByMonth(selectedMonth);
-  }
-  
-  updateExpensesList();
-}
-
-// 특정 월 지출 로드
-async function loadExpensesByMonth(monthString) {
-  try {
-    const [year, month] = monthString.split('-').map(Number);
-    const startOfMonth = new Date(year, month - 1, 1);
-    const startOfNextMonth = new Date(year, month, 1);
-    
-    const expensesQuery = query(
-      collection(db, "company_expenses"),
-      where("date", ">=", startOfMonth.toISOString()),
-      where("date", "<", startOfNextMonth.toISOString()),
-      orderBy("date", "desc")
-    );
-    
-    const snapshot = await getDocs(expensesQuery);
-    monthlyExpenses = [];
-    
-    snapshot.forEach(docSnapshot => {
-      monthlyExpenses.push({
-        id: docSnapshot.id,
-        ...docSnapshot.data()
-      });
-    });
-    
-    console.log(`📊 ${year}년 ${month}월 지출:`, monthlyExpenses.length + '건');
-    
-  } catch (error) {
-    console.error('❌ 월별 지출 로드 오류:', error);
-    monthlyExpenses = [];
-  }
-}
-
-// 자금 현황 표시 업데이트
+// 자금 현황 업데이트
 function updateFundsDisplay() {
-  console.log('🖥️ 자금 현황 표시 업데이트');
-  
   const fundsAmountElement = document.getElementById('current-funds-amount');
   const monthlyTotalElement = document.getElementById('monthly-total');
   
   if (fundsAmountElement) {
     fundsAmountElement.textContent = currentFunds.toLocaleString() + '원';
     fundsAmountElement.className = 'funds-amount ' + (currentFunds >= 0 ? 'positive' : 'negative');
-    console.log('💰 현재 자금 표시 업데이트:', currentFunds.toLocaleString() + '원');
   }
   
   if (monthlyTotalElement) {
     const monthlyTotal = monthlyExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
     monthlyTotalElement.textContent = monthlyTotal.toLocaleString() + '원';
-    console.log('📊 월별 총액 표시 업데이트:', monthlyTotal.toLocaleString() + '원');
   }
   
-  // 카테고리별 집계 업데이트
   updateCategorySummary();
 }
 
 // 카테고리별 집계 업데이트
 function updateCategorySummary() {
-  console.log('📈 카테고리별 집계 업데이트');
-  
   const summaryContainer = document.getElementById('category-summary');
   if (!summaryContainer) return;
   
   const categoryTotals = {};
   
-  // 카테고리별 합계 계산
   monthlyExpenses.forEach(expense => {
     const category = expense.category;
     if (!categoryTotals[category]) {
@@ -542,7 +369,6 @@ function updateCategorySummary() {
     categoryTotals[category] += expense.amount || 0;
   });
   
-  // HTML 생성
   let summaryHTML = '';
   Object.entries(categoryTotals).forEach(([category, total]) => {
     const categoryInfo = EXPENSE_CATEGORIES[category] || { icon: '📋' };
@@ -560,66 +386,346 @@ function updateCategorySummary() {
   }
   
   summaryContainer.innerHTML = summaryHTML;
-  console.log('✅ 카테고리별 집계 HTML 업데이트 완료');
 }
 
-// 지출 목록 업데이트
-function updateExpensesList() {
-  console.log('📋 지출 목록 업데이트');
+// 지출 검색
+window.searchExpensesByRange = async function() {
+  const startDateInput = document.getElementById('expense-start-date');
+  const endDateInput = document.getElementById('expense-end-date');
+  const startDate = startDateInput.value;
+  const endDate = endDateInput.value;
   
-  const expensesContainer = document.getElementById('expenses-list');
-  if (!expensesContainer) return;
-  
-  if (monthlyExpenses.length === 0) {
-    expensesContainer.innerHTML = '<div class="no-data">지출 내역이 없습니다.</div>';
+  if (!startDate || !endDate) {
+    alert('시작 날짜와 종료 날짜를 모두 선택해주세요.');
     return;
   }
   
-  let expensesHTML = '';
-  monthlyExpenses.forEach(expense => {
-    const categoryInfo = EXPENSE_CATEGORIES[expense.category] || { icon: '📋' };
-    const date = new Date(expense.date);
-    const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
+  try {
+    const expensesQuery = query(
+      collection(db, "company_expenses"),
+      where("date", ">=", startDate),
+      where("date", "<=", endDate),
+      orderBy("date", "desc")
+    );
     
-    expensesHTML += `
-      <div class="expense-item">
-        <div class="expense-header">
-          <span class="expense-category">
-            ${categoryInfo.icon} ${expense.category}
-          </span>
-          <span class="expense-date">${formattedDate}</span>
-          <span class="expense-amount">${expense.amount.toLocaleString()}원</span>
-        </div>
-        <div class="expense-details">
-          <span class="payment-method">${expense.paymentMethod}</span>
-          ${expense.note ? `<span class="expense-note">${expense.note}</span>` : ''}
-          <span class="created-by">등록: ${expense.createdByName || expense.createdBy}</span>
-        </div>
-      </div>
-    `;
-  });
+    const querySnapshot = await getDocs(expensesQuery);
+    const expensesList = document.getElementById('expenses-list');
+    
+    const searchResults = [];
+    querySnapshot.forEach((doc) => {
+      searchResults.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    window.lastSearchResults = searchResults;
+    
+    if (querySnapshot.empty) {
+      expensesList.innerHTML = '<div class="no-data">선택한 기간에 지출 내역이 없습니다.</div>';
+      return;
+    }
+    
+    let expensesHTML = '';
+    searchResults.forEach((expense) => {
+      expensesHTML += getExpenseItemHTML(expense, expense.id);
+    });
+    
+    expensesList.innerHTML = expensesHTML;
+  } catch (error) {
+    console.error('지출 내역 검색 오류:', error);
+    document.getElementById('expenses-list').innerHTML = '<div class="no-data">검색 중 오류가 발생했습니다.</div>';
+  }
+};
+
+// 지출 항목 HTML 생성
+function getExpenseItemHTML(expense, id) {
+  const categoryInfo = EXPENSE_CATEGORIES[expense.category] || { icon: '📋' };
+  const formattedDate = formatDate(expense.date);
   
-  expensesContainer.innerHTML = expensesHTML;
-  console.log('✅ 지출 목록 HTML 업데이트 완료');
+  const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
+  const isAdmin = window.isCurrentUserAdmin ? window.isCurrentUserAdmin() : false;
+  const isOwner = expense.createdBy === (userInfo.email || '');
+  const canEdit = isAdmin || isOwner;
+  
+  return `
+    <div class="expense-item ${canEdit ? 'editable' : ''}" data-expense-id="${id}" ${canEdit ? `onclick="editExpense('${id}')"` : ''}>
+      <div class="expense-header">
+        <span class="expense-category">
+          ${categoryInfo.icon} ${expense.category}
+        </span>
+        <span class="expense-date">${formattedDate}</span>
+        <span class="expense-amount">-${(expense.amount || 0).toLocaleString()}원</span>
+      </div>
+      <div class="expense-details">
+        <span class="payment-method">${expense.paymentMethod || ''}</span>
+        ${expense.note ? `<span class="expense-note">${expense.note}</span>` : ''}
+        <span class="created-by">등록: ${expense.createdByName || expense.createdBy}</span>
+        ${canEdit ? '<span class="edit-hint">✏️ 클릭하여 수정</span>' : ''}
+      </div>
+      ${canEdit ? `
+        <div class="expense-actions" onclick="event.stopPropagation();">
+          <button onclick="editExpense('${id}')" class="edit-btn">✏️</button>
+          <button onclick="deleteExpense('${id}')" class="delete-btn">🗑️</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
 }
 
-// HTML 템플릿 생성
-function getCompanyFundsHTML() {
-  console.log('🎨 HTML 템플릿 생성');
+// 지출 수정
+window.editExpense = function(expenseId) {
+  const currentExpenses = getCurrentExpensesList();
+  const expense = currentExpenses.find(exp => exp.id === expenseId);
   
-  const userInfo = window.getCurrentUserInfo();
-  const isAdmin = window.isAdmin && window.isAdmin(userInfo);
+  if (!expense) {
+    alert('지출 내역을 찾을 수 없습니다.');
+    return;
+  }
+  
+  const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
+  const isAdmin = window.isCurrentUserAdmin ? window.isCurrentUserAdmin() : false;
+  const isOwner = expense.createdBy === (userInfo.email || '');
+  
+  if (!isAdmin && !isOwner) {
+    alert('수정 권한이 없습니다. (관리자 또는 등록자만 수정 가능)');
+    return;
+  }
+  
+  showExpenseEditModal(expense);
+};
+
+// 현재 지출 목록 가져오기
+function getCurrentExpensesList() {
+  const expensesList = document.getElementById('expenses-list');
+  if (!expensesList) return [];
+  
+  const expenseElements = expensesList.querySelectorAll('.expense-item[data-expense-id]');
+  const currentExpenseIds = Array.from(expenseElements).map(el => el.dataset.expenseId);
+  
+  if (window.lastSearchResults && Array.isArray(window.lastSearchResults)) {
+    return window.lastSearchResults.filter(exp => currentExpenseIds.includes(exp.id));
+  }
+  
+  return [];
+}
+
+// 지출 수정 모달 표시
+function showExpenseEditModal(expense) {
+  const existingModal = document.querySelector('.expense-edit-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
+  const isAdmin = window.isCurrentUserAdmin ? window.isCurrentUserAdmin() : false;
+  
+  const modal = document.createElement('div');
+  modal.className = 'expense-edit-modal';
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="closeExpenseEditModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>✏️ 지출 수정</h3>
+        <button onclick="closeExpenseEditModal()" class="close-btn">❌</button>
+      </div>
+      
+      <form id="expense-edit-form" class="expense-edit-form">
+        <input type="hidden" id="edit-expense-id" value="${expense.id}">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-expense-date">날짜 *</label>
+            <input type="date" id="edit-expense-date" value="${expense.date}" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="edit-expense-category">카테고리 *</label>
+            <select id="edit-expense-category" required>
+              <option value="">카테고리 선택</option>
+              ${Object.entries(EXPENSE_CATEGORIES).map(([category, info]) => {
+                const canUse = isAdmin || info.allowWorker;
+                const selected = expense.category === category ? 'selected' : '';
+                return `<option value="${category}" ${!canUse ? 'disabled' : ''} ${selected}>${info.icon} ${category}${!canUse ? ' (권한없음)' : ''}</option>`;
+              }).join('')}
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-expense-amount">금액 *</label>
+            <input type="number" id="edit-expense-amount" value="${expense.amount}" min="1" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="edit-expense-payment">결제방법 *</label>
+            <select id="edit-expense-payment" required>
+              <option value="">결제방법</option>
+              ${PAYMENT_METHODS.map(method => `<option value="${method}" ${expense.paymentMethod === method ? 'selected' : ''}>${method}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group full-width">
+          <label for="edit-expense-note">비고</label>
+          <textarea id="edit-expense-note" rows="3">${expense.note || ''}</textarea>
+        </div>
+        
+        <div class="modal-buttons">
+          <button type="button" onclick="closeExpenseEditModal()" class="cancel-btn">취소</button>
+          <button type="submit" class="save-btn">💾 저장</button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  const form = document.getElementById('expense-edit-form');
+  form.addEventListener('submit', handleExpenseEdit);
+  
+  const categorySelect = document.getElementById('edit-expense-category');
+  const submitButton = form.querySelector('button[type="submit"]');
+  
+  categorySelect.addEventListener('change', function() {
+    const selectedCategory = this.value;
+    const hasPermission = isAdmin || (EXPENSE_CATEGORIES[selectedCategory] ? EXPENSE_CATEGORIES[selectedCategory].allowWorker || false : false);
+    
+    if (!hasPermission && selectedCategory) {
+      submitButton.disabled = true;
+      submitButton.textContent = '권한 없음';
+      submitButton.style.background = '#ccc';
+    } else {
+      submitButton.disabled = false;
+      submitButton.textContent = '💾 저장';
+      submitButton.style.background = '#28a745';
+    }
+  });
+}
+
+// 지출 수정 처리
+async function handleExpenseEdit(event) {
+  event.preventDefault();
+  
+  try {
+    const expenseId = document.getElementById('edit-expense-id').value;
+    const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
+    
+    const updatedData = {
+      date: document.getElementById('edit-expense-date').value,
+      category: document.getElementById('edit-expense-category').value,
+      amount: parseFloat(document.getElementById('edit-expense-amount').value),
+      paymentMethod: document.getElementById('edit-expense-payment').value,
+      note: document.getElementById('edit-expense-note').value || '',
+      updatedAt: Timestamp.now(),
+      updatedBy: userInfo.email || 'unknown'
+    };
+    
+    if (!updatedData.date || !updatedData.category || updatedData.amount <= 0) {
+      alert('모든 필수 항목을 입력해주세요.');
+      return;
+    }
+    
+    if (!checkUserPermission(updatedData.category)) {
+      alert('이 카테고리는 수정 권한이 없습니다.');
+      return;
+    }
+    
+    await updateDoc(doc(db, "company_expenses", expenseId), updatedData);
+    alert('지출이 수정되었습니다.');
+    
+    closeExpenseEditModal();
+    await loadInitialData();
+    
+    const startDate = document.getElementById('expense-start-date') ? document.getElementById('expense-start-date').value : '';
+    const endDate = document.getElementById('expense-end-date') ? document.getElementById('expense-end-date').value : '';
+    if (startDate && endDate) {
+      await window.searchExpensesByRange();
+    }
+  } catch (error) {
+    console.error('지출 수정 오류:', error);
+    alert('지출 수정 중 오류: ' + error.message);
+  }
+}
+
+// 지출 수정 모달 닫기
+window.closeExpenseEditModal = function() {
+  const modal = document.querySelector('.expense-edit-modal');
+  if (modal) {
+    modal.remove();
+  }
+};
+
+// 지출 삭제
+window.deleteExpense = async function(expenseId) {
+  const currentExpenses = getCurrentExpensesList();
+  const expense = currentExpenses.find(exp => exp.id === expenseId);
+  
+  if (!expense) {
+    alert('지출 내역을 찾을 수 없습니다.');
+    return;
+  }
+  
+  const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
+  const isAdmin = window.isCurrentUserAdmin ? window.isCurrentUserAdmin() : false;
+  const isOwner = expense.createdBy === (userInfo.email || '');
+  
+  if (!isAdmin && !isOwner) {
+    alert('삭제 권한이 없습니다. (관리자 또는 등록자만 삭제 가능)');
+    return;
+  }
+  
+  if (!confirm(`이 지출 내역을 삭제하시겠습니까?\n\n${expense.category}: ${(expense.amount || 0).toLocaleString()}원`)) {
+    return;
+  }
+  
+  try {
+    await deleteDoc(doc(db, "company_expenses", expenseId));
+    alert('지출 내역이 삭제되었습니다.');
+    
+    await loadInitialData();
+    
+    const startDate = document.getElementById('expense-start-date') ? document.getElementById('expense-start-date').value : '';
+    const endDate = document.getElementById('expense-end-date') ? document.getElementById('expense-end-date').value : '';
+    if (startDate && endDate) {
+      await window.searchExpensesByRange();
+    }
+  } catch (error) {
+    console.error('지출 삭제 오류:', error);
+    alert('지출 삭제 중 오류가 발생했습니다.');
+  }
+};
+
+// 날짜 포맷팅
+function formatDate(dateString) {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    return '';
+  }
+}
+
+// HTML 템플릿
+function getCompanyFundsHTML() {
+  const userInfo = window.getCurrentUserInfo ? window.getCurrentUserInfo() : {};
+  const isAdmin = window.isCurrentUserAdmin ? window.isCurrentUserAdmin() : false;
   
   return `
     <div class="company-funds-container">
-      <!-- 자금 현황 헤더 -->
       <div class="funds-header">
         <div class="funds-info">
           <h3>💰 현재 회사자금</h3>
           <div class="funds-amount positive" id="current-funds-amount">계산중...</div>
-          ${!initialFundsSet && isAdmin ? `
-            <button id="set-initial-funds-btn" class="set-funds-btn">초기 자금 설정</button>
-          ` : ''}
+          ${!initialFundsSet && isAdmin ? '<button id="set-initial-funds-btn" class="set-funds-btn">초기 자금 설정</button>' : ''}
         </div>
         <div class="monthly-info">
           <h4>📊 이번달 지출</h4>
@@ -627,15 +733,11 @@ function getCompanyFundsHTML() {
         </div>
       </div>
       
-      <!-- 카테고리별 요약 -->
       <div class="category-summary-section">
         <h4>📈 카테고리별 지출 현황</h4>
-        <div class="category-summary" id="category-summary">
-          로딩중...
-        </div>
+        <div class="category-summary" id="category-summary">로딩중...</div>
       </div>
       
-      <!-- 지출 입력 폼 -->
       <div class="expense-form-section">
         <h4>💸 지출 등록</h4>
         <form id="expense-form" class="expense-form">
@@ -659,22 +761,25 @@ function getCompanyFundsHTML() {
           </div>
           
           <input type="text" name="note" placeholder="비고 (선택사항)" class="full-width">
-          
           <button type="submit" class="submit-btn">💰 지출 등록</button>
         </form>
       </div>
       
-      <!-- 지출 내역 -->
       <div class="expenses-history-section">
         <div class="history-header">
-          <h4>📋 지출 내역</h4>
-          <select id="month-filter" class="month-filter">
-            <option value="">이번달</option>
-            ${generateMonthOptions()}
-          </select>
+          <h4>📋 지출 내역 검색</h4>
+          <div class="date-range-filter">
+            <input type="date" id="expense-start-date" class="filter-input">
+            <span class="date-separator">~</span>
+            <input type="date" id="expense-end-date" class="filter-input">
+            <button onclick="searchExpensesByRange()" class="filter-btn">🔍 검색</button>
+          </div>
         </div>
-        <div class="expenses-list" id="expenses-list">
-          로딩중...
+        
+        <div class="expenses-list-container">
+          <div class="expenses-list" id="expenses-list">
+            <div class="no-data">📅 기간을 선택하고 검색 버튼을 클릭해주세요.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -709,13 +814,8 @@ function getCompanyFundsHTML() {
         margin-bottom: 10px;
       }
       
-      .funds-amount.positive {
-        color: #28a745;
-      }
-      
-      .funds-amount.negative {
-        color: #dc3545;
-      }
+      .funds-amount.positive { color: #28a745; }
+      .funds-amount.negative { color: #dc3545; }
       
       .monthly-amount {
         font-size: 1.8rem;
@@ -759,19 +859,9 @@ function getCompanyFundsHTML() {
         border-left: 4px solid #219ebc;
       }
       
-      .category-icon {
-        font-size: 1.2rem;
-      }
-      
-      .category-name {
-        flex: 1;
-        font-weight: 600;
-      }
-      
-      .category-amount {
-        font-weight: 700;
-        color: #dc3545;
-      }
+      .category-icon { font-size: 1.2rem; }
+      .category-name { flex: 1; font-weight: 600; }
+      .category-amount { font-weight: 700; color: #dc3545; }
       
       .expense-form {
         display: flex;
@@ -793,9 +883,7 @@ function getCompanyFundsHTML() {
         font-size: 16px;
       }
       
-      .full-width {
-        grid-column: 1 / -1;
-      }
+      .full-width { grid-column: 1 / -1; }
       
       .submit-btn {
         background: #28a745;
@@ -825,30 +913,106 @@ function getCompanyFundsHTML() {
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e6e6e6;
       }
       
-      .month-filter {
+      .history-header h4 {
+        margin: 0;
+        color: #333;
+        font-size: 1.2rem;
+      }
+      
+      .date-range-filter {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      
+      .filter-input {
         padding: 8px 12px;
         border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        min-width: 140px;
+      }
+      
+      .filter-input:focus {
+        border-color: #8ecae6;
+        outline: none;
+      }
+      
+      .date-separator {
+        font-weight: 600;
+        color: #666;
+        margin: 0 5px;
+      }
+      
+      .filter-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #219ebc;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+      }
+      
+      .filter-btn:hover {
+        background: #1a7a96;
+        transform: translateY(-1px);
+      }
+      
+      .expenses-list-container {
+        background: #f8f9fa;
         border-radius: 8px;
+        min-height: 300px;
+        overflow: hidden;
       }
       
       .expenses-list {
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      
+      .no-data {
         display: flex;
-        flex-direction: column;
-        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #666;
+        font-style: italic;
+        font-size: 16px;
+        text-align: center;
       }
       
       .expense-item {
-        border: 1px solid #e9ecef;
-        border-radius: 10px;
+        background: white;
+        border: 1px solid #e6e6e6;
+        border-radius: 8px;
         padding: 15px;
+        margin-bottom: 10px;
         transition: all 0.2s ease;
+        position: relative;
+      }
+      
+      .expense-item.editable {
+        cursor: pointer;
+      }
+      
+      .expense-item.editable:hover {
+        border-color: #8ecae6;
+        box-shadow: 0 4px 12px rgba(33,158,188,0.15);
+        background: #f8fdff;
       }
       
       .expense-item:hover {
         border-color: #8ecae6;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       }
       
       .expense-header {
@@ -864,7 +1028,8 @@ function getCompanyFundsHTML() {
       }
       
       .expense-date {
-        color: #666;
+        font-weight: 600;
+        color: #219ebc;
         font-size: 14px;
       }
       
@@ -879,6 +1044,7 @@ function getCompanyFundsHTML() {
         gap: 15px;
         font-size: 14px;
         color: #666;
+        flex-wrap: wrap;
       }
       
       .payment-method {
@@ -886,17 +1052,66 @@ function getCompanyFundsHTML() {
         color: #1565c0;
         padding: 2px 8px;
         border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
       }
       
-      .no-data {
-        text-align: center;
-        padding: 40px;
-        color: #666;
-        font-style: italic;
+      .expense-note {
+        background: #f1f3f4;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
       }
       
-      /* 초기 자금 설정 모달 */
-      .initial-funds-modal {
+      .created-by {
+        font-size: 12px;
+        color: #888;
+      }
+      
+      .edit-hint {
+        color: #219ebc;
+        font-size: 11px;
+        font-weight: 600;
+        background: #e3f2fd;
+        padding: 2px 6px;
+        border-radius: 8px;
+      }
+      
+      .expense-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 5px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      
+      .expense-item:hover .expense-actions {
+        opacity: 1;
+      }
+      
+      .edit-btn, .delete-btn {
+        background: none;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+      
+      .edit-btn:hover {
+        background: rgba(255, 193, 7, 0.2);
+      }
+      
+      .delete-btn:hover {
+        background: rgba(220, 53, 69, 0.2);
+      }
+      
+      /* 모달 스타일 */
+      .initial-funds-modal,
+      .expense-edit-modal {
         position: fixed;
         top: 0;
         left: 0;
@@ -925,11 +1140,81 @@ function getCompanyFundsHTML() {
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         min-width: 400px;
         max-width: 90%;
+        max-height: 90%;
+        overflow-y: auto;
       }
       
       .modal-content h3 {
         margin: 0 0 10px 0;
         color: #333;
+      }
+      
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e6e6e6;
+      }
+      
+      .modal-header h3 {
+        margin: 0;
+        color: #333;
+      }
+      
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 5px;
+      }
+      
+      .expense-edit-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .expense-edit-form .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      
+      .expense-edit-form .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      
+      .expense-edit-form .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+      
+      .expense-edit-form label {
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+      }
+      
+      .expense-edit-form input,
+      .expense-edit-form select,
+      .expense-edit-form textarea {
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s ease;
+      }
+      
+      .expense-edit-form input:focus,
+      .expense-edit-form select:focus,
+      .expense-edit-form textarea:focus {
+        outline: none;
+        border-color: #8ecae6;
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15);
       }
       
       .modal-buttons {
@@ -945,6 +1230,7 @@ function getCompanyFundsHTML() {
         border-radius: 8px;
         font-weight: 600;
         cursor: pointer;
+        transition: all 0.2s ease;
       }
       
       .cancel-btn {
@@ -955,6 +1241,19 @@ function getCompanyFundsHTML() {
       .save-btn {
         background: #28a745;
         color: white;
+      }
+      
+      .cancel-btn:hover {
+        background: #5a6268;
+      }
+      
+      .save-btn:hover {
+        background: #218838;
+      }
+      
+      .save-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
       }
       
       /* 모바일 반응형 */
@@ -984,6 +1283,26 @@ function getCompanyFundsHTML() {
           grid-template-columns: 1fr;
         }
         
+        .history-header {
+          flex-direction: column;
+          gap: 15px;
+          align-items: stretch;
+        }
+        
+        .date-range-filter {
+          justify-content: space-between;
+          gap: 8px;
+        }
+        
+        .filter-input {
+          min-width: 120px;
+          flex: 1;
+        }
+        
+        .filter-btn {
+          min-width: 80px;
+        }
+        
         .expense-header {
           flex-direction: column;
           align-items: flex-start;
@@ -999,66 +1318,18 @@ function getCompanyFundsHTML() {
           min-width: 300px;
           padding: 20px;
         }
+        
+        .expense-edit-form .form-row {
+          grid-template-columns: 1fr;
+        }
+        
+        .expense-actions {
+          position: static;
+          opacity: 1;
+          justify-content: flex-end;
+          margin-top: 10px;
+        }
       }
     </style>
   `;
 }
-
-// 월 옵션 생성 (최근 12개월)
-function generateMonthOptions() {
-  const options = [];
-  const now = new Date();
-  
-  for (let i = 0; i < 12; i++) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const monthString = `${year}-${month}`;
-    const displayString = `${year}년 ${month}월`;
-    
-    options.push(`<option value="${monthString}">${displayString}</option>`);
-  }
-  
-  return options.join('');
-}
-
-// 지출 삭제 (관리자만)
-window.deleteExpense = async function(expenseId) {
-  const userInfo = window.getCurrentUserInfo();
-  const isAdmin = window.isAdmin && window.isAdmin(userInfo);
-  
-  if (!isAdmin) {
-    showError('삭제 권한이 없습니다.');
-    return;
-  }
-  
-  if (!confirm('이 지출 내역을 삭제하시겠습니까?')) {
-    return;
-  }
-  
-  try {
-    await deleteDoc(doc(db, "company_expenses", expenseId));
-    showSuccess('지출 내역이 삭제되었습니다.');
-    await loadInitialData();
-  } catch (error) {
-    console.error('❌ 지출 삭제 오류:', error);
-    showError('지출 삭제 중 오류가 발생했습니다.');
-  }
-};
-
-// 유틸리티 함수들
-function showError(message) {
-  console.error('ERROR:', message);
-  alert('❌ ' + message);
-}
-
-function showSuccess(message) {
-  console.log('SUCCESS:', message);
-  alert('✅ ' + message);
-}
-
-// 전역 함수 등록
-window.loadCompanyFunds = loadCompanyFunds;
-window.deleteExpense = deleteExpense;
-
-console.log('💰 회사운영비 관리 모듈 로드 완료');
