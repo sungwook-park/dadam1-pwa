@@ -63,7 +63,11 @@ function cleanAddressForMap(address) {
   
   let cleanAddress = address.trim();
   
-  // 동호수 패턴 제거 (더 정확한 패턴)
+  // 하이픈이나 슬래시로 구분된 동호수 패턴 제거
+  // 예: 101-1001, 101/1001, A-501, B/301 등
+  cleanAddress = cleanAddress.replace(/\s+[0-9A-Za-z가-힣]+[-\/][0-9A-Za-z가-힣]+/g, '');
+  
+  // 기존 동호수 패턴 제거 (더 정확한 패턴)
   // 예: 101동 1001호, 1동 101호, A동 1호, 가동 나호 등
   cleanAddress = cleanAddress.replace(/\s+[0-9A-Za-z가-힣]+동\s+[0-9A-Za-z가-힣]+호/g, '');
   
