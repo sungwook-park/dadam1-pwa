@@ -46,7 +46,7 @@ class MobileBackHandler {
     try {
       // 현재 페이지를 히스토리에 추가 (뒤로가기 감지를 위해)
       if (window.history && window.history.pushState) {
-        window.history.pushState(null, null, window.location.href);
+        window.history.pushState({ preventBack: true }, null, window.location.href);
         console.log('📋 히스토리 상태 추가 완료');
       }
 
@@ -55,6 +55,13 @@ class MobileBackHandler {
       
       // beforeunload 이벤트도 추가 (브라우저 탭 닫기/새로고침 시)
       window.addEventListener('beforeunload', (event) => this.handleBeforeUnload(event));
+
+      // 추가: hashchange 이벤트로도 감지
+      window.addEventListener('hashchange', (event) => {
+        console.log('🔗 해시 변경 감지');
+        event.preventDefault();
+        this.handleBackButton(event);
+      });
       
       this.isInitialized = true;
       console.log('✅ 모바일 뒤로가기 처리 초기화 완료');
@@ -68,12 +75,25 @@ class MobileBackHandler {
   handleBackButton(event) {
     console.log('🔙 뒤로가기 버튼 감지됨');
     
-    // 이벤트 기본 동작 방지
-    event.preventDefault();
-    event.stopPropagation();
+    // 즉시 히스토리 상태 복원 (페이지 이동 방지)
+    if (window.history && window.history.pushState) {
+      window.history.pushState({ preventBack: true }, null, window.location.href);
+    }
     
-    // 커스텀 확인 다이얼로그 생성
-    this.showExitConfirmDialog();
+    // 이벤트 기본 동작 방지
+    if (event.preventDefault) {
+      event.preventDefault();
+    }
+    if (event.stopPropagation) {
+      event.stopPropagation();
+    }
+    
+    // 약간의 지연 후 다이얼로그 표시 (브라우저가 안정화되길 기다림)
+    setTimeout(() => {
+      this.showExitConfirmDialog();
+    }, 50);
+    
+    return false;
   }
 
   // 커스텀 종료 확인 다이얼로그
