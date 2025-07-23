@@ -276,12 +276,12 @@ export function getReserveTabHTML() {
       }
       
       .filter-search-btn, .filter-reset-btn {
-        padding: 10px 14px !important;
+        padding: 12px 16px !important;
         margin: 0 !important;
-        font-size: 13px !important;
-        border-radius: 6px !important;
-        min-height: 40px !important;
-        max-height: 40px !important;
+        font-size: 15px !important;
+        border-radius: 8px !important;
+        min-height: 45px !important;
+        max-height: 45px !important;
         white-space: nowrap;
         border: none !important;
         cursor: pointer;
@@ -294,7 +294,7 @@ export function getReserveTabHTML() {
       .filter-search-btn {
         background: #219ebc !important;
         color: white !important;
-        width: 70px !important;
+        width: 250px !important;
       }
       
       .filter-search-btn:hover,
@@ -307,7 +307,7 @@ export function getReserveTabHTML() {
       .filter-reset-btn {
         background: #6c757d !important;
         color: white !important;
-        width: 55px !important;
+        width: 250px !important;
       }
       
       .filter-reset-btn:hover {
@@ -509,12 +509,12 @@ export function getDoneTabHTML() {
       }
       
       .filter-search-btn, .filter-reset-btn {
-        padding: 10px 14px !important;
+        padding: 12px 16px !important;
         margin: 0 !important;
-        font-size: 13px !important;
-        border-radius: 6px !important;
-        min-height: 40px !important;
-        max-height: 40px !important;
+        font-size: 15px !important;
+        border-radius: 8px !important;
+        min-height: 45px !important;
+        max-height: 45px !important;
         white-space: nowrap;
         border: none !important;
         cursor: pointer;
@@ -527,7 +527,7 @@ export function getDoneTabHTML() {
       .filter-search-btn {
         background: #219ebc !important;
         color: white !important;
-        width: 70px !important;
+        width: 250px !important;
       }
       
       .filter-search-btn:hover,
@@ -540,7 +540,7 @@ export function getDoneTabHTML() {
       .filter-reset-btn {
         background: #6c757d !important;
         color: white !important;
-        width: 55px !important;
+        width: 250px !important;
       }
       
       .filter-reset-btn:hover {
