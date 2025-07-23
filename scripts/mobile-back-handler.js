@@ -68,16 +68,150 @@ class MobileBackHandler {
   handleBackButton(event) {
     console.log('🔙 뒤로가기 버튼 감지됨');
     
-    // 종료 확인 다이얼로그 표시
-    const confirmExit = confirm('🚪 앱을 종료하시겠습니까?');
+    // 이벤트 기본 동작 방지
+    event.preventDefault();
+    event.stopPropagation();
     
-    if (confirmExit) {
-      console.log('✅ 사용자가 종료 선택');
-      this.exitApp();
-    } else {
-      console.log('❌ 사용자가 종료 취소');
-      this.cancelExit();
+    // 커스텀 확인 다이얼로그 생성
+    this.showExitConfirmDialog();
+  }
+
+  // 커스텀 종료 확인 다이얼로그
+  showExitConfirmDialog() {
+    // 기존 다이얼로그가 있다면 제거
+    const existingDialog = document.getElementById('exit-confirm-dialog');
+    if (existingDialog) {
+      existingDialog.remove();
     }
+
+    // 다이얼로그 HTML 생성
+    const dialogHTML = `
+      <div id="exit-confirm-dialog" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ">
+        <div style="
+          background: white;
+          border-radius: 12px;
+          padding: 25px;
+          margin: 20px;
+          max-width: 300px;
+          text-align: center;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        ">
+          <div style="
+            font-size: 48px;
+            margin-bottom: 15px;
+          ">🚪</div>
+          
+          <h3 style="
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+          ">앱을 종료하시겠습니까?</h3>
+          
+          <p style="
+            margin: 0 0 25px 0;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+          ">종료하면 현재 작업이 저장되지 않을 수 있습니다.</p>
+          
+          <div style="
+            display: flex;
+            gap: 10px;
+          ">
+            <button id="exit-cancel-btn" style="
+              flex: 1;
+              padding: 12px 20px;
+              border: 2px solid #ddd;
+              background: white;
+              color: #333;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            ">취소</button>
+            
+            <button id="exit-confirm-btn" style="
+              flex: 1;
+              padding: 12px 20px;
+              border: 2px solid #dc3545;
+              background: #dc3545;
+              color: white;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            ">종료</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 다이얼로그를 body에 추가
+    document.body.insertAdjacentHTML('beforeend', dialogHTML);
+
+    // 버튼 이벤트 연결
+    const cancelBtn = document.getElementById('exit-cancel-btn');
+    const confirmBtn = document.getElementById('exit-confirm-btn');
+    const dialog = document.getElementById('exit-confirm-dialog');
+
+    // 취소 버튼
+    cancelBtn.addEventListener('click', () => {
+      console.log('❌ 사용자가 종료 취소');
+      dialog.remove();
+      this.cancelExit();
+    });
+
+    // 종료 버튼
+    confirmBtn.addEventListener('click', () => {
+      console.log('✅ 사용자가 종료 선택');
+      dialog.remove();
+      this.exitApp();
+    });
+
+    // 배경 클릭 시 취소
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        console.log('❌ 배경 클릭으로 취소');
+        dialog.remove();
+        this.cancelExit();
+      }
+    });
+
+    // 버튼 호버 효과
+    cancelBtn.addEventListener('mouseenter', () => {
+      cancelBtn.style.background = '#f8f9fa';
+      cancelBtn.style.borderColor = '#bbb';
+    });
+    
+    cancelBtn.addEventListener('mouseleave', () => {
+      cancelBtn.style.background = 'white';
+      cancelBtn.style.borderColor = '#ddd';
+    });
+
+    confirmBtn.addEventListener('mouseenter', () => {
+      confirmBtn.style.background = '#c82333';
+      confirmBtn.style.borderColor = '#bd2130';
+    });
+    
+    confirmBtn.addEventListener('mouseleave', () => {
+      confirmBtn.style.background = '#dc3545';
+      confirmBtn.style.borderColor = '#dc3545';
+    });
   }
 
   // 페이지 언로드 전 처리 (탭 닫기/새로고침)
