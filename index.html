@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="다담업무">
-  
+     
   <!-- 터치 아이콘 -->
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
 </head>
@@ -132,6 +132,9 @@
   <!-- 6. 인증 (마지막) -->
   <script type="module" src="scripts/auth.js"></script>
 
+  <!-- 모바일 뒤로가기 핸들러 추가 -->
+    <script type="module" src="scripts/mobile-back-handler.js"></script>
+    
   <!-- 메인 앱 로직 -->
   <script>
     // 전역 함수 정의 (인라인으로 정의하여 onclick 이벤트에서 사용 가능)
