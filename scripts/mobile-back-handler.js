@@ -1,8 +1,8 @@
-// mobile-back-handler.js - 모바일 뒤로가기 버튼 종료 확인 처리 (원래 방식)
+// mobile-back-handler.js - 모바일 뒤로가기 버튼 종료 확인 처리
 
 /**
  * 모바일 뒤로가기 버튼 처리 모듈
- * 모바일 기기에서 뒤로가기 버튼을 누르면 커스텀 종료 확인 다이얼로그 표시
+ * 모바일 기기에서 뒤로가기 버튼을 누르면 "앱을 종료하시겠습니까?" 확인 다이얼로그 표시
  */
 
 class MobileBackHandler {
@@ -53,6 +53,16 @@ class MobileBackHandler {
       // popstate 이벤트 리스너 등록 (뒤로가기 버튼 감지)
       window.addEventListener('popstate', (event) => this.handleBackButton(event));
       
+      // beforeunload 이벤트도 추가 (브라우저 탭 닫기/새로고침 시)
+      window.addEventListener('beforeunload', (event) => this.handleBeforeUnload(event));
+
+      // 추가: hashchange 이벤트로도 감지
+      window.addEventListener('hashchange', (event) => {
+        console.log('🔗 해시 변경 감지');
+        event.preventDefault();
+        this.handleBackButton(event);
+      });
+      
       this.isInitialized = true;
       console.log('✅ 모바일 뒤로가기 처리 초기화 완료');
 
@@ -65,22 +75,23 @@ class MobileBackHandler {
   handleBackButton(event) {
     console.log('🔙 뒤로가기 버튼 감지됨');
     
-    // 이벤트 기본 동작 방지
-    if (event && event.preventDefault) {
-      event.preventDefault();
-    }
-    if (event && event.stopPropagation) {
-      event.stopPropagation();
-    }
-    
     // 즉시 히스토리 상태 복원 (페이지 이동 방지)
     if (window.history && window.history.pushState) {
       window.history.pushState({ preventBack: true }, null, window.location.href);
-      console.log('🔄 히스토리 상태 즉시 복원');
     }
     
-    // 커스텀 확인 다이얼로그 생성
-    this.showExitConfirmDialog();
+    // 이벤트 기본 동작 방지
+    if (event.preventDefault) {
+      event.preventDefault();
+    }
+    if (event.stopPropagation) {
+      event.stopPropagation();
+    }
+    
+    // 약간의 지연 후 다이얼로그 표시 (브라우저가 안정화되길 기다림)
+    setTimeout(() => {
+      this.showExitConfirmDialog();
+    }, 50);
     
     return false;
   }
@@ -200,6 +211,35 @@ class MobileBackHandler {
         this.cancelExit();
       }
     });
+
+    // 버튼 호버 효과
+    cancelBtn.addEventListener('mouseenter', () => {
+      cancelBtn.style.background = '#f8f9fa';
+      cancelBtn.style.borderColor = '#bbb';
+    });
+    
+    cancelBtn.addEventListener('mouseleave', () => {
+      cancelBtn.style.background = 'white';
+      cancelBtn.style.borderColor = '#ddd';
+    });
+
+    confirmBtn.addEventListener('mouseenter', () => {
+      confirmBtn.style.background = '#c82333';
+      confirmBtn.style.borderColor = '#bd2130';
+    });
+    
+    confirmBtn.addEventListener('mouseleave', () => {
+      confirmBtn.style.background = '#dc3545';
+      confirmBtn.style.borderColor = '#dc3545';
+    });
+  }
+
+  // 페이지 언로드 전 처리 (탭 닫기/새로고침)
+  handleBeforeUnload(event) {
+    // 모바일에서는 beforeunload가 제한적이지만 추가 보안용
+    const message = '정말 페이지를 떠나시겠습니까?';
+    event.returnValue = message;
+    return message;
   }
 
   // 앱 종료 처리
@@ -207,62 +247,44 @@ class MobileBackHandler {
     try {
       console.log('🔚 앱 종료 시작...');
 
-      // 방법 1: 히스토리 뒤로가기로 자연스러운 종료
+      // 방법 1: 히스토리 백 (이전 페이지로)
       if (window.history && window.history.length > 1) {
-        console.log('📜 히스토리 뒤로가기로 종료');
-        window.history.go(-1);
+        console.log('📜 히스토리 백 시도');
+        window.history.back();
         return;
       }
 
-      // 방법 2: 안드로이드 웹뷰용
+      // 방법 2: 브라우저 탭 닫기 (지원되는 경우)
+      if (window.close) {
+        console.log('🚪 탭 닫기 시도');
+        window.close();
+      }
+
+      // 방법 3: 안드로이드 웹뷰용 (앱에서 제공하는 경우)
       if (window.Android && typeof window.Android.finishApp === 'function') {
-        console.log('📱 안드로이드 앱 종료');
+        console.log('📱 안드로이드 앱 종료 시도');
         window.Android.finishApp();
         return;
       }
 
-      // 방법 3: iOS 웹뷰용
+      // 방법 4: iOS 웹뷰용 (앱에서 제공하는 경우)
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.finishApp) {
-        console.log('🍎 iOS 앱 종료');
+        console.log('🍎 iOS 앱 종료 시도');
         window.webkit.messageHandlers.finishApp.postMessage(null);
         return;
       }
 
-      // 방법 4: 브라우저 창 닫기
-      if (window.close) {
-        console.log('🚪 브라우저 창 닫기');
-        window.close();
-        
-        // window.close()가 즉시 작동하지 않을 수 있으므로 잠시 대기 후 확인
-        setTimeout(() => {
-          // 창이 아직 열려있다면 다른 방법 시도
-          this.tryAlternativeExit();
-        }, 200);
-        return;
-      }
-
-      // 방법 5: 다른 종료 방법들
-      this.tryAlternativeExit();
+      // 방법 5: about:blank 페이지로 이동 (최후 수단)
+      setTimeout(() => {
+        console.log('⚪ about:blank 이동');
+        window.location.href = 'about:blank';
+      }, 100);
 
     } catch (error) {
       console.error('❌ 앱 종료 실패:', error);
-      this.tryAlternativeExit();
-    }
-  }
-
-  // 대안 종료 방법들
-  tryAlternativeExit() {
-    try {
-      console.log('🔄 대안 종료 방법 시도');
-
-      // 현재 페이지를 빈 페이지로 교체
-      window.location.replace('data:text/html,<html><head><title>종료됨</title></head><body style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#666;"><div style="text-align:center;"><h2>✅ 앱이 종료되었습니다</h2><p>이 탭을 닫아주세요</p></div></body></html>');
-
-    } catch (error) {
-      console.error('❌ 대안 종료 방법 실패:', error);
       
-      // 최후 수단: 사용자 안내
-      alert('브라우저의 뒤로가기 버튼을 한 번 더 누르거나\n수동으로 브라우저 탭을 닫아주세요.');
+      // 종료 실패 시 사용자에게 안내
+      alert('앱을 자동으로 종료할 수 없습니다.\n수동으로 브라우저를 닫아주세요.');
     }
   }
 
@@ -271,7 +293,7 @@ class MobileBackHandler {
     try {
       // 히스토리에 다시 푸시하여 뒤로가기 상태 복원
       if (window.history && window.history.pushState) {
-        window.history.pushState({ preventBack: true }, null, window.location.href);
+        window.history.pushState(null, null, window.location.href);
         console.log('🔄 히스토리 상태 복원 완료');
       }
     } catch (error) {
@@ -279,12 +301,13 @@ class MobileBackHandler {
     }
   }
 
-  // 강제 비활성화
+  // 강제 비활성화 (필요한 경우)
   disable() {
     if (!this.isInitialized) return;
 
     try {
       window.removeEventListener('popstate', this.handleBackButton);
+      window.removeEventListener('beforeunload', this.handleBeforeUnload);
       this.isInitialized = false;
       console.log('🚫 모바일 뒤로가기 처리 비활성화');
     } catch (error) {
@@ -309,4 +332,9 @@ window.MobileBackHandler = {
   isMobile: () => mobileBackHandler.isMobile
 };
 
-console.log('📱 mobile-back-handler.js 로드 완료 (원래 방식)');
+console.log('📱 mobile-back-handler.js 로드 완료');
+
+// ES6 모듈로도 사용 가능하도록 export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = MobileBackHandler;
+}
