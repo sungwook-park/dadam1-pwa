@@ -90,12 +90,8 @@ function showWorkerInterface(userInfo) {
   if (tabContent && tabTitle && tabBody) {
     tabContent.style.display = 'block';
     
-    // 탭 제목 설정 (작업자 이름 포함)
-    tabTitle.innerHTML = `
-      <div class="mobile-tab-title">
-        <h3>📋 ${userInfo?.name || '작업자'} 작업 현황</h3>
-      </div>
-    `;
+// 서브타이틀 제거 - 이 부분을 삭제하세요
+// tabTitle.innerHTML = `...`;
     
     // 작업자용 서브탭 (오늘작업, 완료작업만)
     tabBody.innerHTML = `
