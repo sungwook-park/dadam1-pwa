@@ -55,13 +55,41 @@ function formatPhoneLink(contact) {
   return contact;
 }
 
+// 주소를 지도 검색용으로 정리하는 함수
+function cleanAddressForMap(address) {
+  if (!address || !address.trim()) {
+    return '';
+  }
+  
+  let cleanAddress = address.trim();
+  
+  // 동호수 패턴 제거 (예: 101동 1001호, 1동 101호, A동 1호 등)
+  cleanAddress = cleanAddress.replace(/\s*[0-9A-Za-z가-힣]*동\s*[0-9A-Za-z가-힣]*호.*$/g, '');
+  
+  // 호수만 있는 경우도 제거 (예: 1001호, 101호)
+  cleanAddress = cleanAddress.replace(/\s*[0-9]+호.*$/g, '');
+  
+  // 층수 정보 제거 (예: 10층, B1층)
+  cleanAddress = cleanAddress.replace(/\s*[B0-9]+층.*$/g, '');
+  
+  // 상세 주소 정보 제거 (괄호 안 내용)
+  cleanAddress = cleanAddress.replace(/\s*\([^)]*\).*$/g, '');
+  
+  // 연속된 공백을 하나로 정리
+  cleanAddress = cleanAddress.replace(/\s+/g, ' ').trim();
+  
+  return cleanAddress;
+}
+
 // 주소를 지도 링크로 변환하는 함수 (T맵 우선, 폴백: 카카오맵)
 function formatAddressLink(address) {
   if (!address || !address.trim()) {
     return '';
   }
   
-  const encodedAddress = encodeURIComponent(address);
+  // 지도 검색용으로 주소 정리
+  const cleanAddress = cleanAddressForMap(address);
+  const encodedAddress = encodeURIComponent(cleanAddress);
   
   // 모바일 감지
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);
@@ -71,12 +99,12 @@ function formatAddressLink(address) {
     const tmapUrl = `tmap://search?name=${encodedAddress}`;
     const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
     
-    return `<a href="${tmapUrl}" class="address-link" onclick="event.stopPropagation(); handleMapLink(event, '${kakaoMapUrl}');">${address}</a>`;
+    return `<a href="${tmapUrl}" class="address-link" onclick="event.stopPropagation(); handleMapLink(event, '${kakaoMapUrl}');" title="지도에서 보기: ${cleanAddress}">${address}</a>`;
   } else {
     // 웹: 바로 카카오맵 (T맵은 웹에서 지원 안함)
     const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
     
-    return `<a href="${kakaoMapUrl}" class="address-link" onclick="event.stopPropagation();" target="_blank">${address}</a>`;
+    return `<a href="${kakaoMapUrl}" class="address-link" onclick="event.stopPropagation();" target="_blank" title="지도에서 보기: ${cleanAddress}">${address}</a>`;
   }
 }
 
@@ -920,3 +948,4 @@ window.formatPartsForDisplay = formatPartsForDisplay;
 window.formatPhoneLink = formatPhoneLink;
 window.formatAddressLink = formatAddressLink;
 window.handleMapLink = handleMapLink;
+window.cleanAddressForMap = cleanAddressForMap;
