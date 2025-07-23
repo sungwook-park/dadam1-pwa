@@ -1,4 +1,4 @@
-// scripts/templates/task-templates.js - 날짜 필터 1줄 정렬 개선
+// scripts/templates/task-templates.js - 날짜 필터 반응형 개선
 
 // 유틸리티 함수들
 function formatKoreanDate(dateString) {
@@ -193,18 +193,22 @@ export function getTaskListHTML() {
   `;
 }
 
-// 예약탭 - 날짜 필터 1줄 정렬
+// 예약탭 - 날짜 필터 반응형 개선
 export function getReserveTabHTML() {
   const tomorrow = getTomorrowString();
   
   return `
     <div class="date-filter-container">
       <div class="date-filter-row">
-        <input type="date" id="reserve-start-date" value="${tomorrow}" class="date-filter-input">
-        <span class="date-separator">~</span>
-        <input type="date" id="reserve-end-date" value="${tomorrow}" class="date-filter-input">
-        <button id="reserve-search-btn" class="filter-search-btn">🔍 검색</button>
-        <button onclick="resetReserveFilter()" class="filter-reset-btn">내일</button>
+        <div class="date-inputs-group">
+          <input type="date" id="reserve-start-date" value="${tomorrow}" class="date-filter-input">
+          <span class="date-separator">~</span>
+          <input type="date" id="reserve-end-date" value="${tomorrow}" class="date-filter-input">
+        </div>
+        <div class="filter-buttons-group">
+          <button id="reserve-search-btn" class="filter-search-btn">🔍 검색</button>
+          <button onclick="resetReserveFilter()" class="filter-reset-btn">내일</button>
+        </div>
       </div>
     </div>
     ${getTaskListHTML()}
@@ -222,23 +226,38 @@ export function getReserveTabHTML() {
         display: flex;
         align-items: center;
         gap: 12px;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .date-inputs-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      
+      .filter-buttons-group {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
       }
       
       .date-filter-input {
-        flex: 1;
         margin: 0 !important;
-        padding: 12px 16px !important;
-        font-size: 16px !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
         border-radius: 8px !important;
         border: 2px solid #ddd !important;
-        min-height: 45px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
         background: #fff !important;
         color: #333 !important;
         font-family: inherit;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         touch-action: manipulation;
-        min-width: 140px;
+        width: 130px !important;
+        flex: none !important;
       }
       
       .date-filter-input:focus {
@@ -257,11 +276,12 @@ export function getReserveTabHTML() {
       }
       
       .filter-search-btn, .filter-reset-btn {
-        padding: 12px 18px !important;
+        padding: 10px 14px !important;
         margin: 0 !important;
-        font-size: 15px !important;
-        border-radius: 8px !important;
-        min-height: 45px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
         white-space: nowrap;
         border: none !important;
         cursor: pointer;
@@ -274,7 +294,7 @@ export function getReserveTabHTML() {
       .filter-search-btn {
         background: #219ebc !important;
         color: white !important;
-        min-width: 90px;
+        width: 70px !important;
       }
       
       .filter-search-btn:hover,
@@ -287,7 +307,7 @@ export function getReserveTabHTML() {
       .filter-reset-btn {
         background: #6c757d !important;
         color: white !important;
-        min-width: 70px;
+        width: 55px !important;
       }
       
       .filter-reset-btn:hover {
@@ -295,14 +315,50 @@ export function getReserveTabHTML() {
         transform: translateY(-1px);
       }
       
-      /* 모바일 반응형 */
-      @media (max-width: 768px) {
+      /* 태블릿 사이즈 */
+      @media (max-width: 1024px) {
         .date-filter-container {
           padding: 12px 15px;
         }
         
         .date-filter-row {
-          gap: 8px;
+          gap: 12px;
+        }
+        
+        .date-inputs-group {
+          min-width: 260px;
+        }
+        
+        .date-filter-input {
+          min-width: 120px;
+          font-size: 15px !important;
+          padding: 10px 14px !important;
+        }
+        
+        .filter-search-btn,
+        .filter-reset-btn {
+          font-size: 14px !important;
+          padding: 10px 16px !important;
+          min-height: 42px !important;
+        }
+      }
+      
+      /* 모바일 - 2줄로 배치 */
+      @media (max-width: 768px) {
+        .date-filter-row {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
+        }
+        
+        .date-inputs-group {
+          min-width: unset;
+          width: 100%;
+        }
+        
+        .filter-buttons-group {
+          width: 100%;
+          justify-content: center;
         }
         
         .date-filter-input {
@@ -317,20 +373,32 @@ export function getReserveTabHTML() {
           font-size: 14px !important;
           padding: 10px 14px !important;
           min-height: 42px !important;
+          flex: 1;
         }
         
         .filter-search-btn {
-          min-width: 80px;
+          min-width: unset;
+          max-width: 120px;
         }
         
         .filter-reset-btn {
-          min-width: 60px;
+          min-width: unset;
+          max-width: 80px;
         }
       }
       
-      @media (max-width: 600px) {
-        .date-filter-row {
-          gap: 6px;
+      /* 작은 모바일 */
+      @media (max-width: 480px) {
+        .date-filter-container {
+          padding: 10px 12px;
+        }
+        
+        .date-inputs-group {
+          gap: 8px;
+        }
+        
+        .filter-buttons-group {
+          gap: 8px;
         }
         
         .date-filter-input {
@@ -345,14 +413,6 @@ export function getReserveTabHTML() {
           font-size: 13px !important;
           padding: 8px 12px !important;
           min-height: 40px !important;
-        }
-        
-        .filter-search-btn {
-          min-width: 70px;
-        }
-        
-        .filter-reset-btn {
-          min-width: 50px;
         }
         
         .date-separator {
@@ -364,7 +424,7 @@ export function getReserveTabHTML() {
   `;
 }
 
-// 완료작업탭 - 날짜 필터 1줄 정렬
+// 완료작업탭 - 날짜 필터 반응형 개선
 export function getDoneTabHTML() {
   const today = getTodayString();
   
@@ -372,17 +432,21 @@ export function getDoneTabHTML() {
     ${getTaskSubTabsHTML('done')}
     <div class="date-filter-container">
       <div class="date-filter-row">
-        <input type="date" id="done-start-date" value="${today}" class="date-filter-input">
-        <span class="date-separator">~</span>
-        <input type="date" id="done-end-date" value="${today}" class="date-filter-input">
-        <button id="done-search-btn" class="filter-search-btn">🔍 검색</button>
-        <button onclick="resetDoneFilter()" class="filter-reset-btn">오늘</button>
+        <div class="date-inputs-group">
+          <input type="date" id="done-start-date" value="${today}" class="date-filter-input">
+          <span class="date-separator">~</span>
+          <input type="date" id="done-end-date" value="${today}" class="date-filter-input">
+        </div>
+        <div class="filter-buttons-group">
+          <button id="done-search-btn" class="filter-search-btn">🔍 검색</button>
+          <button onclick="resetDoneFilter()" class="filter-reset-btn">오늘</button>
+        </div>
       </div>
     </div>
     ${getTaskListHTML()}
     
     <style>
-      /* 완료작업탭도 동일한 스타일 적용 */
+      /* 완료작업탭 스타일도 동일하게 수정 */
       .date-filter-container {
         background: white;
         padding: 15px 20px;
@@ -395,23 +459,38 @@ export function getDoneTabHTML() {
         display: flex;
         align-items: center;
         gap: 12px;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .date-inputs-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      
+      .filter-buttons-group {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
       }
       
       .date-filter-input {
-        flex: 1;
         margin: 0 !important;
-        padding: 12px 16px !important;
-        font-size: 16px !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
         border-radius: 8px !important;
         border: 2px solid #ddd !important;
-        min-height: 45px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
         background: #fff !important;
         color: #333 !important;
         font-family: inherit;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         touch-action: manipulation;
-        min-width: 140px;
+        width: 130px !important;
+        flex: none !important;
       }
       
       .date-filter-input:focus {
@@ -430,11 +509,12 @@ export function getDoneTabHTML() {
       }
       
       .filter-search-btn, .filter-reset-btn {
-        padding: 12px 18px !important;
+        padding: 10px 14px !important;
         margin: 0 !important;
-        font-size: 15px !important;
-        border-radius: 8px !important;
-        min-height: 45px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
         white-space: nowrap;
         border: none !important;
         cursor: pointer;
@@ -447,7 +527,7 @@ export function getDoneTabHTML() {
       .filter-search-btn {
         background: #219ebc !important;
         color: white !important;
-        min-width: 90px;
+        width: 70px !important;
       }
       
       .filter-search-btn:hover,
@@ -460,7 +540,7 @@ export function getDoneTabHTML() {
       .filter-reset-btn {
         background: #6c757d !important;
         color: white !important;
-        min-width: 70px;
+        width: 55px !important;
       }
       
       .filter-reset-btn:hover {
@@ -468,14 +548,50 @@ export function getDoneTabHTML() {
         transform: translateY(-1px);
       }
       
-      /* 모바일 반응형 */
-      @media (max-width: 768px) {
+      /* 태블릿 사이즈 */
+      @media (max-width: 1024px) {
         .date-filter-container {
           padding: 12px 15px;
         }
         
         .date-filter-row {
-          gap: 8px;
+          gap: 12px;
+        }
+        
+        .date-inputs-group {
+          min-width: 260px;
+        }
+        
+        .date-filter-input {
+          min-width: 120px;
+          font-size: 15px !important;
+          padding: 10px 14px !important;
+        }
+        
+        .filter-search-btn,
+        .filter-reset-btn {
+          font-size: 14px !important;
+          padding: 10px 16px !important;
+          min-height: 42px !important;
+        }
+      }
+      
+      /* 모바일 - 2줄로 배치 */
+      @media (max-width: 768px) {
+        .date-filter-row {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
+        }
+        
+        .date-inputs-group {
+          min-width: unset;
+          width: 100%;
+        }
+        
+        .filter-buttons-group {
+          width: 100%;
+          justify-content: center;
         }
         
         .date-filter-input {
@@ -490,20 +606,32 @@ export function getDoneTabHTML() {
           font-size: 14px !important;
           padding: 10px 14px !important;
           min-height: 42px !important;
+          flex: 1;
         }
         
         .filter-search-btn {
-          min-width: 80px;
+          min-width: unset;
+          max-width: 120px;
         }
         
         .filter-reset-btn {
-          min-width: 60px;
+          min-width: unset;
+          max-width: 80px;
         }
       }
       
-      @media (max-width: 600px) {
-        .date-filter-row {
-          gap: 6px;
+      /* 작은 모바일 */
+      @media (max-width: 480px) {
+        .date-filter-container {
+          padding: 10px 12px;
+        }
+        
+        .date-inputs-group {
+          gap: 8px;
+        }
+        
+        .filter-buttons-group {
+          gap: 8px;
         }
         
         .date-filter-input {
@@ -518,14 +646,6 @@ export function getDoneTabHTML() {
           font-size: 13px !important;
           padding: 8px 12px !important;
           min-height: 40px !important;
-        }
-        
-        .filter-search-btn {
-          min-width: 70px;
-        }
-        
-        .filter-reset-btn {
-          min-width: 50px;
         }
         
         .date-separator {
