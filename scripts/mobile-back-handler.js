@@ -207,34 +207,62 @@ class MobileBackHandler {
     try {
       console.log('🔚 앱 종료 시작...');
 
-      // 방법 1: 안드로이드 웹뷰용
+      // 방법 1: 히스토리 뒤로가기로 자연스러운 종료
+      if (window.history && window.history.length > 1) {
+        console.log('📜 히스토리 뒤로가기로 종료');
+        window.history.go(-1);
+        return;
+      }
+
+      // 방법 2: 안드로이드 웹뷰용
       if (window.Android && typeof window.Android.finishApp === 'function') {
         console.log('📱 안드로이드 앱 종료');
         window.Android.finishApp();
         return;
       }
 
-      // 방법 2: iOS 웹뷰용
+      // 방법 3: iOS 웹뷰용
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.finishApp) {
         console.log('🍎 iOS 앱 종료');
         window.webkit.messageHandlers.finishApp.postMessage(null);
         return;
       }
 
-      // 방법 3: 일반 브라우저 - 창 닫기
+      // 방법 4: 브라우저 창 닫기
       if (window.close) {
         console.log('🚪 브라우저 창 닫기');
         window.close();
+        
+        // window.close()가 즉시 작동하지 않을 수 있으므로 잠시 대기 후 확인
+        setTimeout(() => {
+          // 창이 아직 열려있다면 다른 방법 시도
+          this.tryAlternativeExit();
+        }, 200);
+        return;
       }
 
-      // 방법 4: 최후 수단 - 사용자 안내
-      setTimeout(() => {
-        alert('앱을 자동으로 종료할 수 없습니다.\n브라우저의 뒤로가기 버튼을 한 번 더 누르거나\n수동으로 브라우저를 닫아주세요.');
-      }, 300);
+      // 방법 5: 다른 종료 방법들
+      this.tryAlternativeExit();
 
     } catch (error) {
       console.error('❌ 앱 종료 실패:', error);
-      alert('앱을 자동으로 종료할 수 없습니다.\n수동으로 브라우저를 닫아주세요.');
+      this.tryAlternativeExit();
+    }
+  }
+
+  // 대안 종료 방법들
+  tryAlternativeExit() {
+    try {
+      console.log('🔄 대안 종료 방법 시도');
+
+      // 현재 페이지를 빈 페이지로 교체
+      window.location.replace('data:text/html,<html><head><title>종료됨</title></head><body style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#666;"><div style="text-align:center;"><h2>✅ 앱이 종료되었습니다</h2><p>이 탭을 닫아주세요</p></div></body></html>');
+
+    } catch (error) {
+      console.error('❌ 대안 종료 방법 실패:', error);
+      
+      // 최후 수단: 사용자 안내
+      alert('브라우저의 뒤로가기 버튼을 한 번 더 누르거나\n수동으로 브라우저 탭을 닫아주세요.');
     }
   }
 
