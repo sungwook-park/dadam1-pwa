@@ -55,6 +55,30 @@ function formatPhoneLink(contact) {
   return contact;
 }
 
+// 주소를 지도 링크로 변환하는 함수 (네이버 지도 우선, 폴백: 카카오맵)
+function formatAddressLink(address) {
+  if (!address || !address.trim()) {
+    return '';
+  }
+  
+  const encodedAddress = encodeURIComponent(address);
+  const naverMapUrl = `https://map.naver.com/v5/search/${encodedAddress}`;
+  
+  return `<a href="${naverMapUrl}" class="address-link" onclick="event.stopPropagation();" target="_blank">${address}</a>`;
+}
+
+// 지도 링크 처리 함수 (간소화)
+function handleMapLink(event, fallbackUrl) {
+  // 모바일에서만 폴백 로직 사용
+  if (/Mobi|Android/i.test(navigator.userAgent)) {
+    setTimeout(() => {
+      if (document.hasFocus()) {
+        window.location.href = fallbackUrl;
+      }
+    }, 2000);
+  }
+}
+
 // 전화 링크 스타일 추가 함수
 function addPhoneStyles() {
   if (document.getElementById('phone-link-styles')) {
@@ -84,20 +108,53 @@ function addPhoneStyles() {
         background-color: rgba(33, 158, 188, 0.2);
       }
       
+      .address-link {
+        color: #28a745 !important;
+        text-decoration: none;
+        font-weight: 600;
+        border-bottom: 1px dotted #28a745;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      
+      .address-link:hover {
+        color: #1e7e34 !important;
+        border-bottom-style: solid;
+        background-color: rgba(40, 167, 69, 0.1);
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+      
+      .address-link:active {
+        background-color: rgba(40, 167, 69, 0.2);
+      }
+      
       /* 모바일에서 터치 피드백 */
       @media (max-width: 768px) {
-        .phone-link {
+        .phone-link, .address-link {
           padding: 4px 6px;
           border-radius: 4px;
-          background-color: rgba(33, 158, 188, 0.05);
           border-bottom: none;
           display: inline-block;
           min-height: 44px;
           line-height: 36px;
         }
         
+        .phone-link {
+          background-color: rgba(33, 158, 188, 0.05);
+        }
+        
+        .address-link {
+          background-color: rgba(40, 167, 69, 0.05);
+        }
+        
         .phone-link:active {
           background-color: rgba(33, 158, 188, 0.2);
+          transform: scale(0.98);
+        }
+        
+        .address-link:active {
+          background-color: rgba(40, 167, 69, 0.2);
           transform: scale(0.98);
         }
       }
@@ -708,8 +765,8 @@ export function getTaskItemHTML(task, id, tabType) {
           <span class="arrow">▼</span>
         </div>
         <div id="detail-${id}" class="task-detail" style="display:none;">
-          ${task.removeAddress ? `<div><strong>철거:</strong> ${task.removeAddress}</div>` : ''}
-          <div><strong>설치:</strong> ${task.installAddress || ''}</div>
+          ${task.removeAddress ? `<div><strong>철거:</strong> ${formatAddressLink(task.removeAddress)}</div>` : ''}
+          <div><strong>설치:</strong> ${formatAddressLink(task.installAddress)}</div>
           <div><strong>연락처:</strong> ${formatPhoneLink(task.contact)}</div>
           <div><strong>작업구분:</strong> ${task.taskType || ''}</div>
           <div><strong>금액:</strong> ${parseInt(task.amount || 0).toLocaleString()}원</div>
@@ -849,3 +906,5 @@ document.addEventListener('DOMContentLoaded', addPhoneStyles);
 window.formatDate = formatKoreanDate;
 window.formatPartsForDisplay = formatPartsForDisplay;
 window.formatPhoneLink = formatPhoneLink;
+window.formatAddressLink = formatAddressLink;
+window.handleMapLink = handleMapLink;
