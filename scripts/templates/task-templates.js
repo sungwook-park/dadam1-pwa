@@ -55,28 +55,40 @@ function formatPhoneLink(contact) {
   return contact;
 }
 
-// 주소를 지도 링크로 변환하는 함수 (네이버 지도 우선, 폴백: 카카오맵)
+// 주소를 지도 링크로 변환하는 함수 (T맵 우선, 폴백: 카카오맵)
 function formatAddressLink(address) {
   if (!address || !address.trim()) {
     return '';
   }
   
   const encodedAddress = encodeURIComponent(address);
-  const naverMapUrl = `https://map.naver.com/v5/search/${encodedAddress}`;
   
-  return `<a href="${naverMapUrl}" class="address-link" onclick="event.stopPropagation();" target="_blank">${address}</a>`;
+  // 모바일 감지
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    // 모바일: T맵 시도 → 실패시 카카오맵
+    const tmapUrl = `tmap://search?name=${encodedAddress}`;
+    const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
+    
+    return `<a href="${tmapUrl}" class="address-link" onclick="event.stopPropagation(); handleMapLink(event, '${kakaoMapUrl}');">${address}</a>`;
+  } else {
+    // 웹: 바로 카카오맵 (T맵은 웹에서 지원 안함)
+    const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
+    
+    return `<a href="${kakaoMapUrl}" class="address-link" onclick="event.stopPropagation();" target="_blank">${address}</a>`;
+  }
 }
 
-// 지도 링크 처리 함수 (간소화)
+// 지도 링크 처리 함수 (T맵 실패시 카카오맵으로 폴백)
 function handleMapLink(event, fallbackUrl) {
-  // 모바일에서만 폴백 로직 사용
-  if (/Mobi|Android/i.test(navigator.userAgent)) {
-    setTimeout(() => {
-      if (document.hasFocus()) {
-        window.location.href = fallbackUrl;
-      }
-    }, 2000);
-  }
+  // T맵이 열리지 않을 경우를 대비한 폴백 처리 (모바일만)
+  setTimeout(() => {
+    // T맵 앱이 설치되지 않았거나 열리지 않으면 카카오맵으로
+    if (document.hasFocus()) {
+      window.location.href = fallbackUrl;
+    }
+  }, 1500); // T맵은 1.5초로 단축
 }
 
 // 전화 링크 스타일 추가 함수
