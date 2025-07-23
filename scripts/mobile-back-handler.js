@@ -44,7 +44,7 @@ class MobileBackHandler {
     }
 
     try {
-      // 현재 페이지를 히스토리에 추가 (뒤로가기 감지를 위해)
+      // 단순하게 하나의 히스토리만 추가
       if (window.history && window.history.pushState) {
         window.history.pushState({ preventBack: true }, null, window.location.href);
         console.log('📋 히스토리 상태 추가 완료');
@@ -56,11 +56,17 @@ class MobileBackHandler {
       // beforeunload 이벤트도 추가 (브라우저 탭 닫기/새로고침 시)
       window.addEventListener('beforeunload', (event) => this.handleBeforeUnload(event));
 
-      // 추가: hashchange 이벤트로도 감지
-      window.addEventListener('hashchange', (event) => {
-        console.log('🔗 해시 변경 감지');
-        event.preventDefault();
-        this.handleBackButton(event);
+      // visibilitychange 이벤트 추가 (앱이 숨겨질 때 감지)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          console.log('👁️ 앱이 숨겨짐 (뒤로가기일 가능성)');
+          // 앱이 숨겨지면 히스토리 다시 추가
+          setTimeout(() => {
+            if (window.history && window.history.pushState && document.visibilityState === 'visible') {
+              window.history.pushState({ preventBack: true }, null, window.location.href);
+            }
+          }, 100);
+        }
       });
       
       this.isInitialized = true;
@@ -74,24 +80,24 @@ class MobileBackHandler {
   // 뒤로가기 버튼 처리
   handleBackButton(event) {
     console.log('🔙 뒤로가기 버튼 감지됨');
+    console.log('📊 현재 히스토리 길이:', window.history.length);
+    
+    // 이벤트 기본 동작 방지
+    if (event && event.preventDefault) {
+      event.preventDefault();
+    }
+    if (event && event.stopPropagation) {
+      event.stopPropagation();
+    }
     
     // 즉시 히스토리 상태 복원 (페이지 이동 방지)
     if (window.history && window.history.pushState) {
       window.history.pushState({ preventBack: true }, null, window.location.href);
+      console.log('🔄 히스토리 상태 즉시 복원');
     }
     
-    // 이벤트 기본 동작 방지
-    if (event.preventDefault) {
-      event.preventDefault();
-    }
-    if (event.stopPropagation) {
-      event.stopPropagation();
-    }
-    
-    // 약간의 지연 후 다이얼로그 표시 (브라우저가 안정화되길 기다림)
-    setTimeout(() => {
-      this.showExitConfirmDialog();
-    }, 50);
+    // 즉시 다이얼로그 표시 (지연 제거)
+    this.showExitConfirmDialog();
     
     return false;
   }
@@ -246,45 +252,74 @@ class MobileBackHandler {
   exitApp() {
     try {
       console.log('🔚 앱 종료 시작...');
-
-      // 방법 1: 히스토리 백 (이전 페이지로)
-      if (window.history && window.history.length > 1) {
-        console.log('📜 히스토리 백 시도');
-        window.history.back();
+      
+      // 종료 확인 메시지 (간단한 알림)
+      const finalConfirm = confirm('정말 종료하시겠습니까?');
+      if (!finalConfirm) {
+        console.log('❌ 최종 종료 취소');
+        this.cancelExit();
         return;
       }
 
-      // 방법 2: 브라우저 탭 닫기 (지원되는 경우)
+      // 히스토리 클리어 후 종료 시도
+      console.log('🧹 히스토리 정리 중...');
+      
+      // 방법 1: 히스토리를 초기 상태로 되돌리기
+      const historyLength = window.history.length;
+      if (historyLength > 1) {
+        console.log(`📜 히스토리 ${historyLength}개 정리 중...`);
+        window.history.go(-(historyLength - 1));
+        
+        // 잠깐 기다린 후 종료 시도
+        setTimeout(() => {
+          this.forceExit();
+        }, 500);
+        return;
+      }
+
+      // 히스토리가 1개뿐이면 바로 종료 시도
+      this.forceExit();
+
+    } catch (error) {
+      console.error('❌ 앱 종료 실패:', error);
+      this.forceExit();
+    }
+  }
+
+  // 강제 종료 시도
+  forceExit() {
+    try {
+      console.log('💥 강제 종료 시도');
+
+      // 방법 1: 브라우저 탭 닫기 (지원되는 경우)
       if (window.close) {
         console.log('🚪 탭 닫기 시도');
         window.close();
       }
 
-      // 방법 3: 안드로이드 웹뷰용 (앱에서 제공하는 경우)
+      // 방법 2: 안드로이드 웹뷰용 (앱에서 제공하는 경우)
       if (window.Android && typeof window.Android.finishApp === 'function') {
         console.log('📱 안드로이드 앱 종료 시도');
         window.Android.finishApp();
         return;
       }
 
-      // 방법 4: iOS 웹뷰용 (앱에서 제공하는 경우)
+      // 방법 3: iOS 웹뷰용 (앱에서 제공하는 경우)
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.finishApp) {
         console.log('🍎 iOS 앱 종료 시도');
         window.webkit.messageHandlers.finishApp.postMessage(null);
         return;
       }
 
-      // 방법 5: about:blank 페이지로 이동 (최후 수단)
-      setTimeout(() => {
-        console.log('⚪ about:blank 이동');
-        window.location.href = 'about:blank';
-      }, 100);
+      // 방법 4: 빈 페이지로 이동
+      console.log('⚪ 빈 페이지로 이동');
+      window.location.replace('about:blank');
 
     } catch (error) {
-      console.error('❌ 앱 종료 실패:', error);
+      console.error('❌ 강제 종료 실패:', error);
       
-      // 종료 실패 시 사용자에게 안내
-      alert('앱을 자동으로 종료할 수 없습니다.\n수동으로 브라우저를 닫아주세요.');
+      // 최후 수단: 사용자에게 수동 종료 안내
+      alert('앱을 자동으로 종료할 수 없습니다.\n브라우저의 뒤로가기 버튼을 한 번 더 누르거나\n수동으로 브라우저를 닫아주세요.');
     }
   }
 
