@@ -63,17 +63,21 @@ function cleanAddressForMap(address) {
   
   let cleanAddress = address.trim();
   
-  // 동호수 패턴 제거 (예: 101동 1001호, 1동 101호, A동 1호 등)
-  cleanAddress = cleanAddress.replace(/\s*[0-9A-Za-z가-힣]*동\s*[0-9A-Za-z가-힣]*호.*$/g, '');
+  // 동호수 패턴 제거 (더 정확한 패턴)
+  // 예: 101동 1001호, 1동 101호, A동 1호, 가동 나호 등
+  cleanAddress = cleanAddress.replace(/\s+[0-9A-Za-z가-힣]+동\s+[0-9A-Za-z가-힣]+호/g, '');
   
-  // 호수만 있는 경우도 제거 (예: 1001호, 101호)
-  cleanAddress = cleanAddress.replace(/\s*[0-9]+호.*$/g, '');
+  // 동만 있는 경우 (예: 101동, A동)
+  cleanAddress = cleanAddress.replace(/\s+[0-9A-Za-z가-힣]+동/g, '');
+  
+  // 호수만 있는 경우 (예: 1001호, 101호)
+  cleanAddress = cleanAddress.replace(/\s+[0-9A-Za-z가-힣]+호/g, '');
   
   // 층수 정보 제거 (예: 10층, B1층)
-  cleanAddress = cleanAddress.replace(/\s*[B0-9]+층.*$/g, '');
+  cleanAddress = cleanAddress.replace(/\s+[B0-9]+층/g, '');
   
   // 상세 주소 정보 제거 (괄호 안 내용)
-  cleanAddress = cleanAddress.replace(/\s*\([^)]*\).*$/g, '');
+  cleanAddress = cleanAddress.replace(/\s*\([^)]*\)/g, '');
   
   // 연속된 공백을 하나로 정리
   cleanAddress = cleanAddress.replace(/\s+/g, ' ').trim();
