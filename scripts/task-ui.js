@@ -1,4 +1,252 @@
-// scripts/task-ui.js - 수정 폼 개선 및 모바일 최적화 (코드 정리 버전)
+// CSS 스타일 추가 (작업자 수정 폼용 + 관리자 통계용)
+const workerEditStyles = `
+<style>
+.worker-edit-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin: 10px;
+  overflow: hidden;
+}
+
+.mobile-edit-header {
+  background: linear-gradient(135deg, #8ecae6, #219ebc);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-edit-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.header-cancel-btn {
+  background: rgba(255,255,255,0.2) !important;
+  border: 2px solid rgba(255,255,255,0.3) !important;
+  color: white !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: auto !important;
+  width: auto !important;
+  margin: 0 !important;
+  min-height: auto !important;
+}
+
+.header-cancel-btn:hover {
+  background: rgba(255,255,255,0.3) !important;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 관리자용 통계 스타일 */
+.task-stats-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 25px;
+  padding: 25px;
+}
+
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.stat-item.total {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border-left: 4px solid #2196f3;
+}
+
+.stat-item.pending {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  border-left: 4px solid #ff9800;
+}
+
+.stat-item.completed {
+  background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+  border-left: 4px solid #4caf50;
+}
+
+.stat-icon {
+  font-size: 2rem;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.worker-stats {
+  border-top: 2px solid #e6e6e6;
+  padding-top: 20px;
+}
+
+.worker-stats h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.worker-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.worker-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #219ebc;
+}
+
+.worker-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.worker-count {
+  font-weight: 700;
+  color: #219ebc;
+  background: #e3f2fd;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+/* 작업자별 섹션 스타일 */
+.worker-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.worker-header {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  padding: 15px 20px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.worker-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.worker-task-list {
+  padding: 0;
+}
+
+.worker-task-list .task-item {
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.worker-task-list .task-item:last-child {
+  border-bottom: none;
+}
+
+.no-tasks {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-style: italic;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+@media (max-width: 480px) {
+  .worker-edit-container {
+    margin: 5px;
+  }
+  
+  .mobile-edit-header {
+    padding: 15px;
+  }
+  
+  .mobile-edit-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .task-stats-container {
+    padding: 15px;
+  }
+  
+  .stats-summary {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .stat-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .worker-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .worker-section {
+    margin-bottom: 15px;
+  }
+  
+  .worker-header {
+    padding: 12px 15px;
+  }
+  
+  .worker-header h3 {
+    font-size: 1rem;
+  }
+}
+</style>
+`;
+
+// 스타일 추가
+if (!document.getElementById('worker-edit-styles')) {
+  const styleElement = document.createElement('div');
+  styleElement.id = 'worker-edit-styles';
+  styleElement.innerHTML = workerEditStyles;
+  document.head.appendChild(styleElement);
+}// scripts/task-ui.js - 수정 폼 개선 및 모바일 최적화 (수정된 버전)
 import { db } from './firebase-config.js';
 import {
   collection, query, where, getDocs, updateDoc, doc, deleteDoc, orderBy, getDoc
@@ -63,7 +311,6 @@ function filterTasksForCurrentUser(tasks) {
     if (!task.worker) return false;
     
     // 작업자 필드에 현재 사용자 이름이 포함되어 있는지 확인
-    // 예: "박성욱, 박성호" -> 박성욱이 로그인하면 true
     const isAssigned = task.worker.includes(userName);
     
     if (isAssigned) {
@@ -75,6 +322,178 @@ function filterTasksForCurrentUser(tasks) {
   
   console.log(`👷 작업자(${userName}) - 필터링된 작업:`, filteredTasks.length + '개');
   return filteredTasks;
+}
+
+// 작업자별로 작업 그룹화 (관리자용)
+function groupTasksByWorker(tasks) {
+  const grouped = {};
+  
+  tasks.forEach(task => {
+    if (!task.worker) return;
+    
+    // 첫 번째 작업자를 팀장으로 간주
+    const workers = task.worker.split(',').map(w => w.trim());
+    const teamLeader = workers[0];
+    
+    if (!grouped[teamLeader]) {
+      grouped[teamLeader] = [];
+    }
+    
+    grouped[teamLeader].push(task);
+  });
+  
+  return grouped;
+}
+
+// 통계 정보 생성
+function generateTaskStats(allTasks, completedTasks, isReserveTab = false) {
+  if (isReserveTab) {
+    // 예약 탭: 내일 해야할 작업수만
+    return {
+      totalReserveTasks: allTasks.length
+    };
+  }
+  
+  // 오늘작업/완료작업 탭 공통
+  const workerStats = {};
+  const groupedAll = groupTasksByWorker(allTasks);
+  const groupedCompleted = groupTasksByWorker(completedTasks);
+  
+  // 모든 작업자 목록 수집
+  const allWorkers = new Set([
+    ...Object.keys(groupedAll),
+    ...Object.keys(groupedCompleted)
+  ]);
+  
+  allWorkers.forEach(worker => {
+    workerStats[worker] = {
+      total: (groupedAll[worker] || []).length,
+      completed: (groupedCompleted[worker] || []).length,
+      pending: (groupedAll[worker] || []).length - (groupedCompleted[worker] || []).length
+    };
+  });
+  
+  return {
+    totalTasks: allTasks.length,
+    completedTasks: completedTasks.length,
+    pendingTasks: allTasks.length - completedTasks.length,
+    workerStats: workerStats
+  };
+}
+
+// 통계 HTML 생성
+function getStatsHTML(stats, tabType) {
+  if (tabType === 'reserve') {
+    return `
+      <div class="task-stats-container">
+        <div class="stats-summary">
+          <div class="stat-item total">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <div class="stat-label">내일 해야할 작업</div>
+              <div class="stat-value">${stats.totalReserveTasks}건</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  const workerStatsHTML = Object.entries(stats.workerStats).map(([worker, data]) => {
+    const isCompletedTab = tabType === 'done';
+    return `
+      <div class="worker-stat-item">
+        <span class="worker-name">${worker}</span>
+        <span class="worker-count">${isCompletedTab ? data.completed : data.pending}건</span>
+      </div>
+    `;
+  }).join('');
+  
+  if (tabType === 'done') {
+    return `
+      <div class="task-stats-container">
+        <div class="stats-summary">
+          <div class="stat-item total">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <div class="stat-label">오늘 전체 작업</div>
+              <div class="stat-value">${stats.totalTasks}건</div>
+            </div>
+          </div>
+          <div class="stat-item completed">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <div class="stat-label">완료된 작업</div>
+              <div class="stat-value">${stats.completedTasks}건</div>
+            </div>
+          </div>
+        </div>
+        <div class="worker-stats">
+          <h4>👷 작업자별 완료 현황</h4>
+          <div class="worker-stats-grid">
+            ${workerStatsHTML}
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="task-stats-container">
+        <div class="stats-summary">
+          <div class="stat-item total">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <div class="stat-label">오늘 전체 작업</div>
+              <div class="stat-value">${stats.totalTasks}건</div>
+            </div>
+          </div>
+          <div class="stat-item pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <div class="stat-label">해야할 작업</div>
+              <div class="stat-value">${stats.pendingTasks}건</div>
+            </div>
+          </div>
+        </div>
+        <div class="worker-stats">
+          <h4>👷 작업자별 현황</h4>
+          <div class="worker-stats-grid">
+            ${workerStatsHTML}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// 작업자별 작업 목록 HTML 생성
+function getWorkerTaskListHTML(groupedTasks, tabType) {
+  let html = '';
+  
+  Object.entries(groupedTasks).forEach(([worker, tasks]) => {
+    html += `
+      <div class="worker-section">
+        <div class="worker-header">
+          <h3>👤 ${worker} (${tasks.length}건)</h3>
+        </div>
+        <div class="worker-task-list">
+    `;
+    
+    tasks.forEach(task => {
+      html += getTaskItemHTML(task, task.id, tabType);
+    });
+    
+    html += `
+        </div>
+      </div>
+    `;
+  });
+  
+  if (html === '') {
+    html = '<div class="no-tasks">해당하는 작업이 없습니다.</div>';
+  }
+  
+  return html;
 }
 
 // 수수료 자동 계산 함수
@@ -130,7 +549,7 @@ window.addCustomWorker = function() {
   }
   
   const workerName = customInput.value.trim();
-  const container = customInput.parentNode.parentNode; // 상위 div로 이동
+  const container = customInput.parentNode.parentNode;
   
   // 새 체크박스 생성
   const newLabel = document.createElement('label');
@@ -299,7 +718,8 @@ window.loadTodayTasks = async function() {
   if (isCurrentUserAdmin()) {
     body.innerHTML = `
       ${getTaskSubTabsHTML('check')}
-      ${getTaskListHTML()}
+      <div id="admin-stats-container"></div>
+      <div id="admin-task-content"></div>
     `;
   } else {
     // 작업자용 UI는 이미 auth.js에서 설정됨
@@ -310,7 +730,9 @@ window.loadTodayTasks = async function() {
     console.log('📅 오늘 작업 로드 시작');
     
     const todayStr = getTodayString();
-    const q = query(
+    
+    // 미완료 작업 조회
+    const pendingQuery = query(
       collection(db, "tasks"),
       where("date", ">=", todayStr + "T00:00:00"),
       where("date", "<=", todayStr + "T23:59:59"),
@@ -318,35 +740,75 @@ window.loadTodayTasks = async function() {
       orderBy("date", "asc")
     );
     
-    const querySnapshot = await getDocs(q);
-    let allTasks = [];
+    // 완료 작업 조회 (통계용)
+    const completedQuery = query(
+      collection(db, "tasks"),
+      where("date", ">=", todayStr + "T00:00:00"),
+      where("date", "<=", todayStr + "T23:59:59"),
+      where("done", "==", true),
+      orderBy("date", "desc")
+    );
     
-    querySnapshot.forEach(docu => {
+    const [pendingSnapshot, completedSnapshot] = await Promise.all([
+      getDocs(pendingQuery),
+      getDocs(completedQuery)
+    ]);
+    
+    let allPendingTasks = [];
+    let allCompletedTasks = [];
+    
+    pendingSnapshot.forEach(docu => {
       const taskData = docu.data();
-      allTasks.push({
+      allPendingTasks.push({
         id: docu.id,
         ...taskData
       });
     });
     
-    console.log('📋 전체 오늘 작업 수:', allTasks.length);
-    
-    // 작업자별 필터링 적용
-    const filteredTasks = filterTasksForCurrentUser(allTasks);
-    
-    // HTML 생성
-    let html = "";
-    filteredTasks.forEach(task => {
-      html += getTaskItemHTML(task, task.id, 'today');
+    completedSnapshot.forEach(docu => {
+      const taskData = docu.data();
+      allCompletedTasks.push({
+        id: docu.id,
+        ...taskData
+      });
     });
     
-    const taskListElement = document.querySelector('.task-list');
-    if (taskListElement) {
-      taskListElement.innerHTML = html;
-    }
+    console.log('📋 전체 오늘 미완료 작업:', allPendingTasks.length);
+    console.log('📋 전체 오늘 완료 작업:', allCompletedTasks.length);
     
-    // 작업자의 경우 버튼 조정
-    if (!isCurrentUserAdmin()) {
+    if (isCurrentUserAdmin()) {
+      // 관리자: 통계 + 작업자별 분류
+      const allTodayTasks = [...allPendingTasks, ...allCompletedTasks];
+      const stats = generateTaskStats(allTodayTasks, allCompletedTasks);
+      const groupedTasks = groupTasksByWorker(allPendingTasks);
+      
+      // 통계 표시
+      const statsContainer = document.getElementById('admin-stats-container');
+      if (statsContainer) {
+        statsContainer.innerHTML = getStatsHTML(stats, 'today');
+      }
+      
+      // 작업자별 작업 목록 표시
+      const taskContent = document.getElementById('admin-task-content');
+      if (taskContent) {
+        taskContent.innerHTML = getWorkerTaskListHTML(groupedTasks, 'today');
+      }
+      
+    } else {
+      // 작업자: 본인 작업만 필터링
+      const filteredTasks = filterTasksForCurrentUser(allPendingTasks);
+      
+      let html = "";
+      filteredTasks.forEach(task => {
+        html += getTaskItemHTML(task, task.id, 'today');
+      });
+      
+      const taskListElement = document.querySelector('.task-list');
+      if (taskListElement) {
+        taskListElement.innerHTML = html;
+      }
+      
+      // 작업자의 경우 버튼 조정
       adjustWorkerTaskButtons();
     }
     
@@ -366,7 +828,11 @@ window.loadReserveTasks = async function() {
   }
   
   const body = document.getElementById('tab-body');
-  body.innerHTML = getReserveTabHTML();
+  body.innerHTML = `
+    ${getReserveTabHTML()}
+    <div id="reserve-stats-container"></div>
+    <div id="reserve-task-content"></div>
+  `;
 
   try {
     console.log('📅 예약 작업 로드 시작');
@@ -394,18 +860,19 @@ window.loadReserveTasks = async function() {
     
     console.log('📋 내일 예약 작업 수:', allTasks.length);
     
-    // 관리자는 모든 예약 작업을 볼 수 있지만, 혹시 필요하다면 필터링도 가능
-    const filteredTasks = filterTasksForCurrentUser(allTasks);
-
-    const renderList = (tasks) => {
-      let html = "";
-      tasks.forEach(task => {
-        html += getTaskItemHTML(task, task.id, 'reserve');
-      });
-      document.querySelector('.task-list').innerHTML = html;
-    };
-
-    renderList(filteredTasks);
+    // 통계 표시
+    const stats = generateTaskStats(allTasks, [], true);
+    const statsContainer = document.getElementById('reserve-stats-container');
+    if (statsContainer) {
+      statsContainer.innerHTML = getStatsHTML(stats, 'reserve');
+    }
+    
+    // 작업자별 작업 목록 표시
+    const groupedTasks = groupTasksByWorker(allTasks);
+    const taskContent = document.getElementById('reserve-task-content');
+    if (taskContent) {
+      taskContent.innerHTML = getWorkerTaskListHTML(groupedTasks, 'reserve');
+    }
 
     // 검색 이벤트 연결
     document.getElementById('reserve-search-btn').onclick = function() {
@@ -461,16 +928,21 @@ async function searchReserveTasksByDateRange(startDate, endDate) {
       });
     });
     
-    const filteredTasks = filterTasksForCurrentUser(allTasks);
+    // 통계 업데이트
+    const stats = generateTaskStats(allTasks, [], true);
+    const statsContainer = document.getElementById('reserve-stats-container');
+    if (statsContainer) {
+      statsContainer.innerHTML = getStatsHTML(stats, 'reserve');
+    }
     
-    let html = "";
-    filteredTasks.forEach(task => {
-      html += getTaskItemHTML(task, task.id, 'reserve');
-    });
+    // 작업자별 작업 목록 업데이트
+    const groupedTasks = groupTasksByWorker(allTasks);
+    const taskContent = document.getElementById('reserve-task-content');
+    if (taskContent) {
+      taskContent.innerHTML = getWorkerTaskListHTML(groupedTasks, 'reserve');
+    }
     
-    document.querySelector('.task-list').innerHTML = html;
-    
-    console.log('✅ 예약 작업 검색 완료:', filteredTasks.length + '건');
+    console.log('✅ 예약 작업 검색 완료:', allTasks.length + '건');
     
   } catch (error) {
     console.error('❌ 예약 작업 검색 오류:', error);
@@ -484,7 +956,11 @@ window.loadDoneTasks = async function() {
   
   // 관리자와 작업자에 따라 다른 UI 표시
   if (isCurrentUserAdmin()) {
-    body.innerHTML = getDoneTabHTML();
+    body.innerHTML = `
+      ${getDoneTabHTML()}
+      <div id="done-stats-container"></div>
+      <div id="done-task-content"></div>
+    `;
   } else {
     // 작업자용 검색박스 없이 목록만 표시
     const taskListElement = document.querySelector('.task-list');
@@ -496,9 +972,10 @@ window.loadDoneTasks = async function() {
   try {
     console.log('✅ 완료 작업 로드 시작');
     
-    // 오늘 완료된 작업만 필터링
     const todayStr = getTodayString();
-    const q = query(
+    
+    // 완료된 작업 조회
+    const completedQuery = query(
       collection(db, "tasks"),
       where("done", "==", true),
       where("date", ">=", todayStr + "T00:00:00"),
@@ -506,43 +983,57 @@ window.loadDoneTasks = async function() {
       orderBy("date", "desc")
     );
     
-    const querySnapshot = await getDocs(q);
-    let allTasks = [];
+    // 전체 작업 조회 (통계용 - 관리자만)
+    let allTodayTasks = [];
+    if (isCurrentUserAdmin()) {
+      const allQuery = query(
+        collection(db, "tasks"),
+        where("date", ">=", todayStr + "T00:00:00"),
+        where("date", "<=", todayStr + "T23:59:59"),
+        orderBy("date", "desc")
+      );
+      
+      const allSnapshot = await getDocs(allQuery);
+      allSnapshot.forEach(docu => {
+        const taskData = docu.data();
+        allTodayTasks.push({
+          id: docu.id,
+          ...taskData
+        });
+      });
+    }
+    
+    const querySnapshot = await getDocs(completedQuery);
+    let completedTasks = [];
     
     querySnapshot.forEach(docu => {
       const taskData = docu.data();
-      allTasks.push({
+      completedTasks.push({
         id: docu.id,
         ...taskData
       });
     });
     
-    console.log('📋 오늘 완료 작업 수:', allTasks.length);
+    console.log('📋 오늘 완료 작업 수:', completedTasks.length);
     
-    // 작업자별 필터링 적용
-    const filteredTasks = filterTasksForCurrentUser(allTasks);
-
-    function renderList(tasks) {
-      let html = "";
-      tasks.forEach(task => {
-        html += getTaskItemHTML(task, task.id, 'done');
-      });
-      
-      const taskListElement = document.querySelector('.task-list');
-      if (taskListElement) {
-        taskListElement.innerHTML = html;
-      }
-      
-      // 작업자의 경우 버튼 조정
-      if (!isCurrentUserAdmin()) {
-        adjustWorkerDoneTaskButtons();
-      }
-    }
-
-    renderList(filteredTasks);
-
-    // 관리자만 검색 이벤트 설정
     if (isCurrentUserAdmin()) {
+      // 관리자: 통계 + 작업자별 분류
+      const stats = generateTaskStats(allTodayTasks, completedTasks);
+      const groupedTasks = groupTasksByWorker(completedTasks);
+      
+      // 통계 표시
+      const statsContainer = document.getElementById('done-stats-container');
+      if (statsContainer) {
+        statsContainer.innerHTML = getStatsHTML(stats, 'done');
+      }
+      
+      // 작업자별 작업 목록 표시
+      const taskContent = document.getElementById('done-task-content');
+      if (taskContent) {
+        taskContent.innerHTML = getWorkerTaskListHTML(groupedTasks, 'done');
+      }
+      
+      // 관리자만 검색 이벤트 설정
       document.getElementById('done-search-btn').onclick = function() {
         const startDate = document.getElementById('done-start-date').value;
         const endDate = document.getElementById('done-end-date').value;
@@ -563,6 +1054,23 @@ window.loadDoneTasks = async function() {
         document.getElementById('done-end-date').value = todayStr;
         loadDoneTasks();
       };
+      
+    } else {
+      // 작업자: 본인 작업만 필터링
+      const filteredTasks = filterTasksForCurrentUser(completedTasks);
+      
+      let html = "";
+      filteredTasks.forEach(task => {
+        html += getTaskItemHTML(task, task.id, 'done');
+      });
+      
+      const taskListElement = document.querySelector('.task-list');
+      if (taskListElement) {
+        taskListElement.innerHTML = html;
+      }
+      
+      // 작업자의 경우 버튼 조정
+      adjustWorkerDoneTaskButtons();
     }
     
     console.log('✅ 완료 작업 로드 완료');
@@ -578,7 +1086,7 @@ async function searchDoneTasksByDateRange(startDate, endDate) {
   try {
     console.log('🔍 완료 작업 날짜 범위 검색:', startDate, '~', endDate);
     
-    const q = query(
+    const completedQuery = query(
       collection(db, "tasks"),
       where("done", "==", true),
       where("date", ">=", startDate + "T00:00:00"),
@@ -586,10 +1094,30 @@ async function searchDoneTasksByDateRange(startDate, endDate) {
       orderBy("date", "desc")
     );
     
-    const querySnapshot = await getDocs(q);
+    const allQuery = query(
+      collection(db, "tasks"),
+      where("date", ">=", startDate + "T00:00:00"),
+      where("date", "<=", endDate + "T23:59:59"),
+      orderBy("date", "desc")
+    );
+    
+    const [completedSnapshot, allSnapshot] = await Promise.all([
+      getDocs(completedQuery),
+      getDocs(allQuery)
+    ]);
+    
+    let completedTasks = [];
     let allTasks = [];
     
-    querySnapshot.forEach(docu => {
+    completedSnapshot.forEach(docu => {
+      const taskData = docu.data();
+      completedTasks.push({
+        id: docu.id,
+        ...taskData
+      });
+    });
+    
+    allSnapshot.forEach(docu => {
       const taskData = docu.data();
       allTasks.push({
         id: docu.id,
@@ -597,24 +1125,21 @@ async function searchDoneTasksByDateRange(startDate, endDate) {
       });
     });
     
-    const filteredTasks = filterTasksForCurrentUser(allTasks);
-    
-    let html = "";
-    filteredTasks.forEach(task => {
-      html += getTaskItemHTML(task, task.id, 'done');
-    });
-    
-    const taskListElement = document.querySelector('.task-list');
-    if (taskListElement) {
-      taskListElement.innerHTML = html;
+    // 통계 업데이트
+    const stats = generateTaskStats(allTasks, completedTasks);
+    const statsContainer = document.getElementById('done-stats-container');
+    if (statsContainer) {
+      statsContainer.innerHTML = getStatsHTML(stats, 'done');
     }
     
-    // 작업자의 경우 버튼 조정
-    if (!isCurrentUserAdmin()) {
-      adjustWorkerDoneTaskButtons();
+    // 작업자별 작업 목록 업데이트
+    const groupedTasks = groupTasksByWorker(completedTasks);
+    const taskContent = document.getElementById('done-task-content');
+    if (taskContent) {
+      taskContent.innerHTML = getWorkerTaskListHTML(groupedTasks, 'done');
     }
     
-    console.log('✅ 완료 작업 검색 완료:', filteredTasks.length + '건');
+    console.log('✅ 완료 작업 검색 완료:', completedTasks.length + '건');
     
   } catch (error) {
     console.error('❌ 완료 작업 검색 오류:', error);
@@ -645,7 +1170,7 @@ function adjustWorkerTaskButtons() {
         }
       });
     });
-  }, 500); // 시간을 늘려서 DOM이 완전히 로드된 후 실행
+  }, 500);
 }
 
 // 작업자용 작업 버튼 조정 (완료작업 - 수정, 삭제 표시)
@@ -671,7 +1196,7 @@ function adjustWorkerDoneTaskButtons() {
         }
       });
     });
-  }, 500); // 시간을 늘려서 DOM이 완전히 로드된 후 실행
+  }, 500);
 }
 
 // 작업 완료 처리
@@ -759,7 +1284,7 @@ window.editTask = async function(id, tabType) {
           populateEditForm(data, id, tabType);
         }, 200);
       } else {
-        // 작업자: 관리자와 동일한 폼 사용하지만 작업자용 헤더/버튼
+        // 작업자: 수정된 폼 사용 (하단 버튼 제거)
         console.log('→ 작업자 수정 모드');
         showWorkerEditForm(data, id, tabType);
       }
@@ -852,7 +1377,7 @@ function populateEditForm(data, id, tabType) {
   console.log('✅ 관리자 수정 폼 설정 완료');
 }
 
-// 작업자용 수정 폼 (관리자 폼 재사용)
+// 작업자용 수정 폼 (하단 버튼 제거된 버전)
 function showWorkerEditForm(data, id, tabType) {
   console.log('=== 작업자 수정 폼 표시 ===');
   console.log('데이터:', data);
@@ -866,7 +1391,7 @@ function showWorkerEditForm(data, id, tabType) {
     return;
   }
   
-  // 관리자와 동일한 입력 폼 HTML 생성 (헤더와 버튼만 다름)
+  // 수정된 폼 HTML (하단 버튼 제거)
   const editFormHTML = `
     <div class="worker-edit-container">
       <div class="mobile-edit-header">
@@ -877,15 +1402,6 @@ function showWorkerEditForm(data, id, tabType) {
       <div class="box" style="margin: 0;">
         ${getTaskInputFormHTML(data.date || getNowYYYYMMDDHHMM())}
       </div>
-      
-      <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px; padding: 0 25px;">
-        <button type="button" onclick="saveWorkerEdit('${id}', '${tabType}')" style="flex: 1; background: #28a745 !important; margin: 0;">
-          💾 저장
-        </button>
-        <button type="button" onclick="cancelWorkerEdit()" style="flex: 1; background: #6c757d !important; margin: 0;">
-          ❌ 취소
-        </button>
-      </div>
     </div>
   `;
   
@@ -895,11 +1411,21 @@ function showWorkerEditForm(data, id, tabType) {
   setTimeout(() => {
     renderItemsInput('items-input');
     
-    // 기존 데이터로 폼 채우기 (관리자와 동일한 로직 재사용)
+    // 기존 데이터로 폼 채우기
     populateFormData(data);
     
     // 이벤트 리스너 설정
     setupFormEventListeners();
+    
+    // 저장 버튼을 편집 모드로 변경
+    const saveButton = document.querySelector('#task-form button[type="button"]');
+    if (saveButton) {
+      saveButton.onclick = () => {
+        console.log('💾 작업자 수정 저장 버튼 클릭');
+        window.handleTaskSave(true, id, tabType);
+      };
+      saveButton.textContent = '💾 저장';
+    }
     
     // 스크롤을 상단으로
     window.scrollTo(0, 0);
@@ -989,16 +1515,6 @@ function setupFormEventListeners() {
   });
 }
 
-// 작업자용 수정 저장
-window.saveWorkerEdit = async function(id, tabType) {
-  console.log('=== 작업자 수정 저장 ===');
-  console.log('편집 ID:', id);
-  console.log('탭 타입:', tabType);
-  
-  // 관리자와 동일한 저장 로직 사용
-  window.handleTaskSave(true, id, tabType);
-};
-
 // 작업자용 수정 취소
 window.cancelWorkerEdit = function() {
   console.log('=== 작업자 수정 취소 ===');
@@ -1079,77 +1595,6 @@ window.toggleTaskDetail = function(taskId) {
     if (arrowElement) arrowElement.textContent = '▼';
   }
 };
-
-// CSS 스타일 추가 (작업자 수정 폼용)
-const workerEditStyles = `
-<style>
-.worker-edit-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin: 10px;
-  overflow: hidden;
-}
-
-.mobile-edit-header {
-  background: linear-gradient(135deg, #8ecae6, #219ebc);
-  color: white;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.mobile-edit-header h3 {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
-.header-cancel-btn {
-  background: rgba(255,255,255,0.2) !important;
-  border: 2px solid rgba(255,255,255,0.3) !important;
-  color: white !important;
-  padding: 8px 12px !important;
-  border-radius: 8px !important;
-  font-size: 14px !important;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: auto !important;
-  width: auto !important;
-  margin: 0 !important;
-  min-height: auto !important;
-}
-
-.header-cancel-btn:hover {
-  background: rgba(255,255,255,0.3) !important;
-  transform: none;
-  box-shadow: none;
-}
-
-@media (max-width: 480px) {
-  .worker-edit-container {
-    margin: 5px;
-  }
-  
-  .mobile-edit-header {
-    padding: 15px;
-  }
-  
-  .mobile-edit-header h3 {
-    font-size: 1.1rem;
-  }
-}
-</style>
-`;
-
-// 스타일 추가
-if (!document.getElementById('worker-edit-styles')) {
-  const styleElement = document.createElement('div');
-  styleElement.id = 'worker-edit-styles';
-  styleElement.innerHTML = workerEditStyles;
-  document.head.appendChild(styleElement);
-}
 
 // 전역 함수 등록 (분리된 파일에서 사용하기 위해)
 window.formatKoreanDate = formatKoreanDate;

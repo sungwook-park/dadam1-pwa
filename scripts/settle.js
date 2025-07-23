@@ -1067,7 +1067,9 @@ async function loadFeeAnalysis() {
   contentDiv.innerHTML = getFeeAnalysisHTML(todayFeeTasks, todayStr, todayStr);
 }
 
-// 수수료분석 HTML
+// settle.js - 수수료분석 HTML 함수 (타일 형식으로 수정)
+
+// 수수료분석 HTML (타일 형식으로 변경)
 function getFeeAnalysisHTML(tasks, startDate, endDate = null) {
   const feeStats = calculateFeeStatsNew(tasks);
   const displayDate = endDate && endDate !== startDate ? `${startDate} ~ ${endDate}` : startDate;
@@ -1120,61 +1122,524 @@ function getFeeAnalysisHTML(tasks, startDate, endDate = null) {
         </div>
       </div>
       
-      <!-- 공간/공간티비 상세 -->
+      <!-- 공간/공간티비 상세 (타일 형식) -->
       <div class="fee-details-section">
         <div class="details-card">
           <h4>🏢 공간/공간티비 수수료 내역</h4>
-          <div class="fee-list">
+          <div class="fee-cards-grid">
             ${feeStats.gongganTasks.length > 0 ? 
               feeStats.gongganTasks.map(task => `
-                <div class="fee-item gonggan-item">
-                  <div class="fee-item-header">
-                    <span class="fee-date">${formatDate(task.date)}</span>
-                    <span class="fee-client">${task.client}</span>
-                    <span class="fee-amount">${task.amount.toLocaleString()}원</span>
+                <div class="fee-card gonggan-card">
+                  <div class="fee-card-header">
+                    <div class="fee-card-date">${formatDate(task.date)}</div>
+                    <div class="fee-card-amount">${task.amount.toLocaleString()}원</div>
                   </div>
-                  <div class="fee-item-details">
-                    <span class="fee-worker">${task.worker}</span>
-                    <span class="fee-content">${task.items || task.taskType || ''}</span>
-                    <span class="fee-value">${Math.round(task.amount * 0.22).toLocaleString()}원 (22%)</span>
+                  <div class="fee-card-body">
+                    <div class="fee-card-client">
+                      <span class="client-icon">🏢</span>
+                      <span class="client-name">${task.client}</span>
+                    </div>
+                    <div class="fee-card-worker">
+                      <span class="worker-icon">👤</span>
+                      <span class="worker-name">${task.worker}</span>
+                    </div>
+                    <div class="fee-card-content">${task.items || task.taskType || ''}</div>
+                  </div>
+                  <div class="fee-card-footer">
+                    <div class="fee-calculation">
+                      <span class="fee-rate">22%</span>
+                      <span class="fee-arrow">→</span>
+                      <span class="fee-result">${Math.round(task.amount * 0.22).toLocaleString()}원</span>
+                    </div>
                   </div>
                 </div>
               `).join('') :
-              '<div class="no-data">공간/공간티비 수수료 내역이 없습니다.</div>'
+              '<div class="no-data-card">공간/공간티비 수수료 내역이 없습니다.</div>'
             }
           </div>
           ${feeStats.gongganTasks.length > 0 ? 
-            `<div class="fee-total">총 수수료: <strong>${feeStats.gongganTotal.toLocaleString()}원</strong></div>` : ''
+            `<div class="section-total gonggan-total">
+              <strong>공간/공간티비 총 수수료: ${feeStats.gongganTotal.toLocaleString()}원</strong>
+            </div>` : ''
           }
         </div>
         
+        <!-- 기타 업체 상세 (타일 형식) -->
         <div class="details-card">
           <h4>🏬 기타 업체 수수료 내역</h4>
-          <div class="fee-list">
+          <div class="fee-cards-grid">
             ${feeStats.othersTasks.length > 0 ?
               feeStats.othersTasks.map(task => `
-                <div class="fee-item others-item">
-                  <div class="fee-item-header">
-                    <span class="fee-date">${formatDate(task.date)}</span>
-                    <span class="fee-client">${task.client}</span>
-                    <span class="fee-amount">${task.amount.toLocaleString()}원</span>
+                <div class="fee-card others-card">
+                  <div class="fee-card-header">
+                    <div class="fee-card-date">${formatDate(task.date)}</div>
+                    <div class="fee-card-amount">${task.amount.toLocaleString()}원</div>
                   </div>
-                  <div class="fee-item-details">
-                    <span class="fee-worker">${task.worker}</span>
-                    <span class="fee-content">${task.items || task.taskType || ''}</span>
-                    <span class="fee-value">${(task.fee || 0).toLocaleString()}원</span>
+                  <div class="fee-card-body">
+                    <div class="fee-card-client">
+                      <span class="client-icon">🏬</span>
+                      <span class="client-name">${task.client}</span>
+                    </div>
+                    <div class="fee-card-worker">
+                      <span class="worker-icon">👤</span>
+                      <span class="worker-name">${task.worker}</span>
+                    </div>
+                    <div class="fee-card-content">${task.items || task.taskType || ''}</div>
+                  </div>
+                  <div class="fee-card-footer">
+                    <div class="fee-calculation others-calc">
+                      <span class="fee-label">수수료</span>
+                      <span class="fee-arrow">→</span>
+                      <span class="fee-result">${(task.fee || 0).toLocaleString()}원</span>
+                    </div>
                   </div>
                 </div>
               `).join('') :
-              '<div class="no-data">기타 업체 수수료 내역이 없습니다.</div>'
+              '<div class="no-data-card">기타 업체 수수료 내역이 없습니다.</div>'
             }
           </div>
           ${feeStats.othersTasks.length > 0 ? 
-            `<div class="fee-total">총 수수료: <strong>${feeStats.othersTotal.toLocaleString()}원</strong></div>` : ''
+            `<div class="section-total others-total">
+              <strong>기타 업체 총 수수료: ${feeStats.othersTotal.toLocaleString()}원</strong>
+            </div>` : ''
           }
         </div>
       </div>
     </div>
+    
+    <style>
+      .fee-analysis-container {
+        padding: 25px;
+      }
+      
+      .analysis-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e6e6e6;
+      }
+      
+      .analysis-header h3 {
+        margin: 0;
+        color: #333;
+        font-size: 1.4rem;
+      }
+      
+      .fee-date-filter {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      
+      .fee-date-filter label {
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .fee-date-filter input {
+        padding: 8px 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      
+      .fee-date-filter span {
+        font-weight: 600;
+        color: #666;
+      }
+      
+      .filter-btn, .reset-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .filter-btn {
+        background: #219ebc;
+        color: white;
+      }
+      
+      .filter-btn:hover {
+        background: #1a7a96;
+      }
+      
+      .reset-btn {
+        background: #6c757d;
+        color: white;
+      }
+      
+      .reset-btn:hover {
+        background: #5a6268;
+      }
+      
+      .period-info {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #e3f2fd;
+        border-radius: 8px;
+        border-left: 4px solid #219ebc;
+      }
+      
+      .period-info h4 {
+        margin: 0;
+        color: #1565c0;
+        font-size: 1.1rem;
+      }
+      
+      /* 수수료 요약 카드 */
+      .fee-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      
+      .summary-card {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+      }
+      
+      .summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      }
+      
+      .summary-card.gonggan {
+        background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+        border-left: 4px solid #4caf50;
+      }
+      
+      .summary-card.others {
+        background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+        border-left: 4px solid #ff9800;
+      }
+      
+      .summary-card.total {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-left: 4px solid #2196f3;
+      }
+      
+      .summary-icon {
+        font-size: 2.5rem;
+      }
+      
+      .summary-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 8px;
+      }
+      
+      .summary-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 4px;
+      }
+      
+      .summary-subtitle {
+        font-size: 12px;
+        color: #888;
+      }
+      
+      /* 상세 내역 섹션 */
+      .fee-details-section {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+      
+      .details-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow: hidden;
+      }
+      
+      .details-card h4 {
+        margin: 0;
+        padding: 20px 25px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e6e6e6;
+        color: #333;
+        font-size: 1.2rem;
+      }
+      
+      /* 수수료 카드 그리드 */
+      .fee-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+        padding: 25px;
+      }
+      
+      .fee-card {
+        border: 1px solid #e6e6e6;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+        background: white;
+      }
+      
+      .fee-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      
+      .fee-card.gonggan-card {
+        border-left: 4px solid #4caf50;
+      }
+      
+      .fee-card.others-card {
+        border-left: 4px solid #ff9800;
+      }
+      
+      .fee-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e6e6e6;
+      }
+      
+      .fee-card-date {
+        font-weight: 600;
+        color: #219ebc;
+        font-size: 14px;
+      }
+      
+      .fee-card-amount {
+        font-weight: 700;
+        color: #333;
+        font-size: 16px;
+        background: #e3f2fd;
+        padding: 4px 12px;
+        border-radius: 12px;
+      }
+      
+      .fee-card-body {
+        padding: 15px 20px;
+      }
+      
+      .fee-card-client,
+      .fee-card-worker {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      
+      .client-icon,
+      .worker-icon {
+        font-size: 14px;
+      }
+      
+      .client-name {
+        background: #fff3cd;
+        color: #856404;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      
+      .worker-name {
+        background: #e3f2fd;
+        color: #1565c0;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      
+      .fee-card-content {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.4;
+        margin-top: 8px;
+        background: #f1f3f4;
+        padding: 8px 12px;
+        border-radius: 6px;
+      }
+      
+      .fee-card-footer {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-top: 1px solid #e6e6e6;
+      }
+      
+      .fee-calculation {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+      }
+      
+      .fee-rate {
+        background: #4caf50;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      
+      .fee-label {
+        background: #ff9800;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      
+      .fee-arrow {
+        font-weight: 700;
+        color: #666;
+        font-size: 16px;
+      }
+      
+      .fee-result {
+        background: #219ebc;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      
+      .section-total {
+        padding: 20px 25px;
+        background: #f8f9fa;
+        border-top: 2px solid #e6e6e6;
+        text-align: center;
+        font-size: 18px;
+        color: #333;
+      }
+      
+      .section-total.gonggan-total {
+        color: #4caf50;
+      }
+      
+      .section-total.others-total {
+        color: #ff9800;
+      }
+      
+      .no-data-card {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+        font-style: italic;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px dashed #ddd;
+      }
+      
+      /* 모바일 반응형 */
+      @media (max-width: 768px) {
+        .fee-analysis-container {
+          padding: 15px;
+        }
+        
+        .analysis-header {
+          flex-direction: column;
+          gap: 15px;
+          align-items: stretch;
+        }
+        
+        .fee-date-filter {
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        
+        .fee-date-filter input {
+          min-width: 120px;
+        }
+        
+        .fee-summary {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+        
+        .summary-card {
+          flex-direction: column;
+          text-align: center;
+          gap: 10px;
+          padding: 20px;
+        }
+        
+        .fee-cards-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+          padding: 15px;
+        }
+        
+        .fee-card-header {
+          flex-direction: column;
+          gap: 8px;
+          align-items: flex-start;
+        }
+        
+        .fee-card-body {
+          padding: 12px 15px;
+        }
+        
+        .fee-card-footer {
+          padding: 12px 15px;
+        }
+        
+        .fee-calculation {
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .section-total {
+          padding: 15px;
+          font-size: 16px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .fee-date-filter {
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .fee-date-filter input,
+        .filter-btn,
+        .reset-btn {
+          width: 100%;
+        }
+        
+        .summary-icon {
+          font-size: 2rem;
+        }
+        
+        .summary-value {
+          font-size: 1.5rem;
+        }
+        
+        .fee-cards-grid {
+          padding: 10px;
+        }
+        
+        .fee-card-content {
+          font-size: 13px;
+        }
+      }
+    </style>
   `;
 }
 

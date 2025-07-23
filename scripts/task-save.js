@@ -104,8 +104,8 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       window.editingTaskId = null;
       window.editingTabType = null;
       
-      // 작업자 폼인 경우 원래 화면으로 돌아가기
-      if (isWorkerEditForm) {
+      // 작업자 폼인 경우 원래 화면으로 돌아가기 (수정됨)
+      if (isWorkerEditForm || !window.isCurrentUserAdmin()) {
         console.log('📱 작업자 수정 완료 - 화면 복원');
         if (finalTabType === 'done') {
           console.log('→ 완료작업탭으로 이동');
@@ -125,12 +125,12 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
     }
     
     // 관리자 폼만 초기화 (작업자 폼은 위에서 이미 처리됨)
-    if (!isWorkerEditForm) {
+    if (!isWorkerEditForm && window.isCurrentUserAdmin()) {
       resetAdminForm(form);
     }
     
     // 저장 후 탭 이동 결정 (관리자만)
-    if (!isWorkerEditForm) {
+    if (!isWorkerEditForm && window.isCurrentUserAdmin()) {
       if (finalIsEdit && finalEditId) {
         console.log('=== 수정 완료 - 원래 탭으로 복귀 ===');
         navigateAfterEdit(finalTabType);
