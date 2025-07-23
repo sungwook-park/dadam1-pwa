@@ -1,4 +1,4 @@
-// scripts/auth.js - 모바일 대응 및 권한 관리
+// scripts/auth.js - 모바일 대응 및 권한 관리 (작업자 UI 1줄 정렬 개선)
 import { auth, getUserInfo } from './firebase-config.js';
 import {
   signInWithEmailAndPassword, 
@@ -81,7 +81,7 @@ function setupUserInterface(userInfo) {
   }
 }
 
-// 작업자 전용 인터페이스 표시
+// 작업자 전용 인터페이스 표시 (1줄 정렬 개선)
 function showWorkerInterface(userInfo) {
   const tabContent = document.getElementById('tab-content');
   const tabTitle = document.getElementById('tab-title');
@@ -90,10 +90,10 @@ function showWorkerInterface(userInfo) {
   if (tabContent && tabTitle && tabBody) {
     tabContent.style.display = 'block';
     
-// 서브타이틀 제거 - 이 부분을 삭제하세요
-// tabTitle.innerHTML = `...`;
+    // 타이틀 제거 (헤더바에 이미 표시됨)
+    tabTitle.innerHTML = '';
     
-    // 작업자용 서브탭 (오늘작업, 완료작업만)
+    // 작업자용 서브탭 (오늘작업, 완료작업만) - 1줄 정렬
     tabBody.innerHTML = `
       <div class="worker-subtabs">
         <button onclick="loadWorkerTodayTasks()" class="worker-tab-btn active" id="today-tab">

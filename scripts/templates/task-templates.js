@@ -1,4 +1,4 @@
-// scripts/templates/task-templates.js - 경로 수정된 버전
+// scripts/templates/task-templates.js - 날짜 필터 1줄 정렬 개선
 
 // 유틸리티 함수들
 function formatKoreanDate(dateString) {
@@ -193,40 +193,46 @@ export function getTaskListHTML() {
   `;
 }
 
+// 예약탭 - 날짜 필터 1줄 정렬
 export function getReserveTabHTML() {
   const tomorrow = getTomorrowString();
   
   return `
-    <div id="reserveSearchBox" class="reserve-search-container">
-      <input type="date" id="reserve-start-date" value="${tomorrow}" class="reserve-search-input">
-      <span class="date-separator">~</span>
-      <input type="date" id="reserve-end-date" value="${tomorrow}" class="reserve-search-input">
-      <button id="reserve-search-btn" class="reserve-search-btn">🔍 검색</button>
-      <button onclick="resetReserveFilter()" class="reset-btn">내일</button>
+    <div class="date-filter-container">
+      <div class="date-filter-row">
+        <input type="date" id="reserve-start-date" value="${tomorrow}" class="date-filter-input">
+        <span class="date-separator">~</span>
+        <input type="date" id="reserve-end-date" value="${tomorrow}" class="date-filter-input">
+        <button id="reserve-search-btn" class="filter-search-btn">🔍 검색</button>
+        <button onclick="resetReserveFilter()" class="filter-reset-btn">내일</button>
+      </div>
     </div>
     ${getTaskListHTML()}
     
     <style>
-      .reserve-search-container {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
+      .date-filter-container {
         background: white;
-        padding: 18px;
+        padding: 15px 20px;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        align-items: center;
-        flex-wrap: wrap;
+        margin-bottom: 20px;
       }
       
-      .reserve-search-input {
+      .date-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: nowrap;
+      }
+      
+      .date-filter-input {
         flex: 1;
-        margin: 0;
-        padding: 14px 16px;
-        font-size: 16px;
-        border-radius: 10px;
-        border: 2px solid #ddd;
-        min-height: 48px;
+        margin: 0 !important;
+        padding: 12px 16px !important;
+        font-size: 16px !important;
+        border-radius: 8px !important;
+        border: 2px solid #ddd !important;
+        min-height: 45px !important;
         background: #fff !important;
         color: #333 !important;
         font-family: inherit;
@@ -235,10 +241,10 @@ export function getReserveTabHTML() {
         min-width: 140px;
       }
       
-      .reserve-search-input:focus {
-        outline: none;
-        border-color: #8ecae6;
-        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15);
+      .date-filter-input:focus {
+        outline: none !important;
+        border-color: #8ecae6 !important;
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15) !important;
         background: #fff !important;
         color: #333 !important;
       }
@@ -247,123 +253,159 @@ export function getReserveTabHTML() {
         font-weight: 600;
         color: #666;
         margin: 0 5px;
+        flex-shrink: 0;
       }
       
-      .reserve-search-btn, .reset-btn {
-        padding: 12px 20px;
-        margin: 0;
-        font-size: 16px;
-        border-radius: 10px;
-        min-height: 48px;
+      .filter-search-btn, .filter-reset-btn {
+        padding: 12px 18px !important;
+        margin: 0 !important;
+        font-size: 15px !important;
+        border-radius: 8px !important;
+        min-height: 45px !important;
         white-space: nowrap;
-        border: none;
+        border: none !important;
         cursor: pointer;
         font-weight: 600;
         transition: all 0.2s ease;
         touch-action: manipulation;
+        flex-shrink: 0;
       }
       
-      .reserve-search-btn {
+      .filter-search-btn {
         background: #219ebc !important;
         color: white !important;
+        min-width: 90px;
       }
       
-      .reserve-search-btn:hover,
-      .reserve-search-btn:active {
+      .filter-search-btn:hover,
+      .filter-search-btn:active {
         background: #1a7a96 !important;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(33,158,188,0.2);
       }
       
-      .reset-btn {
+      .filter-reset-btn {
         background: #6c757d !important;
         color: white !important;
+        min-width: 70px;
       }
       
-      .reset-btn:hover {
+      .filter-reset-btn:hover {
         background: #5a6268 !important;
         transform: translateY(-1px);
       }
       
       /* 모바일 반응형 */
       @media (max-width: 768px) {
-        .reserve-search-container {
-          flex-direction: column;
-          gap: 10px;
-          padding: 15px;
+        .date-filter-container {
+          padding: 12px 15px;
         }
         
-        .reserve-search-input,
-        .reserve-search-btn,
-        .reset-btn {
-          flex: none;
-          width: 100%;
-          min-height: 44px;
-          font-size: 16px;
-        }
-        
-        .reserve-search-btn,
-        .reset-btn {
-          padding: 12px 20px;
-        }
-        
-        .date-separator {
-          display: none;
-        }
-      }
-      
-      @media (max-width: 480px) {
-        .reserve-search-container {
-          padding: 12px;
+        .date-filter-row {
           gap: 8px;
         }
         
-        .reserve-search-input,
-        .reserve-search-btn,
-        .reset-btn {
-          min-height: 42px;
-          font-size: 15px;
+        .date-filter-input {
+          min-width: 110px;
+          font-size: 15px !important;
+          padding: 10px 12px !important;
+          min-height: 42px !important;
+        }
+        
+        .filter-search-btn,
+        .filter-reset-btn {
+          font-size: 14px !important;
+          padding: 10px 14px !important;
+          min-height: 42px !important;
+        }
+        
+        .filter-search-btn {
+          min-width: 80px;
+        }
+        
+        .filter-reset-btn {
+          min-width: 60px;
+        }
+      }
+      
+      @media (max-width: 600px) {
+        .date-filter-row {
+          gap: 6px;
+        }
+        
+        .date-filter-input {
+          min-width: 100px;
+          font-size: 14px !important;
+          padding: 8px 10px !important;
+          min-height: 40px !important;
+        }
+        
+        .filter-search-btn,
+        .filter-reset-btn {
+          font-size: 13px !important;
+          padding: 8px 12px !important;
+          min-height: 40px !important;
+        }
+        
+        .filter-search-btn {
+          min-width: 70px;
+        }
+        
+        .filter-reset-btn {
+          min-width: 50px;
+        }
+        
+        .date-separator {
+          font-size: 14px;
+          margin: 0 3px;
         }
       }
     </style>
   `;
 }
 
+// 완료작업탭 - 날짜 필터 1줄 정렬
 export function getDoneTabHTML() {
   const today = getTodayString();
   
   return `
     ${getTaskSubTabsHTML('done')}
-    <div id="doneSearchContainer" class="done-search-container">
-      <input type="date" id="done-start-date" value="${today}" class="done-search-input">
-      <span class="date-separator">~</span>
-      <input type="date" id="done-end-date" value="${today}" class="done-search-input">
-      <button id="done-search-btn" class="done-search-btn">🔍 검색</button>
-      <button onclick="resetDoneFilter()" class="reset-btn">오늘</button>
+    <div class="date-filter-container">
+      <div class="date-filter-row">
+        <input type="date" id="done-start-date" value="${today}" class="date-filter-input">
+        <span class="date-separator">~</span>
+        <input type="date" id="done-end-date" value="${today}" class="date-filter-input">
+        <button id="done-search-btn" class="filter-search-btn">🔍 검색</button>
+        <button onclick="resetDoneFilter()" class="filter-reset-btn">오늘</button>
+      </div>
     </div>
     ${getTaskListHTML()}
     
     <style>
-      .done-search-container {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
+      /* 완료작업탭도 동일한 스타일 적용 */
+      .date-filter-container {
         background: white;
-        padding: 18px;
+        padding: 15px 20px;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        align-items: center;
-        flex-wrap: wrap;
+        margin-bottom: 20px;
       }
       
-      .done-search-input {
+      .date-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: nowrap;
+      }
+      
+      .date-filter-input {
         flex: 1;
-        margin: 0;
-        padding: 14px 16px;
-        font-size: 16px;
-        border-radius: 10px;
-        border: 2px solid #ddd;
-        min-height: 48px;
+        margin: 0 !important;
+        padding: 12px 16px !important;
+        font-size: 16px !important;
+        border-radius: 8px !important;
+        border: 2px solid #ddd !important;
+        min-height: 45px !important;
         background: #fff !important;
         color: #333 !important;
         font-family: inherit;
@@ -372,10 +414,10 @@ export function getDoneTabHTML() {
         min-width: 140px;
       }
       
-      .done-search-input:focus {
-        outline: none;
-        border-color: #8ecae6;
-        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15);
+      .date-filter-input:focus {
+        outline: none !important;
+        border-color: #8ecae6 !important;
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15) !important;
         background: #fff !important;
         color: #333 !important;
       }
@@ -384,82 +426,111 @@ export function getDoneTabHTML() {
         font-weight: 600;
         color: #666;
         margin: 0 5px;
+        flex-shrink: 0;
       }
       
-      .done-search-btn, .reset-btn {
-        padding: 12px 20px;
-        margin: 0;
-        font-size: 16px;
-        border-radius: 10px;
-        min-height: 48px;
+      .filter-search-btn, .filter-reset-btn {
+        padding: 12px 18px !important;
+        margin: 0 !important;
+        font-size: 15px !important;
+        border-radius: 8px !important;
+        min-height: 45px !important;
         white-space: nowrap;
-        border: none;
+        border: none !important;
         cursor: pointer;
         font-weight: 600;
         transition: all 0.2s ease;
         touch-action: manipulation;
+        flex-shrink: 0;
       }
       
-      .done-search-btn {
+      .filter-search-btn {
         background: #219ebc !important;
         color: white !important;
+        min-width: 90px;
       }
       
-      .done-search-btn:hover,
-      .done-search-btn:active {
+      .filter-search-btn:hover,
+      .filter-search-btn:active {
         background: #1a7a96 !important;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(33,158,188,0.2);
       }
       
-      .reset-btn {
+      .filter-reset-btn {
         background: #6c757d !important;
         color: white !important;
+        min-width: 70px;
       }
       
-      .reset-btn:hover {
+      .filter-reset-btn:hover {
         background: #5a6268 !important;
         transform: translateY(-1px);
       }
       
       /* 모바일 반응형 */
       @media (max-width: 768px) {
-        .done-search-container {
-          flex-direction: column;
-          gap: 10px;
-          padding: 15px;
+        .date-filter-container {
+          padding: 12px 15px;
         }
         
-        .done-search-input,
-        .done-search-btn,
-        .reset-btn {
-          flex: none;
-          width: 100%;
-          min-height: 44px;
-          font-size: 16px;
-        }
-        
-        .done-search-btn,
-        .reset-btn {
-          padding: 12px 20px;
-        }
-        
-        .date-separator {
-          display: none;
-        }
-      }
-      
-      @media (max-width: 480px) {
-        .done-search-container {
-          padding: 12px;
+        .date-filter-row {
           gap: 8px;
         }
         
-        .done-search-input,
-        .done-search-btn,
-        .reset-btn {
-          min-height: 42px;
-          font-size: 15px;
+        .date-filter-input {
+          min-width: 110px;
+          font-size: 15px !important;
+          padding: 10px 12px !important;
+          min-height: 42px !important;
+        }
+        
+        .filter-search-btn,
+        .filter-reset-btn {
+          font-size: 14px !important;
+          padding: 10px 14px !important;
+          min-height: 42px !important;
+        }
+        
+        .filter-search-btn {
+          min-width: 80px;
+        }
+        
+        .filter-reset-btn {
+          min-width: 60px;
+        }
+      }
+      
+      @media (max-width: 600px) {
+        .date-filter-row {
+          gap: 6px;
+        }
+        
+        .date-filter-input {
+          min-width: 100px;
+          font-size: 14px !important;
+          padding: 8px 10px !important;
+          min-height: 40px !important;
+        }
+        
+        .filter-search-btn,
+        .filter-reset-btn {
+          font-size: 13px !important;
+          padding: 8px 12px !important;
+          min-height: 40px !important;
+        }
+        
+        .filter-search-btn {
+          min-width: 70px;
+        }
+        
+        .filter-reset-btn {
+          min-width: 50px;
+        }
+        
+        .date-separator {
+          font-size: 14px;
+          margin: 0 3px;
         }
       }
     </style>

@@ -11,7 +11,7 @@ body {
   font-size: 18px; /* 모바일 기본 폰트 크기 증가 */
 }
 
-/* 헤더 바 */
+/* 헤더 바 - 1줄 정렬 개선 */
 .header-bar {
   display: flex;
   align-items: center;
@@ -19,39 +19,44 @@ body {
   margin-bottom: 20px;
   background: #fff !important;
   color: #333 !important;
-  padding: 20px 32px 18px 32px;
+  padding: 15px 25px; /* 패딩 축소 */
   border-radius: 16px;
   box-shadow: 0 2px 10px rgba(33,158,188,0.06);
+  flex-wrap: nowrap; /* 줄바꿈 방지 */
+  min-height: 60px; /* 최소 높이 설정 */
 }
 
 .header-title {
   display: flex;
   align-items: center;
-  font-size: 1.6rem;
+  font-size: 1.4rem; /* 크기 조정 */
   font-weight: 700;
   letter-spacing: -1px;
   color: #222 !important;
+  flex: 1; /* 남은 공간 차지 */
+  min-width: 0; /* overflow 허용 */
 }
 
 .header-icon {
-  font-size: 1.8rem;
-  margin-right: 12px;
+  font-size: 1.5rem; /* 아이콘 크기 조정 */
+  margin-right: 10px;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-shrink: 0; /* 축소 방지 */
 }
 
 /* 버튼 스타일 - 모바일 터치 친화적 */
 .home-btn, .logout-btn {
-  font-size: 1.1rem;
+  font-size: 1rem; /* 크기 조정 */
   font-weight: 700;
-  padding: 14px 28px;
+  padding: 12px 20px; /* 패딩 축소 */
   border-radius: 12px;
-  min-width: 130px;
-  min-height: 52px;
+  min-width: 100px; /* 최소 너비 축소 */
+  min-height: 45px; /* 높이 축소 */
   line-height: 1.2;
   box-sizing: border-box;
   display: inline-block;
@@ -61,6 +66,7 @@ body {
   border: 2px solid;
   text-decoration: none;
   touch-action: manipulation;
+  white-space: nowrap; /* 줄바꿈 방지 */
 }
 
 .logout-btn {
@@ -144,7 +150,7 @@ body {
   border-color: #219ebc;
 }
 
-/* 작업자 전용 UI */
+/* 작업자 전용 UI - 서브탭 1줄 정렬 */
 .mobile-tab-title {
   background: white !important;
   color: #333 !important;
@@ -163,10 +169,12 @@ body {
 }
 
 .worker-subtabs {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 25px;
-  padding: 0 10px;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 0 5px;
+  flex-wrap: nowrap; /* 줄바꿈 방지 */
 }
 
 .worker-tab-btn {
@@ -174,14 +182,16 @@ body {
   background: #f8f9fa !important;
   border: 2px solid #dee2e6;
   border-radius: 12px;
-  padding: 16px 12px;
-  font-size: 18px;
+  padding: 14px 10px; /* 패딩 조정 */
+  font-size: 16px; /* 폰트 크기 조정 */
   font-weight: 600;
   color: #333 !important;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 60px;
+  min-height: 50px; /* 높이 조정 */
   touch-action: manipulation;
+  white-space: nowrap; /* 줄바꿈 방지 */
+  text-align: center;
 }
 
 .worker-tab-btn.active {
@@ -421,17 +431,24 @@ button:disabled {
   }
   
   .header-bar {
-    padding: 18px 20px;
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
-    background: #fff !important;
-    color: #333 !important;
+    padding: 12px 20px; /* 모바일에서 더 작게 */
+    min-height: 55px;
   }
   
   .header-title {
-    font-size: 1.4rem;
-    color: #333 !important;
+    font-size: 1.2rem; /* 모바일에서 더 작게 */
+  }
+  
+  .header-icon {
+    font-size: 1.3rem;
+    margin-right: 8px;
+  }
+  
+  .logout-btn, .home-btn {
+    min-width: 80px; /* 모바일에서 더 작게 */
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    min-height: 40px;
   }
   
   .button-grid {
@@ -446,13 +463,6 @@ button:disabled {
     min-height: 100px;
     background: #fff !important;
     color: #219ebc !important;
-  }
-  
-  .home-btn, .logout-btn {
-    min-width: 110px;
-    font-size: 1rem;
-    padding: 12px 20px;
-    min-height: 48px;
   }
   
   .login-container {
@@ -493,6 +503,18 @@ button:disabled {
   .task-content-mobile {
     font-size: 18px; /* 작업내용 폰트 크기 18px */
   }
+  
+  /* 작업자 서브탭 모바일 최적화 */
+  .worker-subtabs {
+    gap: 8px;
+    padding: 0 3px;
+  }
+  
+  .worker-tab-btn {
+    padding: 12px 8px;
+    font-size: 15px;
+    min-height: 45px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -503,13 +525,24 @@ button:disabled {
   }
   
   .header-bar {
-    padding: 15px;
-    background: #fff !important;
+    padding: 10px 15px;
+    min-height: 50px;
   }
   
   .header-title {
+    font-size: 1.1rem;
+  }
+  
+  .header-icon {
     font-size: 1.2rem;
-    color: #333 !important;
+    margin-right: 6px;
+  }
+  
+  .logout-btn, .home-btn {
+    min-width: 70px;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    min-height: 36px;
   }
   
   .button-grid {
@@ -527,21 +560,14 @@ button:disabled {
   }
   
   .worker-subtabs {
-    flex-direction: column;
-    gap: 10px;
-    padding: 0 5px;
+    gap: 6px;
+    padding: 0;
   }
   
   .worker-tab-btn {
-    min-height: 55px;
-    font-size: 17px;
-    background: #f8f9fa !important;
-    color: #333 !important;
-  }
-  
-  .worker-tab-btn.active {
-    background: #219ebc !important;
-    color: #fff !important;
+    padding: 10px 6px;
+    font-size: 14px;
+    min-height: 42px;
   }
 }
 
