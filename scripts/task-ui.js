@@ -329,8 +329,14 @@ function groupTasksByWorker(tasks) {
   const grouped = {};
   
   tasks.forEach(task => {
-    if (!task.worker) return;
-    
+if (!task.worker || task.worker.trim() === '') {
+  // ✅ 미지정 작업을 "미지정" 그룹으로 분류
+  if (!grouped['미지정']) {
+    grouped['미지정'] = [];
+  }
+  grouped['미지정'].push(task);
+  return;
+}    
     // 첫 번째 작업자를 팀장으로 간주
     const workers = task.worker.split(',').map(w => w.trim());
     const teamLeader = workers[0];
