@@ -6,15 +6,34 @@
   <title>다담업무관리</title>
   <link rel="stylesheet" href="styles/main.css">
   
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
   <!-- PWA 지원을 위한 메타 태그 -->
-  <meta name="theme-color" content="#219ebc">
+  <meta name="theme-color" content="#87CEEB">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="다담업무">
+  <meta name="apple-mobile-web-app-title" content="다담티비">
   
-  <!-- 터치 아이콘 -->
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+  <!-- 터치 아이콘 (아이콘 준비되면 경로 변경) -->
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+  
+  <!-- Service Worker 등록 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(function(registration) {
+            console.log('Service Worker 등록 성공:', registration.scope);
+          })
+          .catch(function(error) {
+            console.log('Service Worker 등록 실패:', error);
+          });
+      });
+    }
+  </script>
 </head>
 <body>
   <!-- 헤더 바 -->
