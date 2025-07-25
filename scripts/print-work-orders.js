@@ -142,7 +142,6 @@ function getWorkOrderPrintHTML() {
       <div id="print-action-buttons" class="print-action-buttons" style="display: none;">
         <button onclick="window.printAllWorkers()" class="print-btn primary">🖨️ 전체 인쇄</button>
         <button onclick="window.printSelectedWorkers()" class="print-btn secondary">✅ 선택 인쇄</button>
-        <button onclick="window.previewPrint()" class="print-btn outline">👁️ 미리보기</button>
       </div>
     </div>
     
@@ -412,14 +411,6 @@ function getWorkOrderPrintHTML() {
         align-items: center;
       }
 
-      .task-client {
-        font-size: 14px;
-        color: #000;
-        margin-bottom: 6px;
-        line-height: 1.5;
-        font-weight: 600;
-      }
-
       .client-highlight {
         background: #fff3cd;
         padding: 2px 6px;
@@ -513,13 +504,8 @@ function getWorkOrderPrintHTML() {
       /* 프린트 전용 스타일 */
       @media print {
         @page {
-          size: A4 portrait;
+          size: A4;
           margin: 10mm;
-        }
-        
-        /* 전체 초기화 */
-        * {
-          box-sizing: border-box !important;
         }
         
         /* 불필요한 요소 숨기기 */
@@ -570,7 +556,7 @@ function getWorkOrderPrintHTML() {
           border: 3px solid #000 !important;
           border-radius: 0 !important;
           background: white !important;
-          min-height: 250mm !important;
+          min-height: 150mm !important;
           width: 100% !important;
         }
         
@@ -578,51 +564,58 @@ function getWorkOrderPrintHTML() {
           page-break-after: auto !important;
         }
         
-        /* 헤더 - 한 줄 배치 */
+        /* 헤더 - 완전히 한 줄로 강제 배치 */
         .worker-header {
           background: #f5f5f5 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           border-bottom: 2px solid #000 !important;
-          padding: 5mm !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: center !important;
-          gap: 15px !important;
-          flex-wrap: nowrap !important;
+          padding: 3mm 5mm !important;
+          min-height: 8mm !important;
+          max-height: 8mm !important;
+          display: block !important;
+          text-align: center !important;
+          line-height: 8mm !important;
+          overflow: hidden !important;
           white-space: nowrap !important;
         }
 
         .worker-header::before {
-          content: "작업지시서 - " attr(data-date) " |" !important;
-          font-size: 16px !important;
+          content: "작업지시서 - " attr(data-date) " | " !important;
+          font-size: 14px !important;
           font-weight: bold !important;
           color: #000 !important;
           margin: 0 !important;
+          display: inline !important;
+          vertical-align: middle !important;
         }
         
         .worker-info {
-          display: flex !important;
-          align-items: center !important;
-          gap: 8px !important;
+          display: inline !important;
           margin: 0 !important;
+          padding: 0 !important;
+          vertical-align: middle !important;
         }
 
         .worker-name {
-          font-size: 16px !important;
+          font-size: 14px !important;
           font-weight: bold !important;
-          margin: 0 !important;
+          margin: 0 5px 0 0 !important;
+          display: inline !important;
+          vertical-align: middle !important;
         }
 
         .task-count-badge {
           background: #000 !important;
           color: white !important;
-          padding: 4px 8px !important;
-          border-radius: 10px !important;
-          font-size: 14px !important;
+          padding: 1mm 2mm !important;
+          border-radius: 8px !important;
+          font-size: 12px !important;
           font-weight: 600 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+          display: inline !important;
+          vertical-align: middle !important;
         }
         
         /* 작업 리스트 */
@@ -630,17 +623,18 @@ function getWorkOrderPrintHTML() {
           padding: 3mm !important;
         }
         
-        /* 작업 아이템 - 18px 글씨, 최소 여백 */
+        /* 작업 아이템 - 6개 리스트, 18px 글씨, 최소 여백, 모든 글씨 굵게 */
         .task-item {
-          margin-bottom: 2mm !important;
+          margin-bottom: 1.5mm !important;
           font-size: 18px !important;
           line-height: 1.2 !important;
           page-break-inside: avoid !important;
           border: 1px solid #333 !important;
           border-radius: 4px !important;
-          padding: 2mm !important;
+          padding: 1.5mm !important;
           background: white !important;
-          min-height: 20mm !important;
+          min-height: 18mm !important;
+          font-weight: bold !important;
         }
         
         .task-time-client {
@@ -653,19 +647,32 @@ function getWorkOrderPrintHTML() {
           color: #000 !important;
         }
         
+        /* 거래처명만 노란색 배경 (부분적으로) */
+        .client-highlight {
+          background: yellow !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          font-weight: bold !important;
+          padding: 1mm 2mm !important;
+          border-radius: 2px !important;
+        }
+        
         .task-details {
           font-size: 18px !important;
           margin-bottom: 1mm !important;
-          color: #333 !important;
+          color: #000 !important;
           line-height: 1.2 !important;
+          font-weight: bold !important;
+          background: none !important;
         }
         
         .task-addresses {
           font-size: 18px !important;
           margin: 0.5mm 0 !important;
           padding-left: 2mm !important;
-          color: #444 !important;
+          color: #000 !important;
           line-height: 1.2 !important;
+          font-weight: bold !important;
         }
         
         .task-note {
@@ -678,6 +685,8 @@ function getWorkOrderPrintHTML() {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           line-height: 1.2 !important;
+          font-weight: bold !important;
+          color: #000 !important;
         }
       }
       
@@ -821,7 +830,7 @@ function groupTasksByWorker(tasks) {
   return grouped;
 }
 
-// 작업자별 작업 미리보기 표시 (카드형으로 개선)
+// 작업자별 작업 미리보기 표시 (안전한 버전)
 function displayWorkerTasksPreview(groupedTasks, selectedDate) {
   const container = document.getElementById('tasks-preview-container');
   
@@ -843,7 +852,7 @@ function displayWorkerTasksPreview(groupedTasks, selectedDate) {
         <div class="worker-tasks-list">
     `;
     
-    // 실제 작업들만 표시 (빈 슬롯 없음)
+    // 실제 작업들만 표시
     tasks.forEach((task, index) => {
       const taskTime = formatTaskTime(task.date);
       const addresses = formatAddressesForCard(task.removeAddress, task.installAddress);
@@ -875,8 +884,6 @@ function displayWorkerTasksPreview(groupedTasks, selectedDate) {
         </div>
       `;
     });
-    
-    // 빈 슬롯 추가 안함 - 실제 작업만 표시
     
     html += `
         </div>
@@ -1100,13 +1107,13 @@ function printSelectedWorkers() {
         display: none !important;
       }
       
-      /* 거래처명 노란색 배경 */
-      .task-details {
+      /* 거래처명만 노란색 배경 */
+      .client-highlight {
         background: yellow !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         font-weight: bold !important;
-        padding: 1mm !important;
+        padding: 1mm 2mm !important;
         border-radius: 2px !important;
       }
       
@@ -1165,160 +1172,11 @@ function printSelectedWorkers() {
   }, 1000);
 }
 
-// 인쇄 미리보기
-function previewPrint() {
-  const printWindow = window.open('', '_blank');
-  const selectedDate = document.getElementById('print-date').value;
-  const separatePages = document.getElementById('separate-pages').checked;
-  
-  // 미리보기 HTML 생성
-  const previewHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>작업지시서 미리보기 - ${selectedDate}</title>
-      <meta charset="UTF-8">
-      <style>
-        @page {
-          size: A4 portrait;
-          margin: 15mm;
-        }
-        
-        body {
-          font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
-          margin: 0;
-          padding: 20px;
-          background: white;
-          color: #333;
-        }
-        
-        .worker-card {
-          margin-bottom: 40px;
-          ${separatePages ? 'page-break-after: always;' : ''}
-          border: 2px solid #333;
-          border-radius: 8px;
-          overflow: hidden;
-          min-height: 250mm;
-        }
-        
-        .worker-card:last-child {
-          page-break-after: auto;
-        }
-        
-        .worker-header {
-          background: #f0f0f0;
-          padding: 20mm 10mm;
-          border-bottom: 2px solid #333;
-          text-align: center;
-          position: relative;
-        }
-
-        .worker-header::before {
-          content: "작업지시서 - ${new Date(selectedDate).toLocaleDateString('ko-KR', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            weekday: 'long'
-          })} | ";
-          display: inline;
-          font-size: 18px;
-          font-weight: bold;
-          margin-right: 10px;
-          color: #000;
-        }
-        
-        .worker-info {
-          display: inline-flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .worker-name {
-          font-size: 18px;
-          font-weight: bold;
-        }
-
-        .task-count-badge {
-          background: #000;
-          color: white;
-          padding: 6px 12px;
-          border-radius: 15px;
-          font-size: 16px;
-          font-weight: 600;
-        }
-        
-        .worker-tasks-list {
-          padding: 10mm;
-        }
-        
-        .task-item {
-          margin-bottom: 8mm;
-          font-size: 15px;
-          line-height: 1.4;
-          border: 2px solid #666;
-          border-radius: 4px;
-          padding: 5mm;
-          background: white;
-          min-height: 35mm;
-        }
-        
-        .task-time-client {
-          font-size: 17px;
-          font-weight: bold;
-          margin-bottom: 3mm;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        
-        .task-details {
-          font-size: 15px;
-          margin-bottom: 2mm;
-        }
-        
-        .task-addresses {
-          font-size: 14px;
-          margin: 1mm 0;
-          padding-left: 3mm;
-        }
-        
-        .task-note {
-          font-size: 14px;
-          background: #f5f5f5;
-          border: 1px solid #999;
-          padding: 3mm;
-          margin-top: 2mm;
-          border-left: 2px solid #000;
-        }
-        
-        .task-item.empty-task {
-          opacity: 0.7;
-          border-style: dashed;
-        }
-        
-        @media print {
-          body { padding: 0; }
-        }
-      </style>
-    </head>
-    <body>
-      ${document.getElementById('tasks-preview-container').innerHTML.replace(/class="worker-controls"[^>]*>.*?<\/div>/gs, '')}
-    </body>
-    </html>
-  `;
-  
-  printWindow.document.write(previewHTML);
-  printWindow.document.close();
-  printWindow.focus();
-}
-
 // 전역 함수 등록
 window.loadWorkOrderPrint = loadWorkOrderPrint;
 window.loadTasksForPrint = loadTasksForPrint;
 window.printAllWorkers = printAllWorkers;
 window.printSelectedWorkers = printSelectedWorkers;
-window.previewPrint = previewPrint;
 window.setQuickDate = setQuickDate;
 
 console.log('📄 작업지시서 인쇄 모듈 로드 완료');
