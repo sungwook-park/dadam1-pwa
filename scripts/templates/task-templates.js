@@ -89,7 +89,7 @@ function cleanAddressForMap(address) {
   return cleanAddress;
 }
 
-// 주소를 지도 링크로 변환하는 함수 (T맵 우선, 폴백: 카카오네비)
+// 주소를 지도 링크로 변환하는 함수 (T맵 우선, 폴백: 카카오맵)
 function formatAddressLink(address) {
   if (!address || !address.trim()) {
     return '';
@@ -103,28 +103,28 @@ function formatAddressLink(address) {
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);
   
   if (isMobile) {
-    // 모바일: T맵 시도 → 실패시 카카오네비
+    // 모바일: T맵 시도 → 실패시 카카오맵
     const tmapUrl = `tmap://search?name=${encodedAddress}`;
-    const kakaoNaviUrl = `kakaonavi://navigate?destination=${encodedAddress}`;
+    const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
     
-    return `<a href="${tmapUrl}" class="address-link" onclick="event.stopPropagation(); handleMapLink(event, '${kakaoNaviUrl}');" title="지도에서 보기: ${cleanAddress}">${address}</a>`;
+    return `<a href="${tmapUrl}" class="address-link" onclick="event.stopPropagation(); handleMapLink(event, '${kakaoMapUrl}');" title="지도에서 보기: ${cleanAddress}">${address}</a>`;
   } else {
-    // 웹: 카카오맵 (T맵은 웹에서 지원 안함)
+    // 웹: 바로 카카오맵 (T맵은 웹에서 지원 안함)
     const kakaoMapUrl = `https://map.kakao.com/link/search/${encodedAddress}`;
     
     return `<a href="${kakaoMapUrl}" class="address-link" onclick="event.stopPropagation();" target="_blank" title="지도에서 보기: ${cleanAddress}">${address}</a>`;
   }
 }
 
-// 지도 링크 처리 함수 (T맵 실패시 카카오네비로 폴백)
+// 지도 링크 처리 함수 (T맵 실패시 카카오맵으로 폴백)
 function handleMapLink(event, fallbackUrl) {
   // T맵이 열리지 않을 경우를 대비한 폴백 처리 (모바일만)
   setTimeout(() => {
-    // T맵 앱이 설치되지 않았거나 열리지 않으면 카카오네비로
+    // T맵 앱이 설치되지 않았거나 열리지 않으면 카카오맵으로
     if (document.hasFocus()) {
       window.location.href = fallbackUrl;
     }
-  }, 2000); // 2초 후 카카오네비로 전환
+  }, 1500); // T맵은 1.5초로 단축
 }
 
 // 전화 링크 스타일 추가 함수

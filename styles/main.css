@@ -114,10 +114,10 @@ body {
   font-size: 1.8rem;
 }
 
-/* 메인 메뉴 버튼 그리드 */
+/* 메인 메뉴 버튼 그리드 - 7개 버튼용 */
 .button-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr); /* 3열 유지 */
   gap: 20px;
   margin-top: 40px;
   max-width: 800px;
@@ -452,7 +452,7 @@ button:disabled {
   }
   
   .button-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr); /* 모바일에서는 2열로 */
     gap: 15px;
     margin-top: 25px;
   }
@@ -546,7 +546,7 @@ button:disabled {
   }
   
   .button-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* 아주 작은 화면에서는 1열로 */
     max-width: 300px;
     gap: 12px;
   }

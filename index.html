@@ -83,6 +83,9 @@
       <button class="menu-button" id="inventory-btn" aria-label="입출고 관리">
         📦<br><span style="margin-top:8px; display:block;">입출고</span>
       </button>
+      <button class="menu-button" id="print-workorder-btn" aria-label="작업지시서 인쇄">
+        🖨️<br><span style="margin-top:8px; display:block;">작업지시서 인쇄</span>
+      </button>
       <button class="menu-button" id="holiday-btn" aria-label="휴무 관리">
         🏖️<br><span style="margin-top:8px; display:block;">휴무관리</span>
       </button>
@@ -126,10 +129,13 @@
   <script type="module" src="scripts/inventory.js"></script>
   <script type="module" src="scripts/company-funds.js"></script>
 
-  <!-- 5. UI 컨트롤러 -->
+  <!-- 5. 작업지시서 인쇄 모듈 추가 -->
+  <script type="module" src="scripts/print-work-orders.js"></script>
+
+  <!-- 6. UI 컨트롤러 -->
   <script type="module" src="scripts/task-ui.js"></script>
 
-  <!-- 6. 인증 (마지막) -->
+  <!-- 7. 인증 (마지막) -->
   <script type="module" src="scripts/auth.js"></script>
 
   <!-- 메인 앱 로직 -->
@@ -186,6 +192,10 @@
             titleText = '입출고';
             titleIcon = '📦';
             break;
+          case 'print-workorder':
+            titleText = '작업지시서 인쇄';
+            titleIcon = '🖨️';
+            break;
           case 'holiday':
             titleText = '휴무관리';
             titleIcon = '🏖️';
@@ -227,6 +237,9 @@
         window.loadCompanyFunds();
       } else if (name === 'inventory' && window.loadInventoryManagement) {
         window.loadInventoryManagement();
+      } else if (name === 'print-workorder' && window.loadWorkOrderPrint) {
+        // 작업지시서 인쇄 탭 로드
+        window.loadWorkOrderPrint();
       }
     }
 
@@ -273,6 +286,49 @@
       }
     }
 
+    // 작업지시서 인쇄 전용 함수 (직접 호출용)
+    function loadPrintWorkOrderTab() {
+      console.log('🖨️ 작업지시서 인쇄 직접 로드');
+      
+      // 화면 전환
+      const homeButtons = document.getElementById('home-buttons');
+      const tabContent = document.getElementById('tab-content');
+      
+      if (homeButtons) homeButtons.style.display = 'none';
+      if (tabContent) tabContent.style.display = 'block';
+      
+      // 제목 설정
+      const tabTitleElement = document.getElementById('tab-title');
+      if (tabTitleElement) {
+        tabTitleElement.innerHTML = `
+          <div style="
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+            border-left: 4px solid #8ecae6;
+          ">
+            <h3 style="
+              margin: 0;
+              font-size: 1.4rem;
+              color: #333;
+              font-weight: 600;
+            ">🖨️ 작업지시서 인쇄</h3>
+          </div>
+        `;
+      }
+      
+      // 내용 로드
+      if (window.loadWorkOrderPrint) {
+        console.log('🖨️ loadWorkOrderPrint 실행');
+        window.loadWorkOrderPrint();
+      } else {
+        console.error('❌ loadWorkOrderPrint 함수 없음');
+      }
+    }
+
     // DOM이 로드된 후 이벤트 리스너 등록
     document.addEventListener('DOMContentLoaded', () => {
       console.log('📱 DOM 로드 완료');
@@ -290,6 +346,7 @@
         const settleBtn = document.getElementById('settle-btn');
         const companyFundsBtn = document.getElementById('company-funds-btn');
         const inventoryBtn = document.getElementById('inventory-btn');
+        const printWorkOrderBtn = document.getElementById('print-workorder-btn');
         const holidayBtn = document.getElementById('holiday-btn');
         
         if (taskBtn) {
@@ -312,6 +369,11 @@
         if (inventoryBtn) {
           inventoryBtn.addEventListener('click', () => openTab('inventory'));
           console.log('✅ 입출고 버튼 이벤트 연결');
+        }
+        if (printWorkOrderBtn) {
+          // 작업지시서 인쇄는 전용 함수 사용
+          printWorkOrderBtn.addEventListener('click', loadPrintWorkOrderTab);
+          console.log('✅ 작업지시서 인쇄 버튼 이벤트 연결');
         }
         if (holidayBtn) {
           holidayBtn.addEventListener('click', () => openTab('holiday'));
@@ -413,6 +475,7 @@
     window.backToHome = backToHome;
     window.openTab = openTab;
     window.loadCompanyFundsTab = loadCompanyFundsTab;
+    window.loadPrintWorkOrderTab = loadPrintWorkOrderTab;
   </script>
 
   <!-- PWA 및 모바일 전용 스타일 -->
