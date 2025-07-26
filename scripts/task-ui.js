@@ -683,14 +683,36 @@ window.showTaskTab = function(type) {
   const subTabs = getTaskSubTabsHTML(type);
   
   if (type === 'input') {
+    // 🔧 부품 데이터 강제 초기화 (맨 처음에)
+    console.log('🧹 작업입력탭 - 부품 데이터 강제 초기화');
+    window.selectedParts = [];
+    window.parts = [];
+    window.currentParts = [];
+    if (window.inventoryItems) window.inventoryItems = [];
+    if (window.selectedItems) window.selectedItems = [];
+    
     body.innerHTML = `
       ${subTabs}
       ${getTaskInputFormHTML(getNowYYYYMMDDHHMM())}
     `;
+    
     renderItemsInput('items-input');
     
-    // 수수료 계산을 위한 이벤트 리스너 추가
+    // 추가 초기화 - DOM 생성 후
     setTimeout(() => {
+      // 모든 부품 관련 DOM 요소 초기화
+      document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
+      document.querySelectorAll('#selected-parts-display').forEach(el => el.innerHTML = '');
+      document.querySelectorAll('.inventory-item').forEach(el => el.remove());
+      
+      // 전역 변수 재확인
+      window.selectedParts = [];
+      window.parts = [];
+      window.currentParts = [];
+      
+      console.log('✅ 부품 데이터 추가 초기화 완료');
+      
+      // 이벤트 리스너 설정
       const clientInput = document.getElementById('client-input');
       const amountInput = document.getElementById('amount-input');
       
@@ -702,7 +724,6 @@ window.showTaskTab = function(type) {
         amountInput.addEventListener('input', calculateFee);
       }
       
-      // 작업자 체크박스 이벤트 리스너 추가
       const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
       workerCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectedWorkers);
@@ -1278,6 +1299,28 @@ window.editTask = async function(id, tabType) {
       window.editingTaskId = id;
       window.editingTabType = tabType;
       
+      // 🔧 편집 시작 전 부품 데이터 강력한 초기화
+      console.log('🧹 편집 전 부품 데이터 강력한 초기화 시작');
+      
+      // 모든 전역 변수 강제 null/빈배열로 설정
+      window.selectedParts = [];
+      window.parts = [];
+      window.currentParts = [];
+      if (window.inventoryItems) window.inventoryItems = [];
+      if (window.selectedItems) window.selectedItems = [];
+      
+      // 모든 부품 관련 DOM 즉시 초기화
+      document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
+      document.querySelectorAll('[id*="parts"], [class*="parts"]').forEach(el => {
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.value = '';
+        } else {
+          el.innerHTML = '';
+        }
+      });
+      
+      console.log('✅ 편집 시작 전 부품 데이터 강력한 초기화 완료');
+      
       console.log('전역 편집 상태 설정:');
       console.log('  window.editingTaskId:', window.editingTaskId);
       console.log('  window.editingTabType:', window.editingTabType);
@@ -1288,7 +1331,7 @@ window.editTask = async function(id, tabType) {
         showTaskTab('input');
         setTimeout(() => {
           populateEditForm(data, id, tabType);
-        }, 200);
+        }, 300); // 시간을 좀 더 늘림
       } else {
         // 작업자: 수정된 폼 사용 (하단 버튼 제거)
         console.log('→ 작업자 수정 모드');
@@ -1362,9 +1405,13 @@ function populateEditForm(data, id, tabType) {
     form.parts.value = data.parts || '';
   }
   
-  // 부품 데이터 로드
+  // 🔧 부품 데이터 로드 (초기화 후 해당 작업의 부품만 로드)
   if (data.parts && window.loadExistingParts) {
-    window.loadExistingParts(data.parts);
+    // 잠시 대기 후 해당 작업의 부품 로드 (초기화 완료 후)
+    setTimeout(() => {
+      window.loadExistingParts(data.parts);
+      console.log('✅ 해당 작업의 부품만 로드 완료:', data.parts);
+    }, 200);
   }
   
   // 저장 버튼 이벤트 수정 - 편집 모드로 설정
@@ -1491,9 +1538,13 @@ function populateFormData(data) {
     form.parts.value = data.parts || '';
   }
   
-  // 부품 데이터 로드
+  // 🔧 부품 데이터 로드 (해당 작업의 부품만)
   if (data.parts && window.loadExistingParts) {
-    window.loadExistingParts(data.parts);
+    // 잠시 대기 후 해당 작업의 부품 로드 (UI 렌더링 완료 후)
+    setTimeout(() => {
+      window.loadExistingParts(data.parts);
+      console.log('✅ 작업자 폼 - 해당 작업의 부품만 로드 완료:', data.parts);
+    }, 300);
   }
   
   // 수수료 자동 계산

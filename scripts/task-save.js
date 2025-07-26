@@ -17,11 +17,13 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
   console.log('window.editingTabType:', window.editingTabType);
   
   // 편집 상태 정리 - 우선순위: 매개변수 > window 전역변수
-  const finalIsEdit = isEdit || (window.editingTaskId !== null);
+  const finalIsEdit = isEdit || (window.editingTaskId !== null && window.editingTaskId !== undefined);
   const finalEditId = editId || window.editingTaskId;
   const finalTabType = tabType || window.editingTabType;
   
   console.log('=== 최종 편집 상태 ===');
+  console.log('isEdit 매개변수:', isEdit);
+  console.log('window.editingTaskId:', window.editingTaskId);
   console.log('최종 편집모드:', finalIsEdit);
   console.log('최종 편집ID:', finalEditId);
   console.log('최종 탭타입:', finalTabType);
@@ -104,7 +106,7 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       window.editingTaskId = null;
       window.editingTabType = null;
       
-      // 작업자 폼인 경우 원래 화면으로 돌아가기 (수정됨)
+      // 작업자 폼인 경우 원래 화면으로 돌아가기
       if (isWorkerEditForm || !window.isCurrentUserAdmin()) {
         console.log('📱 작업자 수정 완료 - 화면 복원');
         if (finalTabType === 'done') {
@@ -117,11 +119,36 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
         return; // 여기서 함수 종료
       }
       
+      // 관리자 수정 완료 후 원래 탭으로 이동
+      if (finalTabType === 'reserve') {
+        console.log('→ 예약탭으로 이동');
+        window.loadReserveTasks();
+      } else if (finalTabType === 'done') {
+        console.log('→ 완료탭으로 이동');
+        window.loadDoneTasks();
+      } else {
+        console.log('→ 오늘작업탭으로 이동');
+        window.loadTodayTasks();
+      }
+      
     } else {
       console.log('=== 새 작업 저장 모드 실행 ===');
       const docRef = await addDoc(collection(db, "tasks"), taskData);
       console.log('✅ 새 문서 저장 완료 ID:', docRef.id);
       alert('저장되었습니다!');
+      
+      // 🔧 새 작업 저장 시 탭 이동 방지 - 더 확실하게
+      console.log('🔧 새 작업 저장 완료 - isEdit:', isEdit, 'editingTaskId:', window.editingTaskId);
+      if (!isEdit && !window.editingTaskId) {
+        console.log('✅ 새 작업 저장 완료 - 작업입력탭에 머무름');
+        
+        // 관리자 폼만 초기화
+        if (window.isCurrentUserAdmin()) {
+          resetAdminForm(form);
+        }
+        
+        return; // 여기서 함수 종료하여 탭 이동 방지
+      }
     }
     
     // 관리자 폼만 초기화 (작업자 폼은 위에서 이미 처리됨)
@@ -129,15 +156,10 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       resetAdminForm(form);
     }
     
-    // 저장 후 탭 이동 결정 (관리자만)
-    if (!isWorkerEditForm && window.isCurrentUserAdmin()) {
-      if (finalIsEdit && finalEditId) {
-        console.log('=== 수정 완료 - 원래 탭으로 복귀 ===');
-        navigateAfterEdit(finalTabType);
-      } else {
-        console.log('=== 새 작업 저장 - 날짜 기반 탭 결정 ===');
-        navigateAfterCreate(formData.date);
-      }
+    // 🚫 새 작업 저장 후에는 탭 이동하지 않음 - 작업입력탭에 그대로 머물기
+    if (!finalIsEdit) {
+      console.log('=== 새 작업 저장 완료 - 작업입력탭에 머무름 ===');
+      // 아무것도 하지 않음 (작업입력탭에 그대로 머무름)
     }
     
   } catch (error) {
@@ -146,9 +168,9 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
   }
 };
 
-// 관리자 폼 초기화 함수
+// 관리자 폼 초기화 함수 (부품 초기화 강화)
 function resetAdminForm(form) {
-  console.log('🧹 관리자 폼 초기화');
+  console.log('🧹 관리자 폼 초기화 시작');
   
   // 폼 리셋
   form.reset();
@@ -178,71 +200,35 @@ function resetAdminForm(form) {
     feeInfo.style.display = 'none';
   }
   
-  // 부품 초기화
-  if (window.selectedParts) {
+  // 🔧 부품 초기화 간단 버전
+  console.log('🧹 저장 후 부품 데이터 초기화');
+  
+  // 전역 변수 초기화
+  window.selectedParts = [];
+  window.parts = [];
+  window.currentParts = [];
+  if (window.inventoryItems) window.inventoryItems = [];
+  if (window.selectedItems) window.selectedItems = [];
+  
+  // DOM 요소 초기화
+  document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
+  document.querySelectorAll('#selected-parts-display').forEach(el => el.innerHTML = '');
+  document.querySelectorAll('.inventory-item').forEach(el => el.remove());
+  
+  // 부품 입력 UI 재렌더링
+  setTimeout(() => {
+    const partsContainer = document.getElementById('items-input');
+    if (partsContainer && window.renderItemsInput) {
+      window.renderItemsInput('items-input');
+      console.log('✅ 부품 입력 UI 재렌더링 완료');
+    }
+    
+    // 한 번 더 확인
     window.selectedParts = [];
-    const partsDisplay = document.getElementById('selected-parts-display');
-    if (partsDisplay) {
-      partsDisplay.innerHTML = '';
-    }
-    const partsTextarea = document.querySelector('[name="parts"]');
-    if (partsTextarea) {
-      partsTextarea.value = '';
-    }
-  }
-}
-
-// 수정 완료 후 탭 이동
-function navigateAfterEdit(tabType) {
-  if (tabType === 'reserve') {
-    console.log('→ 예약탭으로 이동');
-    window.loadReserveTasks();
-  } else if (tabType === 'done') {
-    console.log('→ 완료탭으로 이동');
-    window.loadDoneTasks();
-  } else {
-    console.log('→ 오늘작업탭으로 이동');
-    window.loadTodayTasks();
-  }
-}
-
-// 새 작업 생성 후 탭 이동
-function navigateAfterCreate(dateString) {
-  console.log('📅 원본 입력 날짜:', dateString);
+    window.parts = [];
+    window.currentParts = [];
+    console.log('✅ 저장 후 부품 초기화 완료');
+  }, 200);
   
-  if (!dateString) {
-    console.log('📅 날짜가 없음 → 오늘작업탭');
-    window.loadTodayTasks();
-    return;
-  }
-  
-  // 입력된 날짜를 Date 객체로 변환
-  const inputDate = new Date(dateString);
-  const today = new Date();
-  
-  // 날짜만 비교 (시간 무시)
-  const inputDateOnly = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
-  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  
-  console.log('📊 날짜 비교:');
-  console.log('  입력 날짜 (날짜만):', inputDateOnly);
-  console.log('  오늘 (날짜만):', todayDateOnly);
-  
-  const isToday = inputDateOnly.getTime() === todayDateOnly.getTime();
-  const isFuture = inputDateOnly.getTime() > todayDateOnly.getTime();
-  
-  console.log('📊 최종 결과:');
-  console.log('  오늘 작업:', isToday);
-  console.log('  예약 작업:', isFuture);
-  
-  if (isToday) {
-    console.log('✅ 오늘 작업으로 판정 → 오늘작업탭');
-    window.loadTodayTasks();
-  } else if (isFuture) {
-    console.log('🔮 예약 작업으로 판정 → 예약탭');
-    window.loadReserveTasks();
-  } else {
-    console.log('📜 과거 작업으로 판정 → 오늘작업탭');
-    window.loadTodayTasks();
-  }
+  console.log('✅ 관리자 폼 초기화 완료');
 }
