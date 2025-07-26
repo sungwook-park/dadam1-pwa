@@ -200,35 +200,94 @@ function resetAdminForm(form) {
     feeInfo.style.display = 'none';
   }
   
-  // 🔧 부품 초기화 간단 버전
-  console.log('🧹 저장 후 부품 데이터 초기화');
+  // 🔧 부품 초기화 강력 버전
+  console.log('🧹 저장 후 부품 데이터 강력 초기화');
   
-  // 전역 변수 초기화
+  // 1단계: 전역 변수 강제 초기화 (여러 번)
   window.selectedParts = [];
   window.parts = [];
   window.currentParts = [];
   if (window.inventoryItems) window.inventoryItems = [];
   if (window.selectedItems) window.selectedItems = [];
+  if (window.inventoryData) window.inventoryData = [];
   
-  // DOM 요소 초기화
-  document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
-  document.querySelectorAll('#selected-parts-display').forEach(el => el.innerHTML = '');
-  document.querySelectorAll('.inventory-item').forEach(el => el.remove());
+  console.log('✅ 전역 변수 초기화 완료');
   
-  // 부품 입력 UI 재렌더링
+  // 2단계: DOM 요소 강제 초기화 (즉시 실행)
+  const clearPartsDOM = () => {
+    // 모든 부품 관련 input/textarea 초기화
+    document.querySelectorAll('[name="parts"]').forEach(el => {
+      el.value = '';
+      console.log('parts input 초기화:', el);
+    });
+    
+    // 부품 표시 영역 초기화
+    document.querySelectorAll('#selected-parts-display').forEach(el => {
+      el.innerHTML = '';
+      console.log('parts display 초기화:', el);
+    });
+    
+    // 인벤토리 아이템들 제거
+    document.querySelectorAll('.inventory-item').forEach(el => {
+      el.remove();
+      console.log('inventory item 제거:', el);
+    });
+    
+    // 추가된 부품 리스트 아이템들 제거
+    document.querySelectorAll('.added-part-item').forEach(el => {
+      el.remove();
+      console.log('added part item 제거:', el);
+    });
+    
+    // 모든 체크된 부품 체크박스 해제
+    document.querySelectorAll('input[type="checkbox"][data-part-id]').forEach(el => {
+      el.checked = false;
+      console.log('부품 체크박스 해제:', el);
+    });
+    
+    console.log('✅ DOM 요소 초기화 완료');
+  };
+  
+  // 즉시 실행
+  clearPartsDOM();
+  
+  // 3단계: 부품 입력 UI 완전 재생성
   setTimeout(() => {
+    console.log('🔄 부품 UI 재생성 시작');
+    
     const partsContainer = document.getElementById('items-input');
     if (partsContainer && window.renderItemsInput) {
+      // 컨테이너 완전히 비우기
+      partsContainer.innerHTML = '';
+      
+      // 전역 변수 한 번 더 초기화
+      window.selectedParts = [];
+      window.parts = [];
+      window.currentParts = [];
+      
+      // UI 재생성
       window.renderItemsInput('items-input');
-      console.log('✅ 부품 입력 UI 재렌더링 완료');
+      console.log('✅ 부품 입력 UI 재생성 완료');
+      
+      // 재생성 후 추가 정리
+      setTimeout(() => {
+        clearPartsDOM();
+        window.selectedParts = [];
+        window.parts = [];
+        window.currentParts = [];
+        console.log('✅ 재생성 후 추가 정리 완료');
+      }, 100);
     }
-    
-    // 한 번 더 확인
+  }, 100);
+  
+  // 4단계: 한 번 더 확인 (500ms 후)
+  setTimeout(() => {
+    clearPartsDOM();
     window.selectedParts = [];
     window.parts = [];
     window.currentParts = [];
-    console.log('✅ 저장 후 부품 초기화 완료');
-  }, 200);
+    console.log('✅ 최종 확인 초기화 완료');
+  }, 500);
   
   console.log('✅ 관리자 폼 초기화 완료');
 }

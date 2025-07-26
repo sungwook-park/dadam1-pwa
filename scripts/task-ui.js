@@ -683,34 +683,52 @@ window.showTaskTab = function(type) {
   const subTabs = getTaskSubTabsHTML(type);
   
   if (type === 'input') {
-    // 🔧 부품 데이터 강제 초기화 (맨 처음에)
-    console.log('🧹 작업입력탭 - 부품 데이터 강제 초기화');
+    // 🔧 부품 데이터 즉시 강력 초기화 (HTML 생성 전)
+    console.log('🧹 작업입력탭 - 부품 데이터 즉시 강력 초기화');
+    
+    // 전역 변수 즉시 초기화
     window.selectedParts = [];
     window.parts = [];
     window.currentParts = [];
     if (window.inventoryItems) window.inventoryItems = [];
     if (window.selectedItems) window.selectedItems = [];
+    if (window.inventoryData) window.inventoryData = [];
     
+    console.log('✅ 전역 변수 즉시 초기화 완료');
+    
+    // HTML 생성
     body.innerHTML = `
       ${subTabs}
       ${getTaskInputFormHTML(getNowYYYYMMDDHHMM())}
     `;
     
-    renderItemsInput('items-input');
-    
-    // 추가 초기화 - DOM 생성 후
-    setTimeout(() => {
-      // 모든 부품 관련 DOM 요소 초기화
+    // HTML 생성 직후 즉시 DOM 초기화
+    const clearAllPartsDOM = () => {
+      // 모든 부품 관련 요소 찾기 및 초기화
       document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
       document.querySelectorAll('#selected-parts-display').forEach(el => el.innerHTML = '');
       document.querySelectorAll('.inventory-item').forEach(el => el.remove());
+      document.querySelectorAll('.added-part-item').forEach(el => el.remove());
+      document.querySelectorAll('input[type="checkbox"][data-part-id]').forEach(el => el.checked = false);
       
       // 전역 변수 재확인
       window.selectedParts = [];
       window.parts = [];
       window.currentParts = [];
       
-      console.log('✅ 부품 데이터 추가 초기화 완료');
+      console.log('✅ DOM 요소 즉시 초기화 완료');
+    };
+    
+    // 즉시 실행
+    clearAllPartsDOM();
+    
+    // 부품 입력 렌더링
+    renderItemsInput('items-input');
+    
+    // 렌더링 후 추가 초기화
+    setTimeout(() => {
+      console.log('🔄 렌더링 후 추가 초기화');
+      clearAllPartsDOM();
       
       // 이벤트 리스너 설정
       const clientInput = document.getElementById('client-input');
@@ -728,7 +746,15 @@ window.showTaskTab = function(type) {
       workerCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectedWorkers);
       });
+      
+      console.log('✅ 이벤트 리스너 설정 완료');
     }, 100);
+    
+    // 한 번 더 확인 (300ms 후)
+    setTimeout(() => {
+      clearAllPartsDOM();
+      console.log('✅ 최종 확인 초기화 완료');
+    }, 300);
     
   } else if (type === 'check') {
     loadTodayTasks();
