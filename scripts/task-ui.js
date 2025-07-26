@@ -1461,6 +1461,39 @@ function showWorkerEditForm(data, id, tabType) {
   console.log('=== 작업자 수정 폼 표시 ===');
   console.log('데이터:', data);
   
+  // 🔧 작업자 수정 시작 전 부품 데이터 강력한 초기화
+  console.log('🧹 작업자 수정 전 부품 데이터 강력한 초기화 시작');
+  
+  // 모든 전역 변수 강제 삭제 후 재생성
+  delete window.selectedParts;
+  delete window.parts;  
+  delete window.currentParts;
+  window.selectedParts = [];
+  window.parts = [];
+  window.currentParts = [];
+  
+  if (window.inventoryItems) {
+    delete window.inventoryItems;
+    window.inventoryItems = [];
+  }
+  if (window.selectedItems) {
+    delete window.selectedItems;
+    window.selectedItems = [];
+  }
+  if (window.inventoryData) {
+    delete window.inventoryData;
+    window.inventoryData = [];
+  }
+  
+  // 기존 DOM 요소들 즉시 초기화
+  document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
+  document.querySelectorAll('#selected-parts-display').forEach(el => el.innerHTML = '');
+  document.querySelectorAll('.inventory-item').forEach(el => el.remove());
+  document.querySelectorAll('.added-part-item').forEach(el => el.remove());
+  document.querySelectorAll('input[type="checkbox"][data-part-id]').forEach(el => el.checked = false);
+  
+  console.log('✅ 작업자 수정 전 부품 데이터 강력한 초기화 완료');
+  
   const tabBody = document.getElementById('tab-body');
   const workerTaskContent = document.getElementById('worker-task-content');
   const targetElement = workerTaskContent || tabBody;
@@ -1486,12 +1519,27 @@ function showWorkerEditForm(data, id, tabType) {
   
   targetElement.innerHTML = editFormHTML;
   
-  // 부품 입력 렌더링
+  // HTML 생성 직후 즉시 부품 초기화
   setTimeout(() => {
+    // 부품 입력 렌더링
     renderItemsInput('items-input');
     
-    // 기존 데이터로 폼 채우기
-    populateFormData(data);
+    // 렌더링 직후 즉시 부품 초기화
+    window.selectedParts = [];
+    window.parts = [];
+    window.currentParts = [];
+    
+    // DOM 요소 재초기화
+    document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
+    document.querySelectorAll('#selected-parts-display').forEach(el => el.innerHTML = '');
+    document.querySelectorAll('.inventory-item').forEach(el => el.remove());
+    document.querySelectorAll('.added-part-item').forEach(el => el.remove());
+    document.querySelectorAll('input[type="checkbox"][data-part-id]').forEach(el => el.checked = false);
+    
+    console.log('✅ 작업자 폼 HTML 생성 후 부품 초기화 완료');
+    
+    // 기존 데이터로 폼 채우기 (부품 제외)
+    populateWorkerFormData(data);
     
     // 이벤트 리스너 설정
     setupFormEventListeners();
@@ -1506,13 +1554,82 @@ function showWorkerEditForm(data, id, tabType) {
       saveButton.textContent = '💾 저장';
     }
     
+    // 🔧 해당 작업의 부품만 로드 (모든 초기화 완료 후)
+    setTimeout(() => {
+      if (data.parts && window.loadExistingParts) {
+        console.log('📦 해당 작업의 부품 로드 시작:', data.parts);
+        window.loadExistingParts(data.parts);
+        console.log('✅ 작업자 폼 - 해당 작업의 부품만 로드 완료');
+      }
+    }, 300);
+    
     // 스크롤을 상단으로
     window.scrollTo(0, 0);
     console.log('✅ 작업자 수정 폼 설정 완료');
   }, 100);
 }
 
-// 폼 데이터 채우기 (공통 함수)
+// 작업자 전용 폼 데이터 채우기 함수 (부품 제외)
+function populateWorkerFormData(data) {
+  const form = document.getElementById('task-form');
+  if (!form) return;
+  
+  console.log('📝 작업자 폼 데이터 채우기 시작 (부품 제외)');
+  
+  // 날짜 설정
+  if (form.date && data.date) {
+    form.date.value = data.date;
+  }
+  
+  // 작업자 체크박스 설정
+  const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
+  workerCheckboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  if (data.worker) {
+    const workers = data.worker.split(', ');
+    workers.forEach(workerName => {
+      const checkbox = document.querySelector(`input[name="worker"][value="${workerName.trim()}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
+    });
+    
+    const selectedWorkersInput = document.getElementById('selected-workers');
+    if (selectedWorkersInput) {
+      selectedWorkersInput.value = data.worker;
+    }
+  }
+  
+  // 나머지 필드들 설정 (부품 제외)
+  if (form.client) form.client.value = data.client || '';
+  if (form.removeAddress) form.removeAddress.value = data.removeAddress || '';
+  if (form.installAddress) form.installAddress.value = data.installAddress || '';
+  if (form.contact) form.contact.value = data.contact || '';
+  if (form.taskType) form.taskType.value = data.taskType || '';
+  if (form.items) form.items.value = data.items || '';
+  if (form.amount) form.amount.value = data.amount || '';
+  if (form.note) form.note.value = data.note || '';
+  
+  // 수수료 필드 설정
+  const feeInput = form.querySelector('[name="fee"]');
+  if (feeInput && data.fee) {
+    feeInput.value = data.fee;
+  }
+  
+  // 🔧 부품 필드는 빈 값으로 설정 (나중에 별도로 로드)
+  if (form.parts) {
+    form.parts.value = '';
+  }
+  
+  // 수수료 자동 계산
+  calculateFee();
+  
+  console.log('✅ 작업자 폼 데이터 채우기 완료 (부품 제외)');
+}
+
+// 폼 데이터 채우기 (공통 함수) - 관리자용
 function populateFormData(data) {
   const form = document.getElementById('task-form');
   if (!form) return;
@@ -1601,6 +1718,30 @@ function setupFormEventListeners() {
 // 작업자용 수정 취소
 window.cancelWorkerEdit = function() {
   console.log('=== 작업자 수정 취소 ===');
+  
+  // 🔧 취소 시에도 부품 데이터 완전 초기화
+  console.log('🧹 작업자 수정 취소 - 부품 데이터 초기화');
+  
+  // 전역 변수 강제 초기화
+  delete window.selectedParts;
+  delete window.parts;
+  delete window.currentParts;
+  window.selectedParts = [];
+  window.parts = [];
+  window.currentParts = [];
+  
+  if (window.inventoryItems) window.inventoryItems = [];
+  if (window.selectedItems) window.selectedItems = [];
+  if (window.inventoryData) window.inventoryData = [];
+  
+  // DOM 요소 초기화
+  document.querySelectorAll('[name="parts"]').forEach(el => el.value = '');
+  document.querySelectorAll('#selected-parts-display').forEach(el => el.innerHTML = '');
+  document.querySelectorAll('.inventory-item').forEach(el => el.remove());
+  document.querySelectorAll('.added-part-item').forEach(el => el.remove());
+  document.querySelectorAll('input[type="checkbox"][data-part-id]').forEach(el => el.checked = false);
+  
+  console.log('✅ 작업자 수정 취소 - 부품 데이터 초기화 완료');
   
   // 편집 상태 초기화
   window.editingTaskId = null;
