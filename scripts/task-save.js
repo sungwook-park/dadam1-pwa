@@ -2,6 +2,15 @@ import { db } from './firebase-config.js';
 import { collection, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getTodayStart, getTomorrowStart } from './utils/date-utils.js';
 
+// 🔧 전역 변수 안전 초기화
+window.editingTaskId = window.editingTaskId || null;
+window.editingTabType = window.editingTabType || null;
+window.selectedParts = window.selectedParts || [];
+window.parts = window.parts || [];
+window.currentParts = window.currentParts || [];
+
+console.log('✅ task-save.js 전역 변수 안전 초기화 완료');
+
 window.handleTaskSave = async function(isEdit = false, editId = null, tabType = null) {
   const form = document.getElementById('task-form') || document.getElementById('worker-edit-form');
   if (!form) {
@@ -151,16 +160,8 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       }
     }
     
-    // 관리자 폼만 초기화 (작업자 폼은 위에서 이미 처리됨)
-    if (!isWorkerEditForm && window.isCurrentUserAdmin()) {
-      resetAdminForm(form);
-    }
-    
-    // 🚫 새 작업 저장 후에는 탭 이동하지 않음 - 작업입력탭에 그대로 머물기
-    if (!finalIsEdit) {
-      console.log('=== 새 작업 저장 완료 - 작업입력탭에 머무름 ===');
-      // 아무것도 하지 않음 (작업입력탭에 그대로 머무름)
-    }
+    // 관리자 폼만 초기화는 위에서 이미 처리했으므로 제거
+    console.log('✅ 저장 프로세스 완료');
     
   } catch (error) {
     console.error('❌ 저장 오류:', error);
@@ -170,124 +171,150 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
 
 // 관리자 폼 초기화 함수 (부품 초기화 강화)
 function resetAdminForm(form) {
-  console.log('🧹 관리자 폼 초기화 시작');
-  
-  // 폼 리셋
-  form.reset();
-  
-  // 작업자 체크박스 초기화
-  const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
-  workerCheckboxes.forEach(checkbox => {
-    checkbox.checked = false;
-  });
-  
-  const selectedWorkersInput = document.getElementById('selected-workers');
-  if (selectedWorkersInput) {
-    selectedWorkersInput.value = '';
-  }
-  
-  // 수수료 필드 초기화
-  const feeInput = form.querySelector('[name="fee"]');
-  if (feeInput) {
-    feeInput.value = '';
-    feeInput.style.backgroundColor = '';
-    feeInput.style.borderColor = '';
-    feeInput.readOnly = false;
-  }
-  
-  const feeInfo = document.getElementById('fee-info');
-  if (feeInfo) {
-    feeInfo.style.display = 'none';
-  }
-  
-  // 🔧 부품 초기화 강력 버전
-  console.log('🧹 저장 후 부품 데이터 강력 초기화');
-  
-  // 1단계: 전역 변수 강제 초기화 (여러 번)
-  window.selectedParts = [];
-  window.parts = [];
-  window.currentParts = [];
-  if (window.inventoryItems) window.inventoryItems = [];
-  if (window.selectedItems) window.selectedItems = [];
-  if (window.inventoryData) window.inventoryData = [];
-  
-  console.log('✅ 전역 변수 초기화 완료');
-  
-  // 2단계: DOM 요소 강제 초기화 (즉시 실행)
-  const clearPartsDOM = () => {
-    // 모든 부품 관련 input/textarea 초기화
-    document.querySelectorAll('[name="parts"]').forEach(el => {
-      el.value = '';
-      console.log('parts input 초기화:', el);
+  try {
+    console.log('🧹 관리자 폼 초기화 시작');
+    
+    // 폼 리셋
+    if (form && typeof form.reset === 'function') {
+      form.reset();
+    }
+    
+    // 작업자 체크박스 초기화
+    const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
+    workerCheckboxes.forEach(checkbox => {
+      checkbox.checked = false;
     });
     
-    // 부품 표시 영역 초기화
-    document.querySelectorAll('#selected-parts-display').forEach(el => {
-      el.innerHTML = '';
-      console.log('parts display 초기화:', el);
-    });
+    const selectedWorkersInput = document.getElementById('selected-workers');
+    if (selectedWorkersInput) {
+      selectedWorkersInput.value = '';
+    }
     
-    // 인벤토리 아이템들 제거
-    document.querySelectorAll('.inventory-item').forEach(el => {
-      el.remove();
-      console.log('inventory item 제거:', el);
-    });
+    // 수수료 필드 초기화
+    const feeInput = form ? form.querySelector('[name="fee"]') : document.querySelector('[name="fee"]');
+    if (feeInput) {
+      feeInput.value = '';
+      feeInput.style.backgroundColor = '';
+      feeInput.style.borderColor = '';
+      feeInput.readOnly = false;
+    }
     
-    // 추가된 부품 리스트 아이템들 제거
-    document.querySelectorAll('.added-part-item').forEach(el => {
-      el.remove();
-      console.log('added part item 제거:', el);
-    });
-    
-    // 모든 체크된 부품 체크박스 해제
-    document.querySelectorAll('input[type="checkbox"][data-part-id]').forEach(el => {
-      el.checked = false;
-      console.log('부품 체크박스 해제:', el);
-    });
-    
-    console.log('✅ DOM 요소 초기화 완료');
-  };
-  
-  // 즉시 실행
-  clearPartsDOM();
-  
-  // 3단계: 부품 입력 UI 완전 재생성
-  setTimeout(() => {
-    console.log('🔄 부품 UI 재생성 시작');
-    
-    const partsContainer = document.getElementById('items-input');
-    if (partsContainer && window.renderItemsInput) {
-      // 컨테이너 완전히 비우기
-      partsContainer.innerHTML = '';
+    const feeInfo = document.getElementById('fee-info');
+    if (feeInfo) {
+      feeInfo.style.display = 'none';
+    }
+
+    // 🔧 부품 초기화 강력 버전 (안전장치 추가)
+    try {
+      console.log('🧹 저장 후 부품 데이터 강력 초기화');
       
-      // 전역 변수 한 번 더 초기화
-      window.selectedParts = [];
-      window.parts = [];
-      window.currentParts = [];
-      
-      // UI 재생성
-      window.renderItemsInput('items-input');
-      console.log('✅ 부품 입력 UI 재생성 완료');
-      
-      // 재생성 후 추가 정리
-      setTimeout(() => {
-        clearPartsDOM();
+      // 1단계: 전역 변수 강제 초기화 (안전하게)
+      if (typeof window !== 'undefined') {
         window.selectedParts = [];
         window.parts = [];
         window.currentParts = [];
-        console.log('✅ 재생성 후 추가 정리 완료');
+        if (window.inventoryItems) window.inventoryItems = [];
+        if (window.selectedItems) window.selectedItems = [];
+        if (window.inventoryData) window.inventoryData = [];
+      }
+      
+      console.log('✅ 전역 변수 초기화 완료');
+      
+      // 2단계: DOM 요소 강제 초기화 (안전하게)
+      const clearPartsDOM = () => {
+        try {
+          // 모든 부품 관련 input/textarea 초기화
+          const partsInputs = document.querySelectorAll('[name="parts"]');
+          partsInputs.forEach(el => {
+            if (el) el.value = '';
+          });
+          
+          // 부품 표시 영역 초기화
+          const partsDisplays = document.querySelectorAll('#selected-parts-display');
+          partsDisplays.forEach(el => {
+            if (el) el.innerHTML = '';
+          });
+          
+          // 인벤토리 아이템들 제거
+          const inventoryItems = document.querySelectorAll('.inventory-item');
+          inventoryItems.forEach(el => {
+            if (el && el.remove) el.remove();
+          });
+          
+          // 추가된 부품 리스트 아이템들 제거
+          const addedPartItems = document.querySelectorAll('.added-part-item');
+          addedPartItems.forEach(el => {
+            if (el && el.remove) el.remove();
+          });
+          
+          // 모든 체크된 부품 체크박스 해제
+          const partCheckboxes = document.querySelectorAll('input[type="checkbox"][data-part-id]');
+          partCheckboxes.forEach(el => {
+            if (el) el.checked = false;
+          });
+          
+          console.log('✅ DOM 요소 초기화 완료');
+        } catch (error) {
+          console.warn('DOM 초기화 중 오류:', error);
+        }
+      };
+      
+      // 즉시 실행
+      clearPartsDOM();
+      
+      // 3단계: 부품 입력 UI 완전 재생성 (안전하게)
+      setTimeout(() => {
+        try {
+          console.log('🔄 부품 UI 재생성 시작');
+          
+          const partsContainer = document.getElementById('items-input');
+          if (partsContainer && window.renderItemsInput && typeof window.renderItemsInput === 'function') {
+            // 컨테이너 완전히 비우기
+            partsContainer.innerHTML = '';
+            
+            // 전역 변수 한 번 더 초기화
+            window.selectedParts = [];
+            window.parts = [];
+            window.currentParts = [];
+            
+            // UI 재생성
+            window.renderItemsInput('items-input');
+            console.log('✅ 부품 입력 UI 재생성 완료');
+            
+            // 재생성 후 추가 정리
+            setTimeout(() => {
+              clearPartsDOM();
+              window.selectedParts = [];
+              window.parts = [];
+              window.currentParts = [];
+              console.log('✅ 재생성 후 추가 정리 완료');
+            }, 100);
+          }
+        } catch (error) {
+          console.warn('부품 UI 재생성 중 오류:', error);
+        }
       }, 100);
+      
+      // 4단계: 한 번 더 확인 (500ms 후)
+      setTimeout(() => {
+        try {
+          clearPartsDOM();
+          window.selectedParts = [];
+          window.parts = [];
+          window.currentParts = [];
+          console.log('✅ 최종 확인 초기화 완료');
+        } catch (error) {
+          console.warn('최종 확인 초기화 중 오류:', error);
+        }
+      }, 500);
+      
+    } catch (error) {
+      console.error('부품 초기화 중 오류:', error);
     }
-  }, 100);
-  
-  // 4단계: 한 번 더 확인 (500ms 후)
-  setTimeout(() => {
-    clearPartsDOM();
-    window.selectedParts = [];
-    window.parts = [];
-    window.currentParts = [];
-    console.log('✅ 최종 확인 초기화 완료');
-  }, 500);
-  
-  console.log('✅ 관리자 폼 초기화 완료');
+    
+    console.log('✅ 관리자 폼 초기화 완료');
+    
+  } catch (error) {
+    console.error('관리자 폼 초기화 중 전체 오류:', error);
+  }
 }

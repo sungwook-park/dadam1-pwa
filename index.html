@@ -157,6 +157,90 @@
   <!-- 7. 인증 (마지막) -->
   <script type="module" src="scripts/auth.js"></script>
 
+  <!-- 🔧 캐시 관리 스크립트 -->
+  <script>
+    // 개발용 캐시 삭제 함수
+    window.clearAllCache = async function() {
+      try {
+        console.log('🧹 모든 캐시 삭제 시작...');
+        
+        // Service Worker에게 캐시 삭제 요청
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          const messageChannel = new MessageChannel();
+          
+          return new Promise((resolve) => {
+            messageChannel.port1.onmessage = function(event) {
+              if (event.data.success) {
+                console.log('✅ Service Worker 캐시 삭제 완료');
+                resolve();
+              }
+            };
+            
+            navigator.serviceWorker.controller.postMessage(
+              {type: 'CLEAR_CACHE'}, 
+              [messageChannel.port2]
+            );
+          });
+        }
+        
+        // 브라우저 캐시도 삭제
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames.map(cacheName => {
+              console.log('브라우저 캐시 삭제:', cacheName);
+              return caches.delete(cacheName);
+            })
+          );
+        }
+        
+        console.log('✅ 모든 캐시 삭제 완료!');
+        alert('캐시가 삭제되었습니다. 페이지를 새로고침합니다.');
+        window.location.reload(true);
+        
+      } catch (error) {
+        console.error('❌ 캐시 삭제 오류:', error);
+        alert('캐시 삭제 중 오류가 발생했습니다.');
+      }
+    };
+
+    // 개발용 Service Worker 재등록 함수
+    window.reregisterServiceWorker = async function() {
+      try {
+        if ('serviceWorker' in navigator) {
+          // 기존 Service Worker 해제
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let registration of registrations) {
+            await registration.unregister();
+            console.log('Service Worker 해제:', registration.scope);
+          }
+          
+          // 새로 등록
+          const registration = await navigator.serviceWorker.register('/service-worker.js');
+          console.log('Service Worker 재등록 성공:', registration.scope);
+          
+          alert('Service Worker가 재등록되었습니다. 페이지를 새로고침합니다.');
+          window.location.reload(true);
+        }
+      } catch (error) {
+        console.error('Service Worker 재등록 오류:', error);
+        alert('Service Worker 재등록 중 오류가 발생했습니다.');
+      }
+    };
+
+    // 콘솔에서 사용할 수 있도록 안내
+    console.log(`
+🔧 개발용 캐시 관리 함수:
+  - clearAllCache() : 모든 캐시 삭제
+  - reregisterServiceWorker() : Service Worker 재등록
+    `);
+
+    // 개발 모드에서 자동으로 캐시 무시 (선택사항)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      console.log('🔧 개발 모드 - 캐시 정책 수정');
+    }
+  </script>
+
   <!-- 메인 앱 로직 -->
   <script>
     // 전역 함수 정의 (인라인으로 정의하여 onclick 이벤트에서 사용 가능)
