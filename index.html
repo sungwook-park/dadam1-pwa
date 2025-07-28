@@ -2,31 +2,56 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,minimum-scale=0.5,maximum-scale=3.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,minimum-scale=0.5,maximum-scale=3.0,viewport-fit=cover">
   <title>다담업무관리</title>
   <link rel="stylesheet" href="styles/main.css">
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   
-  <!-- PWA 지원을 위한 메타 태그 - 회전 허용 -->
+  <!-- PWA 지원을 위한 메타 태그 - 회전 허용 강화 -->
   <meta name="theme-color" content="#87CEEB">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="다담티비">
   
-  <!-- 회전 허용을 위한 추가 메타 태그 -->
+  <!-- 회전 허용을 위한 강화된 메타 태그 -->
   <meta name="screen-orientation" content="any">
   <meta name="orientation" content="any">
-  <meta name="apple-mobile-web-app-orientations" content="any">
+  <meta name="apple-mobile-web-app-orientations" content="portrait,landscape">
+  <meta name="msapplication-config" content="none">
+  <meta name="format-detection" content="telephone=no">
+  
+  <!-- 풀스크린 지원 -->
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  
+  <!-- 추가 회전 지원 메타 태그 -->
+  <meta name="x5-orientation" content="portrait|landscape">
+  <meta name="x5-fullscreen" content="true">
+  <meta name="x5-page-mode" content="app">
   
   <!-- 터치 아이콘 -->
   <link rel="apple-touch-icon" href="icons/icon-192x192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
   
-  <!-- Service Worker 등록 -->
+  <!-- Service Worker 등록 및 회전 지원 강화 -->
   <script>
+    // 즉시 회전 잠금 해제 시도
+    if ('screen' in window && screen.orientation) {
+      try {
+        if (typeof screen.orientation.unlock === 'function') {
+          screen.orientation.unlock().catch(() => {
+            console.log('회전 잠금 해제 시도');
+          });
+        }
+      } catch (e) {
+        console.log('회전 기능 지원 확인 중');
+      }
+    }
+
+    // Service Worker 등록
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('/service-worker.js')
@@ -37,6 +62,54 @@
             console.log('Service Worker 등록 실패:', error);
           });
       });
+    }
+
+    // CSS 회전 지원 강제 적용
+    document.documentElement.style.setProperty('--supports-orientation', 'landscape');
+    
+    // 브라우저별 회전 이벤트 강화
+    function forceOrientationSupport() {
+      // CSS orientation 속성 강제 설정
+      const style = document.createElement('style');
+      style.textContent = `
+        @media screen and (orientation: landscape) {
+          html { --orientation-check: landscape; }
+        }
+        @media screen and (orientation: portrait) {
+          html { --orientation-check: portrait; }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // 방향 변경 강제 감지
+      let lastOrientation = window.orientation || 0;
+      
+      function checkOrientation() {
+        const currentOrientation = window.orientation || 0;
+        const isLandscape = Math.abs(currentOrientation) === 90;
+        
+        if (currentOrientation !== lastOrientation) {
+          console.log('🔄 방향 변경 감지:', isLandscape ? '가로' : '세로');
+          lastOrientation = currentOrientation;
+          
+          // 강제 리사이즈 이벤트 발생
+          setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+          }, 100);
+        }
+      }
+      
+      // 다양한 이벤트로 방향 감지
+      window.addEventListener('orientationchange', checkOrientation);
+      window.addEventListener('resize', checkOrientation);
+      setInterval(checkOrientation, 500); // 0.5초마다 체크
+    }
+    
+    // DOM 로드 후 실행
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', forceOrientationSupport);
+    } else {
+      forceOrientationSupport();
     }
   </script>
 </head>
@@ -505,63 +578,97 @@
       window.addEventListener('offline', updateOnlineStatus);
       updateOnlineStatus();
 
-      // iOS Safari 100vh 이슈 해결 및 회전 감지 개선
+      // iOS Safari 100vh 이슈 해결 및 회전 감지 강화
       function setViewportHeight() {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
         
-        // 회전 상태 감지 및 클래스 추가
-        const isLandscape = window.innerWidth > window.innerHeight;
+        // 다양한 방법으로 방향 감지
+        const isLandscape = window.innerWidth > window.innerHeight || 
+                           Math.abs(window.orientation || 0) === 90 ||
+                           window.matchMedia('(orientation: landscape)').matches;
         
         if (isLandscape) {
           document.body.classList.add('landscape-mode');
           document.body.classList.remove('portrait-mode');
-          console.log('🔄 가로모드 활성화');
+          document.documentElement.classList.add('landscape-mode');
+          console.log('🔄 가로모드 활성화 - 크기:', window.innerWidth, 'x', window.innerHeight);
         } else {
           document.body.classList.add('portrait-mode');
           document.body.classList.remove('landscape-mode');
-          console.log('🔄 세로모드 활성화');
+          document.documentElement.classList.remove('landscape-mode');
+          console.log('🔄 세로모드 활성화 - 크기:', window.innerWidth, 'x', window.innerHeight);
         }
+        
+        // 강제 리플로우
+        document.body.style.height = '100vh';
+        setTimeout(() => {
+          document.body.style.height = '';
+        }, 100);
       }
       
       // 즉시 실행
       setViewportHeight();
       
-      // 리사이즈 이벤트 (회전 포함)
-      window.addEventListener('resize', setViewportHeight);
+      // 다양한 이벤트로 감지
+      window.addEventListener('resize', () => {
+        clearTimeout(window.orientationTimer);
+        window.orientationTimer = setTimeout(setViewportHeight, 50);
+      });
       
-      // orientationchange 이벤트 (모바일 회전)
+      // orientationchange 이벤트 (모바일 회전) - 강화
       window.addEventListener('orientationchange', () => {
-        // 약간의 지연을 두고 실행 (iOS에서 정확한 크기 계산을 위해)
+        console.log('📱 orientationchange 이벤트:', window.orientation);
         setTimeout(setViewportHeight, 100);
-        setTimeout(setViewportHeight, 300); // 안전장치
+        setTimeout(setViewportHeight, 300);
+        setTimeout(setViewportHeight, 500); // 추가 안전장치
       });
 
-      // 화면 방향 API 사용 (최신 브라우저)
+      // 화면 방향 API 사용 (최신 브라우저) - 강화
       if (screen.orientation) {
         screen.orientation.addEventListener('change', () => {
+          console.log('📱 Screen Orientation API 변경:', screen.orientation.angle, screen.orientation.type);
           setTimeout(setViewportHeight, 100);
-          console.log('📱 화면 방향 변경:', screen.orientation.angle);
+          setTimeout(setViewportHeight, 300);
         });
       }
 
-      // 미디어 쿼리로 방향 감지 (추가 안전장치)
+      // 미디어 쿼리로 방향 감지 (추가 안전장치) - 강화
       const orientationMQ = window.matchMedia('(orientation: landscape)');
       orientationMQ.addEventListener('change', (e) => {
-        setTimeout(setViewportHeight, 100);
         console.log('📱 미디어 쿼리 방향 변경:', e.matches ? '가로' : '세로');
+        setTimeout(setViewportHeight, 100);
+        setTimeout(setViewportHeight, 300);
       });
 
-      // 회전 잠금 해제 요청 (최신 브라우저)
+      // 추가: 뷰포트 크기 변경 감지
+      const resizeObserver = new ResizeObserver(() => {
+        setTimeout(setViewportHeight, 50);
+      });
+      resizeObserver.observe(document.documentElement);
+
+      // 회전 잠금 해제 요청 (최신 브라우저) - 강화
       if ('screen' in window && screen.orientation && typeof screen.orientation.unlock === 'function') {
         try {
-          screen.orientation.unlock().catch(err => {
-            console.log('화면 회전 잠금 해제 실패 (정상):', err.message);
+          screen.orientation.unlock().then(() => {
+            console.log('✅ 화면 회전 잠금 해제 성공');
+          }).catch(err => {
+            console.log('🔄 화면 회전 잠금 해제 실패 (정상):', err.message);
           });
         } catch (err) {
-          console.log('회전 잠금 해제 지원 안함 (정상):', err.message);
+          console.log('🔄 회전 잠금 해제 지원 안함 (정상):', err.message);
         }
       }
+
+      // 강제 회전 지원 체크 (디버깅용)
+      setTimeout(() => {
+        console.log('🔍 현재 화면 정보:');
+        console.log('- 크기:', window.innerWidth, 'x', window.innerHeight);
+        console.log('- orientation:', window.orientation);
+        console.log('- matchMedia landscape:', window.matchMedia('(orientation: landscape)').matches);
+        console.log('- screen.orientation:', screen.orientation?.type);
+        console.log('- 감지된 모드:', document.body.classList.contains('landscape-mode') ? '가로' : '세로');
+      }, 1000);
 
       // 터치 스크롤 개선 (iOS)
       document.body.style.webkitOverflowScrolling = 'touch';
@@ -760,7 +867,7 @@
       font-weight: 600;
     }
 
-    /* 방향별 최적화 클래스 */
+    /* 방향별 최적화 클래스 - 강화 */
     .landscape-mode .header-bar {
       min-height: 45px;
       padding: 8px 20px;
@@ -815,6 +922,31 @@
       font-size: 22px;
       padding: 40px 12px;
       min-height: 120px;
+    }
+
+    /* 강제 가로모드 지원 */
+    html.landscape-mode,
+    html.landscape-mode body {
+      --orientation: landscape;
+    }
+
+    /* 회전 디버그 정보 */
+    .orientation-debug {
+      position: fixed;
+      top: 50px;
+      right: 10px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      z-index: 10000;
+      display: none;
+    }
+
+    /* 개발 모드에서만 디버그 정보 표시 */
+    body[data-debug="true"] .orientation-debug {
+      display: block;
     }
 
     /* 가로모드 전용 스타일 */
