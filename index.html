@@ -2,21 +2,26 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,minimum-scale=1.0,maximum-scale=3.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,minimum-scale=0.5,maximum-scale=3.0">
   <title>다담업무관리</title>
   <link rel="stylesheet" href="styles/main.css">
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   
-  <!-- PWA 지원을 위한 메타 태그 -->
+  <!-- PWA 지원을 위한 메타 태그 - 회전 허용 -->
   <meta name="theme-color" content="#87CEEB">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="다담티비">
   
-  <!-- 터치 아이콘 (아이콘 준비되면 경로 변경) -->
+  <!-- 회전 허용을 위한 추가 메타 태그 -->
+  <meta name="screen-orientation" content="any">
+  <meta name="orientation" content="any">
+  <meta name="apple-mobile-web-app-orientations" content="any">
+  
+  <!-- 터치 아이콘 -->
   <link rel="apple-touch-icon" href="icons/icon-192x192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
   
@@ -500,17 +505,72 @@
       window.addEventListener('offline', updateOnlineStatus);
       updateOnlineStatus();
 
-      // iOS Safari 100vh 이슈 해결
+      // iOS Safari 100vh 이슈 해결 및 회전 감지 개선
       function setViewportHeight() {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
+        
+        // 회전 상태 감지 및 클래스 추가
+        const isLandscape = window.innerWidth > window.innerHeight;
+        
+        if (isLandscape) {
+          document.body.classList.add('landscape-mode');
+          document.body.classList.remove('portrait-mode');
+          console.log('🔄 가로모드 활성화');
+        } else {
+          document.body.classList.add('portrait-mode');
+          document.body.classList.remove('landscape-mode');
+          console.log('🔄 세로모드 활성화');
+        }
       }
       
+      // 즉시 실행
       setViewportHeight();
+      
+      // 리사이즈 이벤트 (회전 포함)
       window.addEventListener('resize', setViewportHeight);
+      
+      // orientationchange 이벤트 (모바일 회전)
       window.addEventListener('orientationchange', () => {
+        // 약간의 지연을 두고 실행 (iOS에서 정확한 크기 계산을 위해)
         setTimeout(setViewportHeight, 100);
+        setTimeout(setViewportHeight, 300); // 안전장치
       });
+
+      // 화면 방향 API 사용 (최신 브라우저) - 안전한 방식으로 수정
+      if (screen && screen.orientation) {
+        screen.orientation.addEventListener('change', () => {
+          setTimeout(setViewportHeight, 100);
+          console.log('📱 화면 방향 변경:', screen.orientation.angle);
+        });
+      }
+
+      // 미디어 쿼리로 방향 감지 (추가 안전장치)
+      const orientationMQ = window.matchMedia('(orientation: landscape)');
+      orientationMQ.addEventListener('change', (e) => {
+        setTimeout(setViewportHeight, 100);
+        console.log('📱 미디어 쿼리 방향 변경:', e.matches ? '가로' : '세로');
+      });
+
+      // 회전 잠금 해제 요청 (안전한 방식으로 수정)
+      try {
+        if (screen && 
+            screen.orientation && 
+            typeof screen.orientation.unlock === 'function') {
+          
+          screen.orientation.unlock()
+            .then(() => {
+              console.log('✅ 화면 회전 잠금 해제 성공');
+            })
+            .catch(err => {
+              console.log('⚠️ 화면 회전 잠금 해제 실패 (정상):', err.message);
+            });
+        } else {
+          console.log('ℹ️ 화면 회전 API 지원하지 않음 (정상)');
+        }
+      } catch (error) {
+        console.log('⚠️ 화면 회전 API 접근 실패 (정상):', error.message);
+      }
 
       // 터치 스크롤 개선 (iOS)
       document.body.style.webkitOverflowScrolling = 'touch';
@@ -557,20 +617,41 @@
       }
     });
 
-    // 전역 에러 처리
+    // 전역 에러 처리 - 더 안전하게 수정
     window.addEventListener('error', (event) => {
       console.error('전역 에러:', event.error);
+      
       // 특정 에러는 무시 (개발 환경)
-      if (event.error && event.error.message && 
-          (event.error.message.includes('backToHome') || 
-           event.error.message.includes('openTab') ||
-           event.error.message.includes('Live reload'))) {
-        return; // 개발 서버 관련 에러 무시
+      if (event.error && event.error.message) {
+        const errorMessage = event.error.message;
+        const ignoredErrors = [
+          'backToHome',
+          'openTab',
+          'Live reload',
+          'reading \'catch\'',
+          'orientation',
+          'unlock'
+        ];
+        
+        if (ignoredErrors.some(ignored => errorMessage.includes(ignored))) {
+          console.log('⚠️ 무시된 에러:', errorMessage);
+          return; // 해당 에러들 무시
+        }
       }
     });
 
     window.addEventListener('unhandledrejection', (event) => {
       console.error('처리되지 않은 Promise 거부:', event.reason);
+      
+      // 화면 방향 관련 에러는 무시
+      if (event.reason && 
+          (event.reason.message?.includes('orientation') ||
+           event.reason.message?.includes('unlock'))) {
+        console.log('⚠️ 화면 방향 관련 에러 무시:', event.reason.message);
+        event.preventDefault();
+        return;
+      }
+      
       event.preventDefault();
     });
     
