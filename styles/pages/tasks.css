@@ -1,0 +1,308 @@
+/* styles/pages/tasks.css - 작업 관련 모든 스타일 */
+
+/* ===== 1. 작업 목록 컨테이너 ===== */
+.task-list {
+  margin: 30px 0;
+}
+
+/* ===== 2. 작업 아이템 기본 스타일 ===== */
+.task-item {
+  border: 2px solid #e6e6e6;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  background: #fff !important;
+  color: #333 !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.task-item:hover, .task-item:active {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.12);
+  border-color: #8ecae6;
+}
+
+/* ===== 3. 작업 요약 (모바일 최적화) ===== */
+.task-summary {
+  padding: 24px 25px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 18px;
+  min-height: 80px;
+  touch-action: manipulation;
+  background: #fff !important;
+  color: #333 !important;
+  position: relative;
+}
+
+.task-summary-mobile {
+  display: block;
+  line-height: 1.6;
+}
+
+.task-date-mobile {
+  font-weight: 600;
+  color: #219ebc !important;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.task-info-mobile {
+  color: #333 !important;
+  font-size: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.task-worker-mobile {
+  background: #e3f2fd;
+  color: #1565c0 !important;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.task-client-mobile {
+  background: #fff3cd;
+  color: #856404 !important;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.task-type-mobile {
+  color: #666 !important;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.task-content-mobile {
+  color: #333 !important;
+  font-size: 18px;
+  margin-top: 6px;
+  max-width: calc(100% - 50px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.task-summary .arrow {
+  position: absolute;
+  top: 50%;
+  right: 25px;
+  transform: translateY(-50%);
+  font-size: 24px;
+  color: #666 !important;
+  transition: transform 0.2s ease;
+}
+
+/* ===== 4. 데스크탑 컬럼 스타일 (숨김 처리) ===== */
+.col-date, .col-staff, .col-client, .col-tasktype, .col-content {
+  display: none;
+}
+
+/* ===== 5. 작업 상세 정보 ===== */
+.task-detail {
+  padding: 22px 25px;
+  border-top: 2px solid #e6e6e6;
+  background: #f8f9fa !important;
+  color: #333 !important;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.task-detail > div {
+  margin-bottom: 12px;
+}
+
+.task-detail strong {
+  color: #333 !important;
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+/* ===== 6. 작업 액션 버튼들 ===== */
+.task-actions {
+  margin-top: 25px;
+  display: flex;
+  gap: 15px;
+}
+
+.task-actions button {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+  min-height: 52px;
+  touch-action: manipulation;
+  width: auto;
+}
+
+.task-actions button:hover, .task-actions button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+
+/* ===== 7. 작업자 전용 UI ===== */
+.mobile-tab-title {
+  background: white !important;
+  color: #333 !important;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.mobile-tab-title h3 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #333 !important;
+  font-weight: 600;
+}
+
+/* ===== 8. 데스크탑 컬럼 레이아웃 (769px 이상) ===== */
+@media (min-width: 769px) {
+  .task-summary-mobile {
+    display: none;
+  }
+  
+  .col-date, .col-staff, .col-client, .col-tasktype, .col-content {
+    display: block;
+  }
+  
+  .task-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 25px;
+    min-height: 70px;
+  }
+  
+  .col-date {
+    flex-basis: 160px;
+    min-width: 120px;
+    text-align: center;
+    font-weight: 600;
+    color: #555 !important;
+    font-size: 17px;
+  }
+  
+  .col-staff {
+    flex-basis: 140px;
+    min-width: 100px;
+    text-align: center;
+    color: #666 !important;
+    font-size: 17px;
+  }
+  
+  .col-client {
+    flex-basis: 160px;
+    min-width: 110px;
+    text-align: center;
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    color: #856404 !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-size: 17px;
+  }
+  
+  .col-tasktype {
+    flex-basis: 140px;
+    min-width: 100px;
+    text-align: center;
+    color: #666 !important;
+    font-weight: 500;
+    font-size: 17px;
+  }
+  
+  .col-content {
+    flex-basis: 220px;
+    min-width: 120px;
+    text-align: left;
+    color: #333 !important;
+    font-size: 17px;
+  }
+  
+  .task-summary .arrow {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
+}
+
+/* ===== 9. 모바일 반응형 (768px 이하) ===== */
+@media (max-width: 768px) {
+  .task-summary {
+    padding: 20px 22px;
+    min-height: 80px;
+    font-size: 17px;
+  }
+  
+  .task-date-mobile {
+    font-size: 17px;
+  }
+  
+  .task-info-mobile {
+    font-size: 18px;
+  }
+  
+  .task-worker-mobile, .task-client-mobile {
+    font-size: 18px;
+  }
+  
+  .task-type-mobile {
+    font-size: 18px;
+  }
+  
+  .task-content-mobile {
+    font-size: 18px;
+  }
+}
+
+/* ===== 10. 다크모드 강제 비활성화 ===== */
+@media (prefers-color-scheme: dark) {
+  .task-item {
+    background: #fff !important;
+    color: #333 !important;
+    border-color: #e6e6e6 !important;
+  }
+  
+  .task-summary {
+    background: #fff !important;
+    color: #333 !important;
+  }
+  
+  .task-detail {
+    background: #f8f9fa !important;
+    color: #333 !important;
+  }
+  
+  .task-detail strong {
+    color: #333 !important;
+  }
+  
+  .mobile-tab-title {
+    background: white !important;
+    color: #333 !important;
+  }
+  
+  .mobile-tab-title h3 {
+    color: #333 !important;
+  }
+}

@@ -1,4 +1,4 @@
-// scripts/inventory.js - 입출고 관리 메인 로직
+// scripts/inventory.js - 입출고 관리 메인 로직 (입출고 통합 등록)
 
 import { db } from './firebase-config.js';
 import {
@@ -9,7 +9,7 @@ import {
 import {
   getInventoryTabHTML,
   getStockStatusHTML,
-  getInboundFormHTML,
+  getInOutFormHTML,
   getOutboundProcessHTML,
   getInventoryHistoryHTML
 } from './templates/inventory-templates.js';
@@ -64,8 +64,8 @@ window.showInventorySubTab = async function(tabType) {
       case 'stock':
         await loadStockStatus();
         break;
-      case 'in':
-        await loadInboundForm();
+      case 'inout':
+        await loadInOutForm();
         break;
       case 'out':
         await loadOutboundProcess();
@@ -110,22 +110,31 @@ async function loadStockStatus() {
   }
 }
 
-// 2. 입고 등록 폼 로드
-async function loadInboundForm() {
-  console.log('📥 입고 등록 폼 로드');
+// 2. 입출고 등록 폼 로드 (통합)
+async function loadInOutForm() {
+  console.log('📝 입출고 등록 폼 로드');
   
   const contentDiv = document.getElementById('inventory-content');
-  contentDiv.innerHTML = getInboundFormHTML();
+  contentDiv.innerHTML = getInOutFormHTML();
   
   // 폼 이벤트 리스너 설정
-  setupInboundFormEvents();
+  setupInOutFormEvents();
 }
 
-// 입고 폼 이벤트 설정
-function setupInboundFormEvents() {
+// 입출고 폼 이벤트 설정 (통합)
+function setupInOutFormEvents() {
+  // 입고/출고 타입 전환
+  const typeButtons = document.querySelectorAll('.type-btn');
+  typeButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const type = this.dataset.type;
+      switchInOutType(type);
+    });
+  });
+  
   // 부품 선택 시 단가 자동 입력
-  const partSelect = document.getElementById('inbound-part');
-  const priceInput = document.getElementById('inbound-price');
+  const partSelect = document.getElementById('inout-part');
+  const priceInput = document.getElementById('inout-price');
   const customPartGroup = document.getElementById('custom-part-group');
   
   if (partSelect && priceInput) {
@@ -152,7 +161,7 @@ function setupInboundFormEvents() {
   }
   
   // 수량, 단가 변경 시 총액 자동 계산
-  const quantityInput = document.getElementById('inbound-quantity');
+  const quantityInput = document.getElementById('inout-quantity');
   if (quantityInput) {
     quantityInput.addEventListener('input', calculateTotal);
   }
@@ -161,37 +170,88 @@ function setupInboundFormEvents() {
   }
   
   // 폼 제출 이벤트
-  const form = document.getElementById('inbound-form');
+  const form = document.getElementById('inout-form');
   if (form) {
-    form.addEventListener('submit', handleInboundSubmit);
+    form.addEventListener('submit', handleInOutSubmit);
+  }
+}
+
+// 입고/출고 타입 전환
+function switchInOutType(type) {
+  console.log('🔄 입출고 타입 전환:', type);
+  
+  // 버튼 활성화 상태 변경
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-type="${type}"]`).classList.add('active');
+  
+  // 폼 제목 변경
+  const formTitle = document.getElementById('form-title');
+  if (formTitle) {
+    formTitle.textContent = type === 'in' ? '📥 입고 등록' : '📤 직접 출고';
+  }
+  
+  // 사유 옵션 변경
+  const reasonSelect = document.getElementById('inout-reason');
+  if (reasonSelect) {
+    if (type === 'in') {
+      reasonSelect.innerHTML = `
+        <option value="구매입고">구매입고</option>
+        <option value="반품입고">반품입고</option>
+        <option value="이월입고">이월입고</option>
+        <option value="기타">기타</option>
+      `;
+    } else {
+      reasonSelect.innerHTML = `
+        <option value="납품">납품</option>
+        <option value="판매">판매</option>
+        <option value="반품출고">반품출고</option>
+        <option value="직접출고">직접출고</option>
+        <option value="기타">기타</option>
+      `;
+    }
+  }
+  
+  // 제출 버튼 텍스트 변경
+  const submitBtn = document.querySelector('.submit-btn');
+  if (submitBtn) {
+    submitBtn.textContent = type === 'in' ? '📥 입고 등록' : '📤 출고 등록';
+  }
+  
+  // 폼 데이터에 타입 저장
+  const typeInput = document.getElementById('inout-type');
+  if (typeInput) {
+    typeInput.value = type;
   }
 }
 
 // 총액 자동 계산
 function calculateTotal() {
-  const quantity = parseFloat(document.getElementById('inbound-quantity')?.value) || 0;
-  const price = parseFloat(document.getElementById('inbound-price')?.value) || 0;
-  const totalInput = document.getElementById('inbound-total');
+  const quantity = parseFloat(document.getElementById('inout-quantity')?.value) || 0;
+  const price = parseFloat(document.getElementById('inout-price')?.value) || 0;
+  const totalInput = document.getElementById('inout-total');
   
   if (totalInput) {
     totalInput.value = quantity * price;
   }
 }
 
-// 입고 등록 처리
-async function handleInboundSubmit(event) {
+// 입출고 등록 처리 (통합)
+async function handleInOutSubmit(event) {
   event.preventDefault();
   
-  console.log('📥 입고 등록 처리 시작');
+  const type = document.getElementById('inout-type').value;
+  console.log(`📝 ${type === 'in' ? '입고' : '출고'} 등록 처리 시작`);
   
   try {
     // 폼 데이터 수집
-    const partSelect = document.getElementById('inbound-part');
+    const partSelect = document.getElementById('inout-part');
     const customPartInput = document.getElementById('custom-part-name');
-    const quantity = parseInt(document.getElementById('inbound-quantity').value);
-    const unitPrice = parseFloat(document.getElementById('inbound-price').value) || 0;
-    const reason = document.getElementById('inbound-reason').value;
-    const note = document.getElementById('inbound-note').value;
+    const quantity = parseInt(document.getElementById('inout-quantity').value);
+    const unitPrice = parseFloat(document.getElementById('inout-price').value) || 0;
+    const reason = document.getElementById('inout-reason').value;
+    const note = document.getElementById('inout-note').value;
     
     // 부품명 결정
     let partName;
@@ -213,9 +273,9 @@ async function handleInboundSubmit(event) {
     const userInfo = window.getCurrentUserInfo();
     const totalAmount = quantity * unitPrice;
     
-    // 입고 내역 저장
+    // 입출고 내역 저장
     const inventoryData = {
-      type: 'in',
+      type: type,
       partName: partName,
       quantity: quantity,
       unitPrice: unitPrice,
@@ -231,23 +291,28 @@ async function handleInboundSubmit(event) {
     await addDoc(collection(db, "inventory"), inventoryData);
     
     // 재고 업데이트
-    await updateStock(partName, quantity, unitPrice, 'in');
+    await updateStock(partName, quantity, unitPrice, type);
     
-    console.log('✅ 입고 등록 완료:', partName, quantity + '개');
-    alert(`입고 등록이 완료되었습니다!\n\n${partName}: ${quantity}개`);
+    const typeText = type === 'in' ? '입고' : '출고';
+    console.log(`✅ ${typeText} 등록 완료:`, partName, quantity + '개');
+    alert(`${typeText} 등록이 완료되었습니다!\n\n${partName}: ${quantity}개`);
     
     // 폼 초기화
-    document.getElementById('inbound-form').reset();
+    document.getElementById('inout-form').reset();
     document.getElementById('custom-part-group').style.display = 'none';
-    document.getElementById('inbound-total').value = '';
+    document.getElementById('inout-total').value = '';
+    
+    // 기본 타입으로 재설정 (입고)
+    switchInOutType('in');
     
   } catch (error) {
-    console.error('❌ 입고 등록 오류:', error);
-    alert('입고 등록 중 오류가 발생했습니다: ' + error.message);
+    const typeText = type === 'in' ? '입고' : '출고';
+    console.error(`❌ ${typeText} 등록 오류:`, error);
+    alert(`${typeText} 등록 중 오류가 발생했습니다: ` + error.message);
   }
 }
 
-// 3. 출고 처리 로드
+// 3. 출고 처리 로드 (작업 완료 건들)
 async function loadOutboundProcess() {
   console.log('📤 출고 처리 로드');
   
@@ -453,7 +518,7 @@ async function processTaskOutbound(task) {
       quantity: part.quantity,
       unitPrice: part.price || 0,
       totalAmount: (part.quantity * (part.price || 0)),
-      reason: '작업사용',
+      reason: '작업사용', // 작업용 출고는 정산에 반영됨
       worker: task.worker || '',
       taskId: task.id, // 작업 ID 연결
       taskDate: task.date,
@@ -607,13 +672,16 @@ async function loadInventoryHistory() {
   }
 }
 
-// 입고 폼 초기화
-window.resetInboundForm = function() {
-  const form = document.getElementById('inbound-form');
+// 입출고 폼 초기화
+window.resetInOutForm = function() {
+  const form = document.getElementById('inout-form');
   if (form) {
     form.reset();
     document.getElementById('custom-part-group').style.display = 'none';
-    document.getElementById('inbound-total').value = '';
+    document.getElementById('inout-total').value = '';
+    
+    // 기본 타입으로 재설정 (입고)
+    switchInOutType('in');
   }
 };
 
@@ -777,7 +845,7 @@ window.exportHistory = function() {
 // 전역 함수 등록
 window.loadInventoryManagement = loadInventoryManagement;
 window.showInventorySubTab = showInventorySubTab;
-window.resetInboundForm = resetInboundForm;
+window.resetInOutForm = resetInOutForm;
 window.refreshStock = refreshStock;
 window.exportStock = exportStock;
 window.searchHistoryByRange = searchHistoryByRange;
@@ -992,6 +1060,8 @@ window.getMonthlyInventorySummary = async function() {
     let outboundTotal = 0;
     let inboundCount = 0;
     let outboundCount = 0;
+    let workOutboundTotal = 0; // 작업용 출고
+    let directOutboundTotal = 0; // 직접 출고
     
     historySnapshot.forEach(doc => {
       const data = doc.data();
@@ -1001,12 +1071,21 @@ window.getMonthlyInventorySummary = async function() {
       } else {
         outboundTotal += data.totalAmount || 0;
         outboundCount++;
+        
+        // 출고 유형별 분류
+        if (data.reason === '작업사용') {
+          workOutboundTotal += data.totalAmount || 0;
+        } else {
+          directOutboundTotal += data.totalAmount || 0;
+        }
       }
     });
     
     const summary = `📊 ${now.getMonth() + 1}월 입출고 요약\n\n` +
       `📥 입고: ${inboundCount}건 / ${inboundTotal.toLocaleString()}원\n` +
-      `📤 출고: ${outboundCount}건 / ${outboundTotal.toLocaleString()}원\n\n` +
+      `📤 출고(전체): ${outboundCount}건 / ${outboundTotal.toLocaleString()}원\n` +
+      `  └ 작업용: ${workOutboundTotal.toLocaleString()}원 (정산반영)\n` +
+      `  └ 직접출고: ${directOutboundTotal.toLocaleString()}원 (정산제외)\n\n` +
       `순 재고변동: ${(inboundTotal - outboundTotal).toLocaleString()}원`;
     
     alert(summary);
@@ -1023,4 +1102,4 @@ window.adjustStock = adjustStock;
 window.manageParts = manageParts;
 window.getMonthlyInventorySummary = getMonthlyInventorySummary;
 
-console.log('📦 입출고 관리 모듈 로드 완료');
+console.log('📦 입출고 관리 모듈 로드 완료 (입출고 통합 등록)');
