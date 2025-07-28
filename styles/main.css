@@ -1078,7 +1078,83 @@ button:disabled {
   transform: translateY(0);
 }
 
-/* 가로모드 최적화 CSS */
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .backup-container {
+    padding: 15px;
+  }
+  
+  .backup-header {
+    padding: 20px;
+  }
+  
+  .backup-header h3 {
+    font-size: 1.5rem;
+  }
+  
+  .backup-options {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .backup-card {
+    padding: 20px;
+  }
+  
+  .backup-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .backup-controls select,
+  .backup-btn {
+    width: 100%;
+    margin: 5px 0;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .backup-actions {
+    gap: 15px;
+  }
+  
+  .download-btn,
+  .delete-btn {
+    width: 100%;
+    padding: 12px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .backup-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .backup-header p {
+    font-size: 1rem;
+  }
+  
+  .backup-card h4 {
+    font-size: 1.1rem;
+  }
+  
+  .backup-card p {
+    font-size: 14px;
+  }
+  
+  .stat-item {
+    padding: 12px;
+  }
+  
+  .stat-value {
+    font-size: 16px;
+  }
+}
+
+/* 가로모드 최적화 CSS - main.css에 추가할 코드 */
 
 /* 가로 모드 감지 */
 @media screen and (orientation: landscape) {
@@ -1442,81 +1518,5 @@ button:disabled {
     max-height: calc(100vh - 150px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-  }
-}
-
-/* 모바일 반응형 */
-@media (max-width: 768px) {
-  .backup-container {
-    padding: 15px;
-  }
-  
-  .backup-header {
-    padding: 20px;
-  }
-  
-  .backup-header h3 {
-    font-size: 1.5rem;
-  }
-  
-  .backup-options {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .backup-card {
-    padding: 20px;
-  }
-  
-  .backup-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .backup-controls select,
-  .backup-btn {
-    width: 100%;
-    margin: 5px 0;
-  }
-  
-  .summary-stats {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  
-  .backup-actions {
-    gap: 15px;
-  }
-  
-  .download-btn,
-  .delete-btn {
-    width: 100%;
-    padding: 12px 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .backup-header h3 {
-    font-size: 1.3rem;
-  }
-  
-  .backup-header p {
-    font-size: 1rem;
-  }
-  
-  .backup-card h4 {
-    font-size: 1.1rem;
-  }
-  
-  .backup-card p {
-    font-size: 14px;
-  }
-  
-  .stat-item {
-    padding: 12px;
-  }
-  
-  .stat-value {
-    font-size: 16px;
   }
 }
