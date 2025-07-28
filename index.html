@@ -4,16 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,minimum-scale=1.0,maximum-scale=3.0">
   <title>다담업무관리</title>
-  
-  <!-- 📁 분리된 CSS 파일들 (순서 중요) -->
   <link rel="stylesheet" href="styles/main.css">
-  <link rel="stylesheet" href="styles/components/buttons.css">
-  <link rel="stylesheet" href="styles/components/forms.css">
-  <link rel="stylesheet" href="styles/pages/tasks.css">
-  <link rel="stylesheet" href="styles/pages/settlement.css">
-  <link rel="stylesheet" href="styles/pages/company-funds.css">
-  <link rel="stylesheet" href="styles/pages/inventory.css">
-  <link rel="stylesheet" href="styles/utilities/layout.css">
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
@@ -25,7 +16,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="다담티비">
   
-  <!-- 터치 아이콘 -->
+  <!-- 터치 아이콘 (아이콘 준비되면 경로 변경) -->
   <link rel="apple-touch-icon" href="icons/icon-192x192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
   
@@ -143,12 +134,6 @@
   <!-- 스크립트 로딩 (최적화된 순서) -->
   <!-- 1. 기본 설정 및 유틸리티 -->
   <script type="module" src="scripts/firebase-config.js"></script>
-  <script type="module" src="scripts/utils/date-utils.js"></script>
-  <script type="module" src="scripts/utils/dom-utils.js"></script>
-  <script type="module" src="scripts/utils/error-handler.js"></script>
-  <script type="module" src="scripts/utils/validation.js"></script>
-  <script type="module" src="scripts/utils/formatting.js"></script>
-  <script type="module" src="scripts/utils/api-helpers.js"></script>
   
   <!-- 2. 데이터 모델 -->
   <script type="module" src="scripts/parts-list.js"></script>
@@ -163,7 +148,7 @@
   <script type="module" src="scripts/inventory.js"></script>
   <script type="module" src="scripts/company-funds.js"></script>
 
-  <!-- 5. 작업지시서 인쇄 모듈 -->
+  <!-- 5. 작업지시서 인쇄 모듈 추가 -->
   <script type="module" src="scripts/print-work-orders.js"></script>
 
   <!-- 6. UI 컨트롤러 -->
@@ -172,12 +157,14 @@
   <!-- 7. 인증 (마지막) -->
   <script type="module" src="scripts/auth.js"></script>
 
-  <!-- 캐시 관리 스크립트 (기존과 동일) -->
+  <!-- 🔧 캐시 관리 스크립트 -->
   <script>
+    // 개발용 캐시 삭제 함수
     window.clearAllCache = async function() {
       try {
         console.log('🧹 모든 캐시 삭제 시작...');
         
+        // Service Worker에게 캐시 삭제 요청
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           const messageChannel = new MessageChannel();
           
@@ -196,6 +183,7 @@
           });
         }
         
+        // 브라우저 캐시도 삭제
         if ('caches' in window) {
           const cacheNames = await caches.keys();
           await Promise.all(
@@ -216,15 +204,18 @@
       }
     };
 
+    // 개발용 Service Worker 재등록 함수
     window.reregisterServiceWorker = async function() {
       try {
         if ('serviceWorker' in navigator) {
+          // 기존 Service Worker 해제
           const registrations = await navigator.serviceWorker.getRegistrations();
           for (let registration of registrations) {
             await registration.unregister();
             console.log('Service Worker 해제:', registration.scope);
           }
           
+          // 새로 등록
           const registration = await navigator.serviceWorker.register('/service-worker.js');
           console.log('Service Worker 재등록 성공:', registration.scope);
           
@@ -237,19 +228,22 @@
       }
     };
 
+    // 콘솔에서 사용할 수 있도록 안내
     console.log(`
 🔧 개발용 캐시 관리 함수:
   - clearAllCache() : 모든 캐시 삭제
   - reregisterServiceWorker() : Service Worker 재등록
     `);
 
+    // 개발 모드에서 자동으로 캐시 무시 (선택사항)
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       console.log('🔧 개발 모드 - 캐시 정책 수정');
     }
   </script>
 
-  <!-- 메인 앱 로직 (기존과 동일) -->
+  <!-- 메인 앱 로직 -->
   <script>
+    // 전역 함수 정의 (인라인으로 정의하여 onclick 이벤트에서 사용 가능)
     function backToHome() {
       console.log('🏠 홈으로 돌아가기');
       const tabContent = document.getElementById('tab-content');
@@ -262,6 +256,7 @@
     function openTab(name) {
       console.log('📂 탭 열기:', name);
       
+      // 관리자 권한 확인
       if (window.isCurrentUserAdmin && !window.isCurrentUserAdmin()) {
         console.log('❌ 작업자는 탭 이동 불가');
         return;
@@ -273,6 +268,7 @@
       if (homeButtons) homeButtons.style.display = 'none';
       if (tabContent) tabContent.style.display = 'block';
       
+      // 탭 제목 설정
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
         let titleText = '';
@@ -329,6 +325,7 @@
         `;
       }
       
+      // 탭별 로직 실행
       if (name === 'task' && window.showTaskTab) {
         window.showTaskTab('check');
       } else if (name === 'reserve' && window.loadReserveTasks) {
@@ -344,19 +341,23 @@
       } else if (name === 'inventory' && window.loadInventoryManagement) {
         window.loadInventoryManagement();
       } else if (name === 'print-workorder' && window.loadWorkOrderPrint) {
+        // 작업지시서 인쇄 탭 로드
         window.loadWorkOrderPrint();
       }
     }
 
+    // 회사운영비 전용 함수 (직접 호출용)
     function loadCompanyFundsTab() {
       console.log('💸 회사운영비 직접 로드');
       
+      // 화면 전환
       const homeButtons = document.getElementById('home-buttons');
       const tabContent = document.getElementById('tab-content');
       
       if (homeButtons) homeButtons.style.display = 'none';
       if (tabContent) tabContent.style.display = 'block';
       
+      // 제목 설정
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
         tabTitleElement.innerHTML = `
@@ -379,6 +380,7 @@
         `;
       }
       
+      // 내용 로드
       if (window.loadCompanyFunds) {
         console.log('💸 loadCompanyFunds 실행');
         window.loadCompanyFunds();
@@ -387,15 +389,18 @@
       }
     }
 
+    // 작업지시서 인쇄 전용 함수 (직접 호출용)
     function loadPrintWorkOrderTab() {
       console.log('🖨️ 작업지시서 인쇄 직접 로드');
       
+      // 화면 전환
       const homeButtons = document.getElementById('home-buttons');
       const tabContent = document.getElementById('tab-content');
       
       if (homeButtons) homeButtons.style.display = 'none';
       if (tabContent) tabContent.style.display = 'block';
       
+      // 제목 설정
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
         tabTitleElement.innerHTML = `
@@ -418,6 +423,7 @@
         `;
       }
       
+      // 내용 로드
       if (window.loadWorkOrderPrint) {
         console.log('🖨️ loadWorkOrderPrint 실행');
         window.loadWorkOrderPrint();
@@ -426,14 +432,17 @@
       }
     }
 
+    // DOM이 로드된 후 이벤트 리스너 등록
     document.addEventListener('DOMContentLoaded', () => {
       console.log('📱 DOM 로드 완료');
       
+      // 홈 버튼 이벤트
       const homeBtn = document.getElementById('homeBtn');
       if (homeBtn) {
         homeBtn.addEventListener('click', backToHome);
       }
       
+      // 메뉴 버튼들 이벤트 - 확실한 연결을 위해 지연 추가
       setTimeout(() => {
         const taskBtn = document.getElementById('task-btn');
         const reserveBtn = document.getElementById('reserve-btn');
@@ -456,6 +465,7 @@
           console.log('✅ 정산 버튼 이벤트 연결');
         }
         if (companyFundsBtn) {
+          // 회사운영비는 전용 함수 사용
           companyFundsBtn.addEventListener('click', loadCompanyFundsTab);
           console.log('✅ 회사운영비 버튼 이벤트 연결');
         }
@@ -464,6 +474,7 @@
           console.log('✅ 입출고 버튼 이벤트 연결');
         }
         if (printWorkOrderBtn) {
+          // 작업지시서 인쇄는 전용 함수 사용
           printWorkOrderBtn.addEventListener('click', loadPrintWorkOrderTab);
           console.log('✅ 작업지시서 인쇄 버튼 이벤트 연결');
         }
@@ -473,6 +484,7 @@
         }
       }, 300);
       
+      // 온라인/오프라인 상태 감지
       function updateOnlineStatus() {
         const offlineBanner = document.getElementById('offline-banner');
         if (offlineBanner) {
@@ -488,6 +500,7 @@
       window.addEventListener('offline', updateOnlineStatus);
       updateOnlineStatus();
 
+      // iOS Safari 100vh 이슈 해결
       function setViewportHeight() {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -499,9 +512,13 @@
         setTimeout(setViewportHeight, 100);
       });
 
+      // 터치 스크롤 개선 (iOS)
       document.body.style.webkitOverflowScrolling = 'touch';
+      
+      // 탭 하이라이트 제거 (Android)
       document.body.style.webkitTapHighlightColor = 'transparent';
       
+      // 키보드 대응 (모바일에서 input focus 시 스크롤 조정)
       const inputs = document.querySelectorAll('input, textarea, select');
       inputs.forEach(input => {
         input.addEventListener('focus', () => {
@@ -514,11 +531,13 @@
         });
       });
 
+      // 상태바 높이 감지 (iOS)
       if (window.navigator.standalone) {
         document.body.classList.add('standalone');
       }
     });
 
+    // 백그라운드 동기화 감지
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && window.auth?.currentUser) {
         console.log('앱 다시 활성화 - 데이터 새로고침');
@@ -538,13 +557,15 @@
       }
     });
 
+    // 전역 에러 처리
     window.addEventListener('error', (event) => {
       console.error('전역 에러:', event.error);
+      // 특정 에러는 무시 (개발 환경)
       if (event.error && event.error.message && 
           (event.error.message.includes('backToHome') || 
            event.error.message.includes('openTab') ||
            event.error.message.includes('Live reload'))) {
-        return;
+        return; // 개발 서버 관련 에러 무시
       }
     });
 
@@ -553,14 +574,16 @@
       event.preventDefault();
     });
     
+    // 전역 함수를 window에 등록
     window.backToHome = backToHome;
     window.openTab = openTab;
     window.loadCompanyFundsTab = loadCompanyFundsTab;
     window.loadPrintWorkOrderTab = loadPrintWorkOrderTab;
   </script>
 
-  <!-- PWA 및 모바일 전용 스타일 (유지) -->
+  <!-- PWA 및 모바일 전용 스타일 -->
   <style>
+    /* 오프라인 배너 */
     .offline-banner {
       position: fixed;
       top: 0;
@@ -576,11 +599,13 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
+    /* 스탠드얼론 모드 (PWA) 스타일 */
     .standalone {
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
     }
 
+    /* 키보드 대응 */
     @media screen and (max-height: 500px) {
       .header-bar {
         padding: 10px 20px;
@@ -597,6 +622,7 @@
       }
     }
 
+    /* 접근성: 모션 감소 설정 */
     @media (prefers-reduced-motion: reduce) {
       * {
         animation-duration: 0.01ms !important;
@@ -613,12 +639,14 @@
       }
     }
 
+    /* CSS 사용자 정의 속성 */
     :root {
       --vh: 1vh;
       --safe-area-inset-top: env(safe-area-inset-top);
       --safe-area-inset-bottom: env(safe-area-inset-bottom);
     }
 
+    /* 로딩 스피너 */
     .spinner {
       border: 3px solid #f3f3f3;
       border-top: 3px solid #219ebc;
@@ -634,6 +662,7 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* 에러 메시지 */
     #error-message {
       position: fixed;
       top: 20px;
@@ -658,6 +687,7 @@
       display: block !important;
     }
 
+    /* 로딩 스피너 전역 */
     #loading-spinner {
       position: fixed;
       top: 0;
