@@ -2,10 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.5, maximum-scale=3.0, viewport-fit=cover">
-  <!-- 화면 회전 강제 허용 -->
-  <meta name="screen-orientation" content="any">
-  <meta name="format-detection" content="telephone=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
   <title>다담업무관리</title>
   <link rel="stylesheet" href="styles/main.css">
   
@@ -513,6 +510,9 @@
       window.addEventListener('resize', setViewportHeight);
       window.addEventListener('orientationchange', () => {
         setTimeout(setViewportHeight, 100);
+        // 가로모드 강제 허용
+        document.body.style.transform = 'none';
+        document.documentElement.style.transform = 'none';
       });
 
       // 터치 스크롤 개선 (iOS)
@@ -586,20 +586,32 @@
 
   <!-- PWA 및 모바일 전용 스타일 -->
   <style>
-    /* 가로모드 강제 허용 CSS */
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow-x: auto !important;
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
+    /* 가로모드 강제 허용 - 모든 CSS 우선순위 최고로 설정 */
+    * {
+      -webkit-transform: none !important;
+      -moz-transform: none !important;
+      -ms-transform: none !important;
+      -o-transform: none !important;
+      transform: none !important;
     }
     
-    /* iOS Safari 가로모드 확대 방지 */
-    @media screen and (orientation: landscape) {
-      html {
-        -webkit-text-size-adjust: 100%;
-      }
+    html {
+      -webkit-text-size-adjust: none !important;
+      -moz-text-size-adjust: none !important;
+      -ms-text-size-adjust: none !important;
+      text-size-adjust: none !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    body {
+      -webkit-text-size-adjust: none !important;
+      -moz-text-size-adjust: none !important;
+      -ms-text-size-adjust: none !important;
+      text-size-adjust: none !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow-x: auto !important;
     }
     
     /* 오프라인 배너 */
