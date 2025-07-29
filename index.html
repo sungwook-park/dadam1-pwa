@@ -2,7 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,minimum-scale=1.0,maximum-scale=3.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.5, maximum-scale=3.0, viewport-fit=cover">
+  <!-- 화면 회전 강제 허용 -->
+  <meta name="screen-orientation" content="any">
+  <meta name="format-detection" content="telephone=no">
   <title>다담업무관리</title>
   <link rel="stylesheet" href="styles/main.css">
   
@@ -583,6 +586,22 @@
 
   <!-- PWA 및 모바일 전용 스타일 -->
   <style>
+    /* 가로모드 강제 허용 CSS */
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow-x: auto !important;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    
+    /* iOS Safari 가로모드 확대 방지 */
+    @media screen and (orientation: landscape) {
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+    }
+    
     /* 오프라인 배너 */
     .offline-banner {
       position: fixed;
