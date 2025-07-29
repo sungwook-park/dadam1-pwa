@@ -708,6 +708,120 @@
       font-size: 16px;
       font-weight: 600;
     }
+
+    /* 가로모드 지원을 위한 추가 스타일 */
+    @media screen and (orientation: landscape) {
+      /* 가로모드에서 헤더 높이 조정 */
+      .header-bar {
+        padding: 8px 20px;
+        min-height: 50px;
+      }
+      
+      .header-title {
+        font-size: 1.2rem;
+      }
+      
+      .header-icon {
+        font-size: 1.3rem;
+      }
+      
+      /* 가로모드에서 버튼 그리드 조정 */
+      .button-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+      }
+      
+      .menu-button {
+        padding: 20px 8px;
+        min-height: 80px;
+        font-size: 16px;
+      }
+      
+      /* 가로모드에서 로그인 폼 조정 */
+      .login-container {
+        max-width: 400px;
+        margin: 20px auto;
+      }
+      
+      /* 가로모드에서 작업 아이템 높이 조정 */
+      .task-summary {
+        min-height: 60px;
+        padding: 16px 20px;
+      }
+      
+      /* 가로모드에서 폼 요소 높이 조정 */
+      input, textarea, select, button {
+        min-height: 45px;
+        padding: 12px 16px;
+      }
+      
+      /* 가로모드에서 작업자 서브탭 조정 */
+      .worker-subtabs {
+        margin-bottom: 15px;
+      }
+      
+      .worker-tab-btn {
+        min-height: 40px;
+        padding: 10px 12px;
+      }
+    }
+
+    /* 작은 가로모드 (모바일 가로) */
+    @media screen and (orientation: landscape) and (max-height: 500px) {
+      body {
+        padding: 10px;
+      }
+      
+      .header-bar {
+        padding: 6px 15px;
+        min-height: 45px;
+      }
+      
+      .header-title {
+        font-size: 1.1rem;
+      }
+      
+      .button-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin-top: 15px;
+      }
+      
+      .menu-button {
+        padding: 15px 6px;
+        min-height: 70px;
+        font-size: 14px;
+      }
+      
+      .login-container {
+        max-width: 350px;
+        margin: 15px auto;
+        padding: 20px;
+      }
+      
+      .task-summary {
+        min-height: 50px;
+        padding: 12px 18px;
+      }
+      
+      input, textarea, select, button {
+        min-height: 40px;
+        padding: 10px 14px;
+        font-size: 16px;
+      }
+      
+      .worker-tab-btn {
+        min-height: 36px;
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+      
+      /* 가로모드에서 키보드 대응 개선 */
+      .box {
+        padding: 12px;
+      }
+    }
   </style>
 
 </body>

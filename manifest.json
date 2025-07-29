@@ -6,11 +6,12 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#87CEEB",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/",
   "lang": "ko",
   "categories": ["business", "productivity"],
   "prefer_related_applications": false,
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "icons": [
     {
       "src": "icons/icon-192x192.png",
