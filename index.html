@@ -2,35 +2,103 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 🔧 가로모드 허용 viewport (수정됨) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0, minimum-scale=0.5">
   <title>다담업무관리</title>
   
-  <!-- 가로모드 강제 허용 스크립트 (오류 수정됨) -->
+  <!-- 🔧 즉시 실행: 모든 가로모드 차단 요소 제거 -->
   <script>
-    // 화면 방향 API로 가로모드 강제 허용 - 안전한 버전
-    try {
-      if (screen && screen.orientation && screen.orientation.unlock) {
-        const unlockResult = screen.orientation.unlock();
-        if (unlockResult && typeof unlockResult.catch === 'function') {
-          unlockResult.catch(function() {
-            console.log('화면 회전 잠금 해제 실패 (정상)');
+    (function() {
+      console.log('🔧 가로모드 차단 요소 완전 제거 시작...');
+      
+      try {
+        // 1. Screen Orientation Lock 모두 해제
+        if (screen && screen.orientation) {
+          // 기존 lock 해제
+          if (typeof screen.orientation.unlock === 'function') {
+            const unlockResult = screen.orientation.unlock();
+            if (unlockResult && typeof unlockResult.catch === 'function') {
+              unlockResult.catch(() => console.log('unlock 실패 (정상)'));
+            }
+          }
+          
+          // lock 함수 무력화
+          if (screen.orientation.lock) {
+            const originalLock = screen.orientation.lock;
+            screen.orientation.lock = function() {
+              console.log('🚫 orientation.lock 차단됨 (가로모드 허용)');
+              return Promise.reject('가로모드 허용을 위해 lock 차단');
+            };
+          }
+        }
+        
+        // 2. 레거시 orientation lock 제거
+        ['lockOrientation', 'mozLockOrientation', 'msLockOrientation'].forEach(prop => {
+          if (screen && screen[prop]) {
+            screen[prop] = function() {
+              console.log(`🚫 ${prop} 차단됨 (가로모드 허용)`);
+              return false;
+            };
+          }
+        });
+        
+        // 3. CSS Transform 강제 해제
+        function removeTransforms() {
+          const elements = [document.documentElement, document.body];
+          elements.forEach(el => {
+            if (el && el.style) {
+              el.style.transform = 'none';
+              el.style.webkitTransform = 'none';
+              el.style.msTransform = 'none';
+              el.style.mozTransform = 'none';
+              el.style.oTransform = 'none';
+            }
           });
         }
+        
+        // 4. CSS 강제 width 제거 함수
+        function removeForcedWidth() {
+          const html = document.documentElement;
+          const body = document.body;
+          
+          if (html) {
+            html.style.width = '';
+            html.style.maxWidth = '';
+            html.style.minWidth = '';
+            html.style.overflowX = '';
+          }
+          
+          if (body) {
+            body.style.width = '';
+            body.style.maxWidth = '';
+            body.style.minWidth = '';
+            body.style.overflowX = '';
+          }
+        }
+        
+        // 즉시 실행
+        removeTransforms();
+        removeForcedWidth();
+        
+        // DOM 로드 후에도 실행
+        document.addEventListener('DOMContentLoaded', function() {
+          removeTransforms();
+          removeForcedWidth();
+        });
+        
+        // 화면 회전 시에도 실행
+        window.addEventListener('orientationchange', function() {
+          setTimeout(removeTransforms, 50);
+          setTimeout(removeTransforms, 200);
+          setTimeout(removeForcedWidth, 50);
+        });
+        
+        console.log('✅ 가로모드 차단 요소 제거 완료');
+        
+      } catch (error) {
+        console.log('가로모드 설정 오류 (정상):', error.message);
       }
-      
-      // 모든 방향 허용
-      if (screen && screen.lockOrientation) {
-        screen.lockOrientation = null;
-      }
-      if (screen && screen.mozLockOrientation) {
-        screen.mozLockOrientation = null;
-      }
-      if (screen && screen.msLockOrientation) {
-        screen.msLockOrientation = null;
-      }
-    } catch (error) {
-      console.log('가로모드 초기화 오류 (정상):', error.message);
-    }
+    })();
   </script>
   
   <link rel="stylesheet" href="styles/main.css">
@@ -465,42 +533,43 @@
     document.addEventListener('DOMContentLoaded', () => {
       console.log('📱 DOM 로드 완료');
       
-      // 가로모드 강제 허용 코드 (수정된 버전)
-      function enableLandscape() {
+      // 🔧 추가적인 가로모드 차단 요소 제거
+      function forceEnableLandscape() {
+        console.log('🔧 가로모드 강제 허용 실행');
+        
         try {
-          // Screen Orientation API 사용 (안전한 방식)
-          if (screen && screen.orientation && typeof screen.orientation.unlock === 'function') {
-            const unlockResult = screen.orientation.unlock();
-            // Promise인지 확인 후 catch 호출
-            if (unlockResult && typeof unlockResult.catch === 'function') {
-              unlockResult.catch(() => {
-                console.log('화면 회전 잠금 해제 실패 (정상)');
-              });
+          // CSS의 강제 portrait 스타일 제거
+          const style = document.createElement('style');
+          style.innerHTML = `
+            /* 🔧 모든 가로모드 차단 CSS 무력화 */
+            html, body {
+              transform: none !important;
+              -webkit-transform: none !important;
+              width: 100% !important;
+              max-width: none !important;
+              min-width: 0 !important;
+              overflow-x: visible !important;
             }
-          }
+            
+            /* 🔧 landscape 미디어쿼리의 강제 회전 차단 */
+            @media screen and (orientation: landscape) {
+              html, body, * {
+                transform: none !important;
+                -webkit-transform: none !important;
+                width: auto !important;
+                height: auto !important;
+              }
+            }
+          `;
+          document.head.appendChild(style);
           
-          // 레거시 브라우저 지원
-          if (screen && screen.lockOrientation) {
-            screen.lockOrientation = null;
-          }
-          if (screen && screen.mozLockOrientation) {
-            screen.mozLockOrientation = null;
-          }
-          if (screen && screen.msLockOrientation) {
-            screen.msLockOrientation = null;
-          }
-          
-          // CSS transform 강제 해제
-          document.documentElement.style.transform = 'none';
-          document.body.style.transform = 'none';
-          document.documentElement.style.webkitTransform = 'none';
-          document.body.style.webkitTransform = 'none';
-          
-          // viewport meta 태그 재설정
+          // viewport 메타 태그 재설정
           let viewport = document.querySelector('meta[name=viewport]');
           if (viewport) {
-            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=yes');
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0, minimum-scale=0.5');
           }
+          
+          console.log('✅ 가로모드 강제 허용 완료');
           
         } catch (error) {
           console.log('가로모드 설정 오류 (정상):', error.message);
@@ -508,9 +577,9 @@
       }
       
       // 즉시 실행 및 이벤트 등록
-      enableLandscape();
-      window.addEventListener('orientationchange', enableLandscape);
-      window.addEventListener('resize', enableLandscape);
+      forceEnableLandscape();
+      window.addEventListener('orientationchange', forceEnableLandscape);
+      window.addEventListener('resize', forceEnableLandscape);
       
       // 홈 버튼 이벤트
       const homeBtn = document.getElementById('homeBtn');
@@ -587,8 +656,8 @@
       window.addEventListener('orientationchange', () => {
         setTimeout(setViewportHeight, 100);
         // 가로모드 강제 허용
-        document.body.style.transform = 'none';
-        document.documentElement.style.transform = 'none';
+        setTimeout(forceEnableLandscape, 50);
+        setTimeout(forceEnableLandscape, 200);
       });
 
       // 터치 스크롤 개선 (iOS)
@@ -614,6 +683,29 @@
       if (window.navigator.standalone) {
         document.body.classList.add('standalone');
       }
+      
+      // 🔧 정기적인 가로모드 차단 요소 감시 및 제거
+      setInterval(() => {
+        // Transform 강제 해제
+        [document.documentElement, document.body].forEach(el => {
+          if (el && el.style) {
+            if (el.style.transform && el.style.transform !== 'none') {
+              console.log('🔧 강제 transform 감지 및 제거:', el.style.transform);
+              el.style.transform = 'none';
+              el.style.webkitTransform = 'none';
+            }
+          }
+        });
+        
+        // Fixed width 강제 해제
+        if (document.documentElement.style.width && 
+            document.documentElement.style.width !== '' && 
+            document.documentElement.style.width !== '100%') {
+          console.log('🔧 강제 width 감지 및 제거:', document.documentElement.style.width);
+          document.documentElement.style.width = '';
+          document.documentElement.style.maxWidth = '';
+        }
+      }, 1000);
     });
 
     // 백그라운드 동기화 감지
@@ -642,7 +734,8 @@
       if (event.error && event.error.message) {
         const msg = event.error.message.toLowerCase();
         if (msg.includes('catch') || msg.includes('orientation') || msg.includes('unlock') ||
-            msg.includes('backToHome') || msg.includes('openTab') || msg.includes('live reload')) {
+            msg.includes('backToHome') || msg.includes('openTab') || msg.includes('live reload') ||
+            msg.includes('transform') || msg.includes('landscape')) {
           return; // 무시
         }
       }
@@ -653,7 +746,8 @@
       // Promise 거부도 가로모드 관련은 무시
       if (event.reason && event.reason.message) {
         const msg = event.reason.message.toLowerCase();
-        if (msg.includes('orientation') || msg.includes('unlock')) {
+        if (msg.includes('orientation') || msg.includes('unlock') ||
+            msg.includes('landscape') || msg.includes('lock')) {
           event.preventDefault();
           return;
         }
@@ -667,11 +761,44 @@
     window.openTab = openTab;
     window.loadCompanyFundsTab = loadCompanyFundsTab;
     window.loadPrintWorkOrderTab = loadPrintWorkOrderTab;
+    
+    // 🔧 가로모드 강제 허용 함수를 전역에 등록
+    window.forceEnableLandscape = function() {
+      console.log('🔧 가로모드 강제 허용 (수동 실행)');
+      
+      // Screen orientation unlock
+      if (screen && screen.orientation && screen.orientation.unlock) {
+        try {
+          const result = screen.orientation.unlock();
+          if (result && result.catch) {
+            result.catch(() => {});
+          }
+        } catch (e) {}
+      }
+      
+      // Transform 제거
+      [document.documentElement, document.body].forEach(el => {
+        if (el) {
+          el.style.transform = 'none';
+          el.style.webkitTransform = 'none';
+          el.style.width = '';
+          el.style.maxWidth = '';
+        }
+      });
+      
+      // Viewport 재설정
+      const viewport = document.querySelector('meta[name=viewport]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=yes');
+      }
+      
+      console.log('✅ 가로모드 강제 허용 완료');
+    };
   </script>
 
-  <!-- PWA 및 모바일 전용 스타일 -->
+  <!-- 🔧 가로모드 강제 허용 CSS (강력한 오버라이드) -->
   <style>
-    /* 가로모드 완전 허용 - CSS 초기화 */
+    /* 🔧 모든 가로모드 차단 CSS 완전 무력화 */
     html, body {
       width: 100% !important;
       height: 100% !important;
@@ -683,27 +810,83 @@
       -ms-text-size-adjust: none !important;
       text-size-adjust: none !important;
       -webkit-transform: none !important;
+      -moz-transform: none !important;
+      -ms-transform: none !important;
+      -o-transform: none !important;
       transform: none !important;
       -webkit-transform-origin: center center !important;
+      -moz-transform-origin: center center !important;
+      -ms-transform-origin: center center !important;
+      -o-transform-origin: center center !important;
       transform-origin: center center !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      max-height: none !important;
+      min-height: 0 !important;
     }
     
-    /* 모든 요소의 강제 회전 방지 해제 */
-    * {
+    /* 🔧 모든 요소의 강제 회전/크기 제한 해제 */
+    *, *::before, *::after {
       -webkit-transform: none !important;
+      -moz-transform: none !important;
+      -ms-transform: none !important;
+      -o-transform: none !important;
       transform: none !important;
       -webkit-transform-origin: initial !important;
+      -moz-transform-origin: initial !important;
+      -ms-transform-origin: initial !important;
+      -o-transform-origin: initial !important;
       transform-origin: initial !important;
       box-sizing: border-box !important;
     }
     
-    /* 강제 가로모드 방지 CSS 오버라이드 */
+    /* 🔧 가로모드 미디어쿼리의 강제 회전 완전 차단 */
+    @media screen and (orientation: landscape) {
+      html, body, *, *::before, *::after {
+        transform: none !important;
+        -webkit-transform: none !important;
+        -moz-transform: none !important;
+        -ms-transform: none !important;
+        -o-transform: none !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        max-height: none !important;
+        min-height: 0 !important;
+      }
+      
+      html {
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+      
+      body {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    }
+    
+    /* 🔧 세로모드에서도 정상 표시 */
+    @media screen and (orientation: portrait) {
+      html, body {
+        transform: none !important;
+        -webkit-transform: none !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+    }
+    
+    /* 🔧 강제 가로모드 방지 CSS 완전 오버라이드 */
     @media screen {
       html, body {
         orientation: unset !important;
         -webkit-orientation: unset !important;
         -moz-orientation: unset !important;
         -ms-orientation: unset !important;
+        -o-orientation: unset !important;
+        writing-mode: horizontal-tb !important;
+        direction: ltr !important;
       }
     }
     
@@ -833,7 +1016,7 @@
       font-weight: 600;
     }
 
-    /* 가로모드 지원을 위한 추가 스타일 */
+    /* 🔧 가로모드 지원을 위한 추가 스타일 (차단 무력화) */
     @media screen and (orientation: landscape) {
       /* 가로모드에서 헤더 높이 조정 */
       .header-bar {
