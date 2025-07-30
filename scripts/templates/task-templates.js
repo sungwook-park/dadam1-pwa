@@ -1,4 +1,4 @@
-// scripts/templates/task-templates.js - 날짜 필터 반응형 개선
+// scripts/templates/task-templates.js - 날짜 필터 반응형 개선 + 팀 작업 지원
 
 // 유틸리티 함수들
 function formatKoreanDate(dateString) {
@@ -762,6 +762,7 @@ export function getDoneTabHTML() {
   `;
 }
 
+// 🔥 수정된 작업 아이템 HTML (팀 작업 지원 - 팀장/팀원 색상 구분)
 export function getTaskItemHTML(task, id, tabType) {
   const dateStr = formatKoreanDate(task.date);
   
@@ -793,16 +794,32 @@ export function getTaskItemHTML(task, id, tabType) {
     }
   }
   
+  // 🔥 팀 작업 배지 및 CSS 클래스 생성
+  let teamBadge = '';
+  let teamClass = '';
+  if (task.isTeamWork) {
+    if (task.isTeamLeader) {
+      teamBadge = '<span class="team-badge leader">👑 팀장</span>';
+      teamClass = 'team-leader';
+    } else {
+      teamBadge = '<span class="team-badge member">👥 팀원</span>';
+      teamClass = 'team-member';
+    }
+  }
+  
   // 모바일과 데스크탑 감지
   const isMobile = window.innerWidth <= 768;
   
   if (isMobile) {
-    // 모바일용 한 줄 레이아웃
+    // 모바일용 한 줄 레이아웃 (팀장/팀원 색상 구분)
     return `
-      <div class="task-item">
+      <div class="task-item ${task.isTeamWork ? `team-work ${teamClass}` : ''}">
         <div class="task-summary" onclick="toggleTaskDetail('${id}')">
           <div class="task-summary-mobile">
-            <div class="task-date-mobile">${dateStr}</div>
+            <div class="task-date-mobile">
+              ${dateStr}
+              ${teamBadge}
+            </div>
             <div class="task-info-mobile">
               ${task.worker ? `<span class="task-worker-mobile">${task.worker}</span>` : ''}
               ${task.client ? `<span class="task-client-mobile">${task.client}</span>` : ''}
@@ -830,11 +847,11 @@ export function getTaskItemHTML(task, id, tabType) {
       </div>
     `;
   } else {
-    // 데스크탑용 기존 레이아웃
+    // 데스크탑용 기존 레이아웃 (팀장/팀원 색상 구분)
     return `
-      <div class="task-item">
+      <div class="task-item ${task.isTeamWork ? `team-work ${teamClass}` : ''}">
         <div class="task-summary" onclick="toggleTaskDetail('${id}')">
-          <div class="col-date">${dateStr}</div>
+          <div class="col-date">${dateStr}${teamBadge}</div>
           <div class="col-staff">${task.worker || ''}</div>
           <div class="col-client">${task.client || ''}</div>
           <div class="col-tasktype">${task.taskType || ''}</div>

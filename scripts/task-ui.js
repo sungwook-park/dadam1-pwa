@@ -1,4 +1,4 @@
-// CSS 스타일 추가 (작업자 수정 폼용 + 관리자 통계용)
+// CSS 스타일 추가 (작업자 수정 폼용 + 관리자 통계용 + 팀 작업 스타일)
 const workerEditStyles = `
 <style>
 .worker-edit-container {
@@ -192,6 +192,66 @@ const workerEditStyles = `
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+/* 팀 작업 스타일 */
+.team-badge {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+.team-badge.leader {
+  background: #ffd700;
+  color: #b8860b;
+}
+
+.team-badge.member {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+/* 팀장 작업 - 금색 테두리 */
+.task-item.team-work.team-leader {
+  border-left: 4px solid #ffd700 !important;
+}
+
+.task-item.team-work.team-leader:hover {
+  border-left-color: #ffca28 !important;
+}
+
+.worker-task-list .task-item.team-work.team-leader {
+  border-left: 4px solid #ffd700 !important;
+  border-right: none;
+  border-top: none;
+}
+
+/* 팀원 작업 - 파란색 테두리 */
+.task-item.team-work.team-member {
+  border-left: 4px solid #2196f3 !important;
+}
+
+.task-item.team-work.team-member:hover {
+  border-left-color: #1976d2 !important;
+}
+
+.worker-task-list .task-item.team-work.team-member {
+  border-left: 4px solid #2196f3 !important;
+  border-right: none;
+  border-top: none;
+}
+
+.team-participants {
+  background: #fff3e0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #e65100;
+  margin-top: 8px;
+  border-left: 3px solid #ff9800;
+}
+
 @media (max-width: 480px) {
   .worker-edit-container {
     margin: 5px;
@@ -236,6 +296,12 @@ const workerEditStyles = `
   .worker-header h3 {
     font-size: 1rem;
   }
+  
+  .team-badge {
+    font-size: 11px;
+    padding: 1px 4px;
+    margin-left: 4px;
+  }
 }
 </style>
 `;
@@ -246,7 +312,9 @@ if (!document.getElementById('worker-edit-styles')) {
   styleElement.id = 'worker-edit-styles';
   styleElement.innerHTML = workerEditStyles;
   document.head.appendChild(styleElement);
-}// scripts/task-ui.js - 수정 폼 개선 및 모바일 최적화 (수정된 버전)
+}
+
+// scripts/task-ui.js - 수정 폼 개선 및 모바일 최적화 (다중 작업자 지원 버전)
 import { db } from './firebase-config.js';
 import {
   collection, query, where, getDocs, updateDoc, doc, deleteDoc, orderBy, getDoc
@@ -324,46 +392,69 @@ function filterTasksForCurrentUser(tasks) {
   return filteredTasks;
 }
 
-// 작업자별로 작업 그룹화 (관리자용)
+// 작업자별로 작업 그룹화 (수정됨 - 모든 작업자에게 복제)
 function groupTasksByWorker(tasks) {
   const grouped = {};
   
   tasks.forEach(task => {
-if (!task.worker || task.worker.trim() === '') {
-  // ✅ 미지정 작업을 "미지정" 그룹으로 분류
-  if (!grouped['미지정']) {
-    grouped['미지정'] = [];
-  }
-  grouped['미지정'].push(task);
-  return;
-}    
-    // 첫 번째 작업자를 팀장으로 간주
-    const workers = task.worker.split(',').map(w => w.trim());
-    const teamLeader = workers[0];
-    
-    if (!grouped[teamLeader]) {
-      grouped[teamLeader] = [];
+    if (!task.worker || task.worker.trim() === '') {
+      // ✅ 미지정 작업을 "미지정" 그룹으로 분류
+      if (!grouped['미지정']) {
+        grouped['미지정'] = [];
+      }
+      grouped['미지정'].push({
+        ...task,
+        isTeamLeader: true,
+        isTeamWork: false,
+        allWorkers: []
+      });
+      return;
     }
     
-    grouped[teamLeader].push(task);
+    // 🔥 모든 작업자에게 작업 할당 (수정된 부분)
+    const workers = task.worker.split(',').map(w => w.trim());
+    
+    workers.forEach((worker, index) => {
+      if (!worker) return;
+      
+      if (!grouped[worker]) {
+        grouped[worker] = [];
+      }
+      
+      // 각 작업자에게 작업 복사본 생성
+      grouped[worker].push({
+        ...task,
+        isTeamLeader: index === 0,  // 첫 번째 작업자가 팀장
+        isTeamWork: workers.length > 1,  // 2명 이상이면 팀 작업
+        allWorkers: workers  // 전체 참여자 목록
+      });
+    });
   });
   
   return grouped;
 }
 
-// 통계 정보 생성
+// 통계 정보 생성 (수정됨 - 중복 제거)
 function generateTaskStats(allTasks, completedTasks, isReserveTab = false) {
+  // 🔥 중복 제거: 작업 ID 기준으로 유니크하게 만들기
+  const uniqueAllTasks = Array.from(
+    new Map(allTasks.map(task => [task.id, task])).values()
+  );
+  const uniqueCompletedTasks = Array.from(
+    new Map(completedTasks.map(task => [task.id, task])).values()
+  );
+  
   if (isReserveTab) {
     // 예약 탭: 내일 해야할 작업수만
     return {
-      totalReserveTasks: allTasks.length
+      totalReserveTasks: uniqueAllTasks.length
     };
   }
   
   // 오늘작업/완료작업 탭 공통
   const workerStats = {};
-  const groupedAll = groupTasksByWorker(allTasks);
-  const groupedCompleted = groupTasksByWorker(completedTasks);
+  const groupedAll = groupTasksByWorker(uniqueAllTasks);
+  const groupedCompleted = groupTasksByWorker(uniqueCompletedTasks);
   
   // 모든 작업자 목록 수집
   const allWorkers = new Set([
@@ -372,17 +463,28 @@ function generateTaskStats(allTasks, completedTasks, isReserveTab = false) {
   ]);
   
   allWorkers.forEach(worker => {
+    // 🔥 중복 제거된 작업 수 계산
+    const workerAllTasks = groupedAll[worker] || [];
+    const workerCompletedTasks = groupedCompleted[worker] || [];
+    
+    const uniqueWorkerAllTasks = Array.from(
+      new Map(workerAllTasks.map(task => [task.id, task])).values()
+    );
+    const uniqueWorkerCompletedTasks = Array.from(
+      new Map(workerCompletedTasks.map(task => [task.id, task])).values()
+    );
+    
     workerStats[worker] = {
-      total: (groupedAll[worker] || []).length,
-      completed: (groupedCompleted[worker] || []).length,
-      pending: (groupedAll[worker] || []).length - (groupedCompleted[worker] || []).length
+      total: uniqueWorkerAllTasks.length,
+      completed: uniqueWorkerCompletedTasks.length,
+      pending: uniqueWorkerAllTasks.length - uniqueWorkerCompletedTasks.length
     };
   });
   
   return {
-    totalTasks: allTasks.length,
-    completedTasks: completedTasks.length,
-    pendingTasks: allTasks.length - completedTasks.length,
+    totalTasks: uniqueAllTasks.length,
+    completedTasks: uniqueCompletedTasks.length,
+    pendingTasks: uniqueAllTasks.length - uniqueCompletedTasks.length,
     workerStats: workerStats
   };
 }
@@ -435,7 +537,7 @@ function getStatsHTML(stats, tabType) {
           </div>
         </div>
         <div class="worker-stats">
-          <h4>👷 작업자별 완료 현황</h4>
+          <h4>👷 작업자별 완료 현황 (협업 작업 중복 제거)</h4>
           <div class="worker-stats-grid">
             ${workerStatsHTML}
           </div>
@@ -462,7 +564,7 @@ function getStatsHTML(stats, tabType) {
           </div>
         </div>
         <div class="worker-stats">
-          <h4>👷 작업자별 현황</h4>
+          <h4>👷 작업자별 현황 (협업 작업 중복 제거)</h4>
           <div class="worker-stats-grid">
             ${workerStatsHTML}
           </div>
@@ -472,19 +574,25 @@ function getStatsHTML(stats, tabType) {
   }
 }
 
-// 작업자별 작업 목록 HTML 생성
+// 작업자별 작업 목록 HTML 생성 (수정됨 - 실제 작업 수 표시)
 function getWorkerTaskListHTML(groupedTasks, tabType) {
   let html = '';
   
   Object.entries(groupedTasks).forEach(([worker, tasks]) => {
+    // 🔥 실제 작업 수 계산 (중복 제거)
+    const uniqueTasks = Array.from(
+      new Map(tasks.map(task => [task.id, task])).values()
+    );
+    
     html += `
       <div class="worker-section">
         <div class="worker-header">
-          <h3>👤 ${worker} (${tasks.length}건)</h3>
+          <h3>👤 ${worker} (${uniqueTasks.length}건)</h3>
         </div>
         <div class="worker-task-list">
     `;
     
+    // 🔥 모든 작업 표시 (중복 포함) - 팀장/팀원 구분 표시
     tasks.forEach(task => {
       html += getTaskItemHTML(task, task.id, tabType);
     });

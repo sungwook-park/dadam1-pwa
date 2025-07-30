@@ -1,4 +1,4 @@
-// scripts/print-work-orders.js - 작업지시서 인쇄 시스템
+// scripts/print-work-orders.js - 작업지시서 인쇄 시스템 (다중 작업자 지원)
 
 import { db } from './firebase-config.js';
 import {
@@ -392,6 +392,12 @@ function getWorkOrderPrintHTML() {
         transition: box-shadow 0.2s ease;
       }
 
+      /* 🔥 협업 작업 아이템 스타일 */
+      .task-item.team-work {
+        border-left: 6px solid #ff4444;
+        background: #f0f8ff;
+      }
+
       .task-item:hover {
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       }
@@ -440,6 +446,17 @@ function getWorkOrderPrintHTML() {
         border-radius: 6px;
         margin-top: 8px;
         border-left: 3px solid #ffc107;
+      }
+
+      /* 🔥 협업자 정보 스타일 */
+      .team-members {
+        font-size: 13px;
+        color: #1976d2;
+        background: #e3f2fd;
+        padding: 6px 10px;
+        border-radius: 4px;
+        margin-top: 6px;
+        border-left: 5px solid #ff4444;
       }
       
       /* 인쇄 액션 버튼 */
@@ -562,6 +579,27 @@ function getWorkOrderPrintHTML() {
         
         .worker-card:last-child {
           page-break-after: auto !important;
+        }
+        
+        /* 🔥 협업 작업 아이템 인쇄 시 굵고 눈에 띄는 테두리 */
+        .task-item.team-work {
+          border-left: 6px solid #ff4444 !important;
+          background: white !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* 🔥 협업자 정보 인쇄 시 표시 */
+        .team-members {
+          font-size: 16px !important;
+          color: #000 !important;
+          background: white !important;
+          padding: 1mm 2mm !important;
+          margin-top: 1mm !important;
+          border-left: 5px solid #ff4444 !important;
+          font-weight: bold !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
         
         /* 헤더 - 완전히 한 줄로 강제 배치 */
@@ -789,7 +827,7 @@ async function loadTasksForPrint() {
       return;
     }
     
-    // 작업자별로 그룹화
+    // 🔥 작업자별로 그룹화 (다중 작업자 지원)
     const groupedTasks = groupTasksByWorker(allTasks);
     
     // 미리보기 생성
@@ -804,7 +842,7 @@ async function loadTasksForPrint() {
   }
 }
 
-// 작업자별 그룹화
+// 🔥 작업자별 그룹화 (수정됨 - 모든 작업자에게 복제)
 function groupTasksByWorker(tasks) {
   const grouped = {};
   
@@ -813,36 +851,56 @@ function groupTasksByWorker(tasks) {
       if (!grouped['미지정']) {
         grouped['미지정'] = [];
       }
-      grouped['미지정'].push(task);
+      grouped['미지정'].push({
+        ...task,
+        isTeamLeader: true,
+        isTeamWork: false,
+        allWorkers: []
+      });
       return;
     }
     
+    // 🔥 모든 작업자에게 작업 할당 (task-ui.js와 동일한 로직)
     const workers = task.worker.split(',').map(w => w.trim());
-    const teamLeader = workers[0];
     
-    if (!grouped[teamLeader]) {
-      grouped[teamLeader] = [];
-    }
-    
-    grouped[teamLeader].push(task);
+    workers.forEach((worker, index) => {
+      if (!worker) return;
+      
+      if (!grouped[worker]) {
+        grouped[worker] = [];
+      }
+      
+      // 각 작업자에게 작업 복사본 생성
+      grouped[worker].push({
+        ...task,
+        isTeamLeader: index === 0,  // 첫 번째 작업자가 팀장
+        isTeamWork: workers.length > 1,  // 2명 이상이면 팀 작업
+        allWorkers: workers  // 전체 참여자 목록
+      });
+    });
   });
   
   return grouped;
 }
 
-// 작업자별 작업 미리보기 표시 (안전한 버전)
+// 🔥 작업자별 작업 미리보기 표시 (협업 작업 구분 추가)
 function displayWorkerTasksPreview(groupedTasks, selectedDate) {
   const container = document.getElementById('tasks-preview-container');
   
   let html = '';
   
   Object.entries(groupedTasks).forEach(([worker, tasks]) => {
+    // 🔥 실제 작업 수 계산 (중복 제거)
+    const uniqueTasks = Array.from(
+      new Map(tasks.map(task => [task.id, task])).values()
+    );
+    
     html += `
       <div class="worker-card" data-date="${selectedDate}">
         <div class="worker-header" data-date="${selectedDate}">
           <div class="worker-info">
             <span class="worker-name">👤 ${worker}</span>
-            <span class="task-count-badge">${tasks.length}건</span>
+            <span class="task-count-badge">${uniqueTasks.length}건</span>
           </div>
           <div class="worker-controls">
             <input type="checkbox" class="worker-checkbox" value="${worker}" checked>
@@ -852,8 +910,8 @@ function displayWorkerTasksPreview(groupedTasks, selectedDate) {
         <div class="worker-tasks-list">
     `;
     
-    // 실제 작업들만 표시
-    tasks.forEach((task, index) => {
+    // 🔥 실제 작업들 표시 (협업 여부 구분)
+    uniqueTasks.forEach((task, index) => {
       const taskTime = formatTaskTime(task.date);
       const addresses = formatAddressesForCard(task.removeAddress, task.installAddress);
       const parts = formatPartsForCard(task.parts);
@@ -865,6 +923,18 @@ function displayWorkerTasksPreview(groupedTasks, selectedDate) {
       const contact = task.contact || '';
       const items = task.items || '';
       
+      // 🔥 협업 작업 여부 및 협업자 정보
+      const isTeamWork = task.isTeamWork;
+      const teamWorkClass = isTeamWork ? 'team-work' : '';
+      
+      let teamMembersInfo = '';
+      if (isTeamWork && task.allWorkers && task.allWorkers.length > 1) {
+        const otherWorkers = task.allWorkers.filter(w => w !== worker);
+        if (otherWorkers.length > 0) {
+          teamMembersInfo = `<div class="team-members">👥 협업: ${otherWorkers.join(', ')}</div>`;
+        }
+      }
+      
       // 작업 세부 정보 배열 생성 (거래처명을 span으로 감싸기)
       const detailParts = [];
       if (client) detailParts.push(`🏢 <span class="client-highlight">${client}</span>`);
@@ -873,13 +943,14 @@ function displayWorkerTasksPreview(groupedTasks, selectedDate) {
       if (parts && parts !== '없음') detailParts.push(`📦 ${parts}`);
       
       html += `
-        <div class="task-item">
+        <div class="task-item ${teamWorkClass}">
           <div class="task-time-client">
             <span>🕐 ${taskTime}${taskType ? ` | 📋 ${taskType}` : ''}${items ? ` ${items}` : ''}</span>
             <span>💰 ${amount}</span>
           </div>
           ${detailParts.length > 0 ? `<div class="task-details">${detailParts.join(' | ')}</div>` : ''}
           ${addresses}
+          ${teamMembersInfo}
           ${note ? `<div class="task-note">📝 비고: ${note}</div>` : ''}
         </div>
       `;
@@ -1136,7 +1207,7 @@ function printSelectedWorkers() {
   
   // 선택되지 않은 작업자 카드 숨기기
   document.querySelectorAll('.worker-card').forEach(card => {
-    const workerName = card.querySelector('.worker-name').textContent.replace('👤 ', '');
+    const workerName = card.querySelector('.worker-name').textContent.replace('👤 ', '').trim();
     if (selectedWorkerNames.includes(workerName)) {
       card.style.display = 'block';
       if (separatePages) {
@@ -1179,5 +1250,5 @@ window.printAllWorkers = printAllWorkers;
 window.printSelectedWorkers = printSelectedWorkers;
 window.setQuickDate = setQuickDate;
 
-console.log('📄 작업지시서 인쇄 모듈 로드 완료');
+console.log('📄 작업지시서 인쇄 모듈 로드 완료 (다중 작업자 지원)');
 console.log('✅ loadWorkOrderPrint 함수 등록:', typeof window.loadWorkOrderPrint);
