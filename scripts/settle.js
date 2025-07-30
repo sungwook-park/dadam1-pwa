@@ -1134,17 +1134,30 @@ function getFeeAnalysisHTML(tasks, startDate, endDate = null) {
                     <div class="fee-card-date">${formatDate(task.date)}</div>
                     <div class="fee-card-amount">${task.amount.toLocaleString()}원</div>
                   </div>
-                  <div class="fee-card-body">
-                    <div class="fee-card-client">
-                      <span class="client-icon">🏢</span>
-                      <span class="client-name">${task.client}</span>
-                    </div>
-                    <div class="fee-card-worker">
-                      <span class="worker-icon">👤</span>
-                      <span class="worker-name">${task.worker}</span>
-                    </div>
-                    <div class="fee-card-content">${task.items || task.taskType || ''}</div>
-                  </div>
+<div class="fee-card-body">
+  <div class="fee-card-client">
+    <span class="client-icon">🏢</span>
+    <span class="client-name">${task.client}</span>
+  </div>
+  <div class="fee-card-worker">
+    <span class="worker-icon">👤</span>
+    <span class="worker-name">${task.worker}</span>
+  </div>
+  ${(task.installAddress || task.removeAddress) ? `
+    <div class="fee-card-address">
+      <span class="address-icon">📍</span>
+      <span class="address-text">
+        ${task.installAddress && task.removeAddress ? 
+          `철거: ${task.removeAddress} → 설치: ${task.installAddress}` : 
+          task.installAddress ? 
+            `${task.installAddress}` : 
+            `철거: ${task.removeAddress}`
+        }
+      </span>
+    </div>
+  ` : ''}
+  <div class="fee-card-content">${task.items || task.taskType || ''}</div>
+</div>
                   <div class="fee-card-footer">
                     <div class="fee-calculation">
                       <span class="fee-rate">22%</span>
@@ -1212,6 +1225,7 @@ function getFeeAnalysisHTML(tasks, startDate, endDate = null) {
         padding: 25px;
       }
       
+
       .analysis-header {
         display: flex;
         justify-content: space-between;
@@ -1545,6 +1559,37 @@ function getFeeAnalysisHTML(tasks, startDate, endDate = null) {
         border-radius: 8px;
         border: 2px dashed #ddd;
       }
+      .fee-card-address {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.address-icon {
+  font-size: 14px;
+}
+
+.address-text {
+  background: #f0f8ff;
+  color: #1565c0;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .address-text {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+}
+    
       
       /* 모바일 반응형 */
       @media (max-width: 768px) {
