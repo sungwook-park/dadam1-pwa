@@ -1,4 +1,4 @@
-// scripts/templates/task-templates.js - 날짜 필터 반응형 개선 + 팀 작업 지원
+// scripts/templates/task-templates.js - 검색어 입력 기능 추가 + 날짜 필터 반응형 개선 + 팀 작업 지원
 
 // 유틸리티 함수들
 function formatKoreanDate(dateString) {
@@ -298,467 +298,265 @@ export function getTaskListHTML() {
   `;
 }
 
-// 예약탭 - 날짜 필터 반응형 개선
+// 🔍 예약작업 탭 HTML (검색어 입력 추가)
 export function getReserveTabHTML() {
-  const tomorrow = getTomorrowString();
+  const tomorrowStr = getTomorrowString();
   
   return `
-    <div class="date-filter-container">
-      <div class="date-filter-row">
-        <div class="date-inputs-group">
-          <input type="date" id="reserve-start-date" value="${tomorrow}" class="date-filter-input">
-          <span class="date-separator">~</span>
-          <input type="date" id="reserve-end-date" value="${tomorrow}" class="date-filter-input">
-        </div>
-        <div class="filter-buttons-group">
-          <button id="reserve-search-btn" class="filter-search-btn">🔍 검색</button>
-          <button onclick="resetReserveFilter()" class="filter-reset-btn">내일</button>
-        </div>
+    <!-- 개선된 검색 필터 -->
+    <div class="search-filter-container" style="
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      padding: 20px;
+    ">
+      <h4 style="margin: 0 0 15px 0; color: #333; font-size: 1rem;">🔍 예약작업 검색</h4>
+      
+      <!-- 검색어 입력 -->
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">검색어</label>
+        <input type="text" id="reserve-search-keyword" placeholder="고객명, 주소, 연락처, 작업내용 등을 입력하세요..." style="
+          width: 100%;
+          padding: 10px 12px;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: border-color 0.2s ease;
+        " onkeypress="if(event.key==='Enter') searchReserveTasksEnhanced()">
       </div>
+      
+      <!-- 날짜 범위 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: 10px; align-items: end;">
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">시작날짜</label>
+          <input type="date" id="reserve-start-date" value="${tomorrowStr}" style="
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+          ">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">종료날짜</label>
+          <input type="date" id="reserve-end-date" value="${tomorrowStr}" style="
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+          ">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">정렬</label>
+          <select id="reserve-sort-order" style="
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+          ">
+            <option value="date-asc">날짜 빠른순</option>
+            <option value="date-desc">날짜 늦은순</option>
+            <option value="client-asc">고객명순</option>
+            <option value="worker-asc">작업자순</option>
+          </select>
+        </div>
+        <button id="reserve-search-btn" style="
+          background: linear-gradient(135deg, #2196f3, #1976d2);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+          🔍 검색
+        </button>
+        <button onclick="resetReserveFilter()" style="
+          background: linear-gradient(135deg, #ff9800, #f57c00);
+          color: white;
+          border: none;
+          padding: 12px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+          🔄 리셋
+        </button>
+      </div>
+      
+      <!-- 검색 결과 요약 -->
+      <div id="reserve-search-summary" style="
+        margin-top: 15px;
+        padding: 10px 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #666;
+        display: none;
+      "></div>
     </div>
-    ${getTaskListHTML()}
     
     <style>
-      .date-filter-container {
-        background: white;
-        padding: 15px 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-      }
-      
-      .date-filter-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      
-      .date-inputs-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      
-      .filter-buttons-group {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      
-      .date-filter-input {
-        margin: 0 !important;
-        padding: 10px 12px !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
-        border: 2px solid #ddd !important;
-        min-height: 40px !important;
-        max-height: 40px !important;
-        background: #fff !important;
-        color: #333 !important;
-        font-family: inherit;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        touch-action: manipulation;
-        width: 130px !important;
-        flex: none !important;
-      }
-      
-      .date-filter-input:focus {
-        outline: none !important;
-        border-color: #8ecae6 !important;
-        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15) !important;
-        background: #fff !important;
-        color: #333 !important;
-      }
-      
-      .date-separator {
-        font-weight: 600;
-        color: #666;
-        margin: 0 5px;
-        flex-shrink: 0;
-      }
-      
-      .filter-search-btn, .filter-reset-btn {
-        padding: 12px 16px !important;
-        margin: 0 !important;
-        font-size: 15px !important;
-        border-radius: 8px !important;
-        min-height: 45px !important;
-        max-height: 45px !important;
-        white-space: nowrap;
-        border: none !important;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        touch-action: manipulation;
-        flex-shrink: 0;
-      }
-      
-      .filter-search-btn {
-        background: #219ebc !important;
-        color: white !important;
-        width: 250px !important;
-      }
-      
-      .filter-search-btn:hover,
-      .filter-search-btn:active {
-        background: #1a7a96 !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(33,158,188,0.2);
-      }
-      
-      .filter-reset-btn {
-        background: #6c757d !important;
-        color: white !important;
-        width: 250px !important;
-      }
-      
-      .filter-reset-btn:hover {
-        background: #5a6268 !important;
-        transform: translateY(-1px);
-      }
-      
-      /* 태블릿 사이즈 */
-      @media (max-width: 1024px) {
-        .date-filter-container {
-          padding: 12px 15px;
-        }
-        
-        .date-filter-row {
-          gap: 12px;
-        }
-        
-        .date-inputs-group {
-          min-width: 260px;
-        }
-        
-        .date-filter-input {
-          min-width: 120px;
-          font-size: 15px !important;
-          padding: 10px 14px !important;
-        }
-        
-        .filter-search-btn,
-        .filter-reset-btn {
-          font-size: 14px !important;
-          padding: 10px 16px !important;
-          min-height: 42px !important;
-        }
-      }
-      
-      /* 모바일 - 2줄로 배치 */
       @media (max-width: 768px) {
-        .date-filter-row {
-          flex-direction: column;
-          align-items: stretch;
-          gap: 12px;
+        .search-filter-container > div:nth-child(3) {
+          grid-template-columns: 1fr !important;
+          gap: 15px !important;
         }
         
-        .date-inputs-group {
-          min-width: unset;
+        .search-filter-container > div:nth-child(3) > div {
+          grid-column: 1 / -1;
+        }
+        
+        .search-filter-container > div:nth-child(3) > button {
           width: 100%;
-        }
-        
-        .filter-buttons-group {
-          width: 100%;
-          justify-content: center;
-        }
-        
-        .date-filter-input {
-          min-width: 110px;
-          font-size: 15px !important;
-          padding: 10px 12px !important;
-          min-height: 42px !important;
-        }
-        
-        .filter-search-btn,
-        .filter-reset-btn {
-          font-size: 14px !important;
-          padding: 10px 14px !important;
-          min-height: 42px !important;
-          flex: 1;
-        }
-        
-        .filter-search-btn {
-          min-width: unset;
-          max-width: 120px;
-        }
-        
-        .filter-reset-btn {
-          min-width: unset;
-          max-width: 80px;
-        }
-      }
-      
-      /* 작은 모바일 */
-      @media (max-width: 480px) {
-        .date-filter-container {
-          padding: 10px 12px;
-        }
-        
-        .date-inputs-group {
-          gap: 8px;
-        }
-        
-        .filter-buttons-group {
-          gap: 8px;
-        }
-        
-        .date-filter-input {
-          min-width: 100px;
-          font-size: 14px !important;
-          padding: 8px 10px !important;
-          min-height: 40px !important;
-        }
-        
-        .filter-search-btn,
-        .filter-reset-btn {
-          font-size: 13px !important;
-          padding: 8px 12px !important;
-          min-height: 40px !important;
-        }
-        
-        .date-separator {
-          font-size: 14px;
-          margin: 0 3px;
+          margin: 5px 0;
         }
       }
     </style>
+    
+    ${getTaskListHTML()}
   `;
 }
 
-// 완료작업탭 - 날짜 필터 반응형 개선
+// 🔍 완료작업 탭 HTML (검색어 입력 추가)
 export function getDoneTabHTML() {
-  const today = getTodayString();
+  const todayStr = getTodayString();
   
   return `
     ${getTaskSubTabsHTML('done')}
-    <div class="date-filter-container">
-      <div class="date-filter-row">
-        <div class="date-inputs-group">
-          <input type="date" id="done-start-date" value="${today}" class="date-filter-input">
-          <span class="date-separator">~</span>
-          <input type="date" id="done-end-date" value="${today}" class="date-filter-input">
-        </div>
-        <div class="filter-buttons-group">
-          <button id="done-search-btn" class="filter-search-btn">🔍 검색</button>
-          <button onclick="resetDoneFilter()" class="filter-reset-btn">오늘</button>
-        </div>
+    
+    <!-- 개선된 검색 필터 -->
+    <div class="search-filter-container" style="
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      padding: 20px;
+    ">
+      <h4 style="margin: 0 0 15px 0; color: #333; font-size: 1rem;">🔍 완료작업 검색</h4>
+      
+      <!-- 검색어 입력 -->
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">검색어</label>
+        <input type="text" id="done-search-keyword" placeholder="고객명, 주소, 연락처, 작업내용 등을 입력하세요..." style="
+          width: 100%;
+          padding: 10px 12px;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: border-color 0.2s ease;
+        " onkeypress="if(event.key==='Enter') searchDoneTasksEnhanced()">
       </div>
+      
+      <!-- 날짜 범위 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto auto; gap: 10px; align-items: end;">
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">시작날짜</label>
+          <input type="date" id="done-start-date" value="${todayStr}" style="
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+          ">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">종료날짜</label>
+          <input type="date" id="done-end-date" value="${todayStr}" style="
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+          ">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #555;">정렬</label>
+          <select id="done-sort-order" style="
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+          ">
+            <option value="date-desc">최신순</option>
+            <option value="date-asc">과거순</option>
+            <option value="client-asc">고객명순</option>
+            <option value="worker-asc">작업자순</option>
+          </select>
+        </div>
+        <button id="done-search-btn" style="
+          background: linear-gradient(135deg, #4caf50, #45a049);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+          🔍 검색
+        </button>
+        <button onclick="resetDoneFilter()" style="
+          background: linear-gradient(135deg, #ff9800, #f57c00);
+          color: white;
+          border: none;
+          padding: 12px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+          🔄 리셋
+        </button>
+      </div>
+      
+      <!-- 검색 결과 요약 -->
+      <div id="done-search-summary" style="
+        margin-top: 15px;
+        padding: 10px 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #666;
+        display: none;
+      "></div>
     </div>
-    ${getTaskListHTML()}
     
     <style>
-      /* 완료작업탭 스타일도 동일하게 수정 */
-      .date-filter-container {
-        background: white;
-        padding: 15px 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-      }
-      
-      .date-filter-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      
-      .date-inputs-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      
-      .filter-buttons-group {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      
-      .date-filter-input {
-        margin: 0 !important;
-        padding: 10px 12px !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
-        border: 2px solid #ddd !important;
-        min-height: 40px !important;
-        max-height: 40px !important;
-        background: #fff !important;
-        color: #333 !important;
-        font-family: inherit;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        touch-action: manipulation;
-        width: 130px !important;
-        flex: none !important;
-      }
-      
-      .date-filter-input:focus {
-        outline: none !important;
-        border-color: #8ecae6 !important;
-        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.15) !important;
-        background: #fff !important;
-        color: #333 !important;
-      }
-      
-      .date-separator {
-        font-weight: 600;
-        color: #666;
-        margin: 0 5px;
-        flex-shrink: 0;
-      }
-      
-      .filter-search-btn, .filter-reset-btn {
-        padding: 12px 16px !important;
-        margin: 0 !important;
-        font-size: 15px !important;
-        border-radius: 8px !important;
-        min-height: 45px !important;
-        max-height: 45px !important;
-        white-space: nowrap;
-        border: none !important;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        touch-action: manipulation;
-        flex-shrink: 0;
-      }
-      
-      .filter-search-btn {
-        background: #219ebc !important;
-        color: white !important;
-        width: 250px !important;
-      }
-      
-      .filter-search-btn:hover,
-      .filter-search-btn:active {
-        background: #1a7a96 !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(33,158,188,0.2);
-      }
-      
-      .filter-reset-btn {
-        background: #6c757d !important;
-        color: white !important;
-        width: 250px !important;
-      }
-      
-      .filter-reset-btn:hover {
-        background: #5a6268 !important;
-        transform: translateY(-1px);
-      }
-      
-      /* 태블릿 사이즈 */
-      @media (max-width: 1024px) {
-        .date-filter-container {
-          padding: 12px 15px;
-        }
-        
-        .date-filter-row {
-          gap: 12px;
-        }
-        
-        .date-inputs-group {
-          min-width: 260px;
-        }
-        
-        .date-filter-input {
-          min-width: 120px;
-          font-size: 15px !important;
-          padding: 10px 14px !important;
-        }
-        
-        .filter-search-btn,
-        .filter-reset-btn {
-          font-size: 14px !important;
-          padding: 10px 16px !important;
-          min-height: 42px !important;
-        }
-      }
-      
-      /* 모바일 - 2줄로 배치 */
       @media (max-width: 768px) {
-        .date-filter-row {
-          flex-direction: column;
-          align-items: stretch;
-          gap: 12px;
+        .search-filter-container > div:nth-child(3) {
+          grid-template-columns: 1fr !important;
+          gap: 15px !important;
         }
         
-        .date-inputs-group {
-          min-width: unset;
+        .search-filter-container > div:nth-child(3) > div {
+          grid-column: 1 / -1;
+        }
+        
+        .search-filter-container > div:nth-child(3) > button {
           width: 100%;
-        }
-        
-        .filter-buttons-group {
-          width: 100%;
-          justify-content: center;
-        }
-        
-        .date-filter-input {
-          min-width: 110px;
-          font-size: 15px !important;
-          padding: 10px 12px !important;
-          min-height: 42px !important;
-        }
-        
-        .filter-search-btn,
-        .filter-reset-btn {
-          font-size: 14px !important;
-          padding: 10px 14px !important;
-          min-height: 42px !important;
-          flex: 1;
-        }
-        
-        .filter-search-btn {
-          min-width: unset;
-          max-width: 120px;
-        }
-        
-        .filter-reset-btn {
-          min-width: unset;
-          max-width: 80px;
-        }
-      }
-      
-      /* 작은 모바일 */
-      @media (max-width: 480px) {
-        .date-filter-container {
-          padding: 10px 12px;
-        }
-        
-        .date-inputs-group {
-          gap: 8px;
-        }
-        
-        .filter-buttons-group {
-          gap: 8px;
-        }
-        
-        .date-filter-input {
-          min-width: 100px;
-          font-size: 14px !important;
-          padding: 8px 10px !important;
-          min-height: 40px !important;
-        }
-        
-        .filter-search-btn,
-        .filter-reset-btn {
-          font-size: 13px !important;
-          padding: 8px 12px !important;
-          min-height: 40px !important;
-        }
-        
-        .date-separator {
-          font-size: 14px;
-          margin: 0 3px;
+          margin: 5px 0;
         }
       }
     </style>
+    
+    ${getTaskListHTML()}
   `;
 }
 
