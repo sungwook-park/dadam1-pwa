@@ -1,0 +1,961 @@
+/*
+ * 작업지시 탭 현대적 디자인
+ * 메인 홈과 동일한 글래스모피즘 + 3D 효과 적용
+ * 기능 변경 없이 디자인만 현대화
+ */
+
+/* ===================================
+   1. 작업지시 서브탭 현대화
+   ================================= */
+
+.task-subtabs {
+  background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 8px 32px rgba(33, 158, 188, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  padding: var(--space-3) !important;
+  margin-bottom: var(--space-6) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-subtabs::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--primary-color) 0%, 
+    var(--primary-light) 50%, 
+    var(--secondary-color) 100%
+  );
+}
+
+.task-subtabs button {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 4px 16px rgba(33, 158, 188, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05) !important;
+  padding: var(--space-4) var(--space-5) !important;
+  font-size: var(--font-size-lg) !important;
+  font-weight: 700 !important;
+  color: var(--primary-color) !important;
+  cursor: pointer !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  position: relative;
+  overflow: hidden;
+  margin: 0 !important;
+}
+
+.task-subtabs button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--primary-gradient);
+  opacity: 0;
+  transition: all var(--duration-normal) var(--easing);
+  z-index: -1;
+}
+
+.task-subtabs button:hover::before,
+.task-subtabs button.active::before {
+  opacity: 1;
+}
+
+.task-subtabs button:hover,
+.task-subtabs button.active {
+  color: var(--white) !important;
+  transform: translateY(-6px) scale(1.02) !important;
+  box-shadow: 
+    0 16px 40px rgba(33, 158, 188, 0.15),
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ===================================
+   2. 작업입력 폼 현대화
+   ================================= */
+
+#task-form.box {
+  background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 8px 32px rgba(33, 158, 188, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  padding: var(--space-8) !important;
+  margin-bottom: var(--space-6) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+#task-form.box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, 
+    var(--primary-color) 0%, 
+    var(--primary-light) 50%, 
+    var(--secondary-color) 100%
+  );
+}
+
+/* ===================================
+   3. 입력 필드들 현대화
+   ================================= */
+
+#task-form input[type="text"],
+#task-form input[type="email"],
+#task-form input[type="number"],
+#task-form input[type="datetime-local"],
+#task-form input[type="date"],
+#task-form textarea,
+#task-form select {
+  background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  border: 2px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 16px !important;
+  padding: var(--space-4) var(--space-5) !important;
+  font-size: var(--font-size-lg) !important;
+  color: var(--gray-900) !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  box-shadow: 
+    0 2px 8px rgba(33, 158, 188, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  margin: var(--space-3) 0 !important;
+}
+
+#task-form input:focus,
+#task-form textarea:focus,
+#task-form select:focus {
+  outline: none !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 
+    0 0 0 4px rgba(142, 202, 230, 0.2),
+    0 4px 16px rgba(33, 158, 188, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  transform: translateY(-2px) !important;
+  background: #ffffff !important;
+}
+
+/* ===================================
+   4. 폼 버튼 현대화
+   ================================= */
+
+#task-form button {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 8px 24px rgba(33, 158, 188, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05) !important;
+  padding: var(--space-4) var(--space-6) !important;
+  font-size: var(--font-size-lg) !important;
+  font-weight: 700 !important;
+  color: var(--primary-color) !important;
+  cursor: pointer !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  position: relative;
+  overflow: hidden;
+  margin: var(--space-3) 0 !important;
+  min-height: 56px !important;
+}
+
+#task-form button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--primary-gradient);
+  opacity: 0;
+  transition: all var(--duration-normal) var(--easing);
+  z-index: -1;
+}
+
+#task-form button:hover::before {
+  opacity: 1;
+}
+
+#task-form button:hover {
+  color: var(--white) !important;
+  transform: translateY(-6px) scale(1.02) !important;
+  box-shadow: 
+    0 16px 40px rgba(33, 158, 188, 0.15),
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ===================================
+   5. 작업자 선택 영역 현대화
+   ================================= */
+
+#task-form label {
+  color: var(--gray-900) !important;
+  font-weight: 600 !important;
+  font-size: var(--font-size-lg) !important;
+  margin-bottom: var(--space-2) !important;
+}
+
+#task-form input[type="checkbox"] {
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid var(--gray-300) !important;
+  border-radius: 6px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+  margin: 0 var(--space-2) 0 0 !important;
+  cursor: pointer !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  appearance: none !important;
+  position: relative !important;
+}
+
+#task-form input[type="checkbox"]:checked {
+  background: var(--primary-gradient) !important;
+  border-color: var(--primary-color) !important;
+  transform: scale(1.1) !important;
+}
+
+#task-form input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* ===================================
+   6. 작업 목록 컨테이너 현대화
+   ================================= */
+
+.task-stats-container {
+  background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 8px 32px rgba(33, 158, 188, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  padding: var(--space-8) !important;
+  margin-bottom: var(--space-6) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-stats-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--primary-color) 0%, 
+    var(--primary-light) 50%, 
+    var(--secondary-color) 100%
+  );
+}
+
+/* ===================================
+   7. 통계 아이템들 현대화
+   ================================= */
+
+.stat-item {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 4px 16px rgba(33, 158, 188, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  padding: var(--space-6) !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-item:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 
+    0 12px 32px rgba(33, 158, 188, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+.stat-item.total::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2196f3, #64b5f6);
+}
+
+.stat-item.pending::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9800, #ffb74d);
+}
+
+.stat-item.completed::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+}
+
+/* ===================================
+   8. 작업자 섹션 현대화
+   ================================= */
+
+.worker-section {
+  background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 8px 32px rgba(33, 158, 188, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  margin-bottom: var(--space-6) !important;
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--easing) !important;
+}
+
+.worker-section:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 
+    0 12px 32px rgba(33, 158, 188, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+.worker-header {
+  background: linear-gradient(135deg, rgba(33, 158, 188, 0.05), rgba(142, 202, 230, 0.03)) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  padding: var(--space-5) var(--space-6) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+  position: relative;
+}
+
+.worker-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-gradient);
+}
+
+.worker-header h3 {
+  color: var(--gray-900) !important;
+  font-size: var(--font-size-xl) !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===================================
+   9. 작업 아이템 현대화
+   ================================= */
+
+.task-item {
+  background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 4px 16px rgba(33, 158, 188, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  margin-bottom: var(--space-4) !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-gradient);
+  transform: scaleX(0);
+  transition: transform var(--duration-normal) var(--easing);
+}
+
+.task-item:hover::before {
+  transform: scaleX(1);
+}
+
+.task-item:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 
+    0 12px 32px rgba(33, 158, 188, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  border-color: var(--primary-light) !important;
+}
+
+/* ===================================
+   10. 작업 액션 버튼들 현대화
+   ================================= */
+
+.task-actions button {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border-radius: 12px !important;
+  box-shadow: 
+    0 4px 16px rgba(33, 158, 188, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  padding: var(--space-3) var(--space-4) !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  position: relative;
+  overflow: hidden;
+  margin: 0 var(--space-2) 0 0 !important;
+}
+
+.task-actions button:hover {
+  transform: translateY(-4px) scale(1.05) !important;
+  box-shadow: 
+    0 8px 24px rgba(33, 158, 188, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* ===================================
+   11. 팀 작업 스타일 현대화
+   ================================= */
+
+.task-item.team-work.team-leader {
+  border-left: 4px solid #ffd700 !important;
+}
+
+.task-item.team-work.team-member {
+  border-left: 4px solid #2196f3 !important;
+}
+
+.team-badge {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9)) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  border-radius: 12px !important;
+  padding: var(--space-1) var(--space-3) !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  box-shadow: 
+    0 2px 8px rgba(33, 158, 188, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+}
+
+.team-badge.leader {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3) !important;
+  color: #f57f17 !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+}
+
+.team-badge.member {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+  color: #1976d2 !important;
+  border: 1px solid rgba(33, 150, 243, 0.3) !important;
+}
+
+/* ===================================
+   12. 작업자 통계 현대화
+   ================================= */
+
+.worker-stat-item {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  border-radius: 12px !important;
+  box-shadow: 
+    0 2px 8px rgba(33, 158, 188, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  padding: var(--space-3) var(--space-4) !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  border-left: 3px solid var(--primary-color) !important;
+}
+
+.worker-stat-item:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 
+    0 4px 16px rgba(33, 158, 188, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+.worker-count {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+  color: var(--primary-color) !important;
+  padding: var(--space-1) var(--space-2) !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  font-size: var(--font-size-sm) !important;
+  box-shadow: 
+    0 1px 4px rgba(33, 158, 188, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ===================================
+   13. 모바일 최적화
+   ================================= */
+
+@media (max-width: 768px) {
+  .task-subtabs {
+    padding: var(--space-2) !important;
+    border-radius: 16px !important;
+  }
+  
+  .task-subtabs button {
+    padding: var(--space-3) var(--space-4) !important;
+    font-size: var(--font-size-base) !important;
+    border-radius: 12px !important;
+  }
+  
+  #task-form.box {
+    padding: var(--space-6) !important;
+    border-radius: 16px !important;
+  }
+  
+  .worker-section {
+    border-radius: 16px !important;
+  }
+  
+  .task-item {
+    border-radius: 12px !important;
+  }
+  
+  .stat-item {
+    padding: var(--space-4) !important;
+    border-radius: 12px !important;
+  }
+  
+  .task-stats-container {
+    padding: var(--space-6) !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* ===================================
+   14. 부드러운 애니메이션 추가
+   ================================= */
+
+.task-subtabs,
+#task-form,
+.task-stats-container,
+.worker-section,
+.task-item {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.task-subtabs button {
+  animation: slideInUp 0.6s ease-out;
+  animation-delay: 0.1s;
+  animation-fill-mode: both;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================================
+   15. 포커스 상태 개선
+   ================================= */
+
+#task-form *:focus-visible {
+  outline: 2px solid var(--primary-color) !important;
+  outline-offset: 2px !important;
+}
+
+/* ===================================
+   16. 로딩 상태 스타일
+   ================================= */
+
+.loading-state {
+  background: linear-gradient(90deg, 
+    rgba(33, 158, 188, 0.1) 0%, 
+    rgba(142, 202, 230, 0.2) 50%, 
+    rgba(33, 158, 188, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===================================
+   17. 수수료 정보 현대화
+   ================================= */
+
+.fee-info {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(129, 199, 132, 0.05)) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  border: 1px solid rgba(76, 175, 80, 0.2) !important;
+  border-radius: 8px !important;
+  padding: var(--space-2) var(--space-3) !important;
+  color: #2e7d32 !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 500 !important;
+  margin-top: var(--space-2) !important;
+  box-shadow: 
+    0 2px 8px rgba(76, 175, 80, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ===================================
+   18. 통계 아이콘들 현대적 라인 스타일
+   ================================= */
+
+/* 통계 아이콘 기본 스타일 */
+.stat-icon {
+  width: 48px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 12px !important;
+  position: relative !important;
+  transition: all var(--duration-normal) var(--easing) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9)) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  border: 2px solid rgba(33, 158, 188, 0.1) !important;
+  box-shadow: 
+    0 4px 16px rgba(33, 158, 188, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+.stat-icon:hover {
+  transform: scale(1.1) rotate(5deg) !important;
+  box-shadow: 
+    0 8px 24px rgba(33, 158, 188, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+/* 📊 전체 작업 아이콘 - 차트 */
+.stat-icon:contains("📊")::before,
+.stat-item.total .stat-icon::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid var(--primary-color);
+  border-radius: 4px;
+  background: none;
+}
+
+.stat-item.total .stat-icon::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: 3px;
+  height: 6px;
+  background: var(--primary-color);
+  border-radius: 1px;
+  box-shadow: 
+    4px -2px 0 var(--primary-color),
+    8px -4px 0 var(--primary-color),
+    12px -6px 0 var(--primary-color);
+}
+
+/* ⏳ 대기중 작업 아이콘 - 시계 */
+.stat-item.pending .stat-icon::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid #ff9800;
+  border-radius: 50%;
+  background: none;
+}
+
+.stat-item.pending .stat-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 8px;
+  background: #ff9800;
+  border-radius: 1px;
+  transform: translate(-50%, -100%) rotate(90deg);
+  transform-origin: bottom center;
+  box-shadow: 0 6px 0 -4px #ff9800;
+}
+
+/* ✅ 완료 작업 아이콘 - 체크마크 */
+.stat-item.completed .stat-icon::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid #4caf50;
+  border-radius: 50%;
+  background: none;
+}
+
+.stat-item.completed .stat-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 3px;
+  border: solid #4caf50;
+  border-width: 0 0 2.5px 2.5px;
+  transform: translate(-50%, -60%) rotate(-45deg);
+}
+
+/* 기존 이모지 숨기기 */
+.stat-icon {
+  font-size: 0 !important;
+}
+
+/* ===================================
+   19. 작업자 헤더 아이콘 현대화
+   ================================= */
+
+/* 👤 작업자 아이콘을 라인 스타일로 */
+.worker-header h3::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  margin-right: var(--space-2);
+  border: 2.5px solid currentColor;
+  border-radius: 50%;
+  background: none;
+  position: relative;
+  vertical-align: middle;
+}
+
+.worker-header h3::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 7px;
+  width: 8px;
+  height: 8px;
+  border: 2.5px solid currentColor;
+  border-radius: 50%;
+  background: none;
+  margin-left: -24px;
+}
+
+/* 원래 이모지 제거 */
+.worker-header h3 {
+  font-size: var(--font-size-xl) !important;
+}
+
+/* ===================================
+   20. 탭 제목 아이콘 현대화 - 홈 메뉴와 완전히 동일한 라인 스타일
+   ================================= */
+
+/* 작업지시 탭 제목에서 이모지 숨기기 */
+#tab-title .card h3.neon-glow {
+  position: relative;
+  padding-left: 45px !important;
+}
+
+/* 기존 이모지 숨기기 */
+#tab-title .card h3.neon-glow:first-letter {
+  font-size: 0 !important;
+  visibility: hidden !important;
+}
+
+/* 홈 메뉴와 동일한 라인 아이콘 생성 */
+#tab-title .card h3.neon-glow::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid currentColor;
+  border-radius: 6px;
+  background: none;
+  transition: all 0.3s ease;
+}
+
+/* 라인들 (홈과 동일) */
+#tab-title .card h3.neon-glow::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 2.5px;
+  background: currentColor;
+  border-radius: 1px;
+  box-shadow: 
+    0 -7px 0 currentColor, 
+    0 7px 0 currentColor;
+  transition: all 0.3s ease;
+}
+
+/* 호버 효과 (홈과 동일) */
+#tab-title .card:hover h3.neon-glow::before {
+  transform: translateY(-50%) scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3));
+}
+
+#tab-title .card:hover h3.neon-glow::after {
+  transform: translateY(-50%) scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3));
+}
+
+/* 체크마크 추가를 위한 추가 스타일링 */
+#tab-title .card h3.neon-glow {
+  overflow: visible;
+}
+
+#tab-title .card h3.neon-glow span {
+  position: relative;
+}
+
+/* JavaScript로 체크마크를 동적으로 추가하기 위한 준비 */
+.task-title-checkmarks {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.task-title-checkmarks::before,
+.task-title-checkmarks::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 2px;
+  border: solid currentColor;
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg);
+}
+
+.task-title-checkmarks::before {
+  top: -3px;
+  left: 8px;
+}
+
+.task-title-checkmarks::after {
+  top: 4px;
+  left: 8px;
+}
+
+/* 추가: 세 번째 체크마크 */
+.task-title-checkmarks {
+  box-shadow: 0 11px 0 -9px currentColor, 0 13px 0 -11px currentColor;
+}
+
+/* ===================================
+   21. 작업 상세 정보 아이콘들 현대화
+   ================================= */
+
+/* 작업 상세 정보의 아이콘들을 더 세련되게 */
+.task-detail strong::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: var(--space-1);
+  background: var(--primary-color);
+  border-radius: 3px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+/* 철거/설치 주소 아이콘 */
+.task-detail div:nth-child(1) strong::before,
+.task-detail div:nth-child(2) strong::before {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E") no-repeat center;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E") no-repeat center;
+}
+
+/* 연락처 아이콘 */
+.task-detail div:nth-child(3) strong::before {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z'/%3E%3C/svg%3E") no-repeat center;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z'/%3E%3C/svg%3E") no-repeat center;
+}
+
+/* 금액 아이콘 */
+.task-detail div:nth-child(5) strong::before,
+.task-detail div:nth-child(6) strong::before {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z'/%3E%3C/svg%3E") no-repeat center;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z'/%3E%3C/svg%3E") no-repeat center;
+}

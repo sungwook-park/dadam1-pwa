@@ -4,19 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes,minimum-scale=1.0,maximum-scale=3.0">
   <title>다담업무관리</title>
+  
+  <!-- 현대화된 모듈 CSS 로딩 -->
   <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/animations.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+  
+  <!-- 🆕 탭별 현대적 디자인 CSS 추가 -->
+  <link rel="stylesheet" href="styles/modern/task-tab.css">
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   
   <!-- PWA 지원을 위한 메타 태그 -->
-  <meta name="theme-color" content="#87CEEB">
+  <meta name="theme-color" content="#219ebc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="다담티비">
   
-  <!-- 터치 아이콘 (아이콘 준비되면 경로 변경) -->
+  <!-- 터치 아이콘 -->
   <link rel="apple-touch-icon" href="icons/icon-192x192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
   
@@ -35,99 +43,114 @@
     }
   </script>
 </head>
-<body>
+<body class="animate-fade-in">
   <!-- 헤더 바 -->
-  <div class="header-bar">
+  <div class="header-bar particles-bg">
     <span class="header-title">
       <span class="header-icon">📋</span>
       다담업무관리
     </span>
     <div class="header-actions">
-      <button id="logoutBtn" class="logout-btn" aria-label="로그아웃" style="display:none;">로그아웃</button>
+      <button id="logoutBtn" class="btn btn-danger btn-sm" aria-label="로그아웃" style="display:none;">로그아웃</button>
     </div>
   </div>
   
   <!-- 홈 버튼 (관리자만 표시) -->
-  <button class="home-btn" id="homeBtn" aria-label="홈으로 돌아가기" style="display:none;">🏠 홈</button>
+  <button class="btn btn-primary btn-md home-btn" id="homeBtn" aria-label="홈으로 돌아가기" style="display:none;">🏠 홈</button>
 
   <!-- 로그인 영역 -->
-  <div id="login-view">
-    <div class="box login-container">
-      <h3>로그인</h3>
-      <form id="login-form" onsubmit="return false;" autocomplete="on">
-        <input 
-          type="email" 
-          id="email" 
-          placeholder="이메일" 
-          required 
-          aria-label="이메일 입력"
-          autocomplete="email"
-          inputmode="email"
-        >
-        <input 
-          type="password" 
-          id="password" 
-          placeholder="비밀번호" 
-          required 
-          aria-label="비밀번호 입력"
-          autocomplete="current-password"
-        >
-        <button id="loginBtn" type="button" aria-label="로그인하기">로그인</button>
-      </form>
-      
-      <!-- 로딩 상태 표시 -->
-      <div id="login-loading" style="display:none; text-align:center; margin-top:15px;">
-        <div class="spinner" style="width:30px; height:30px; margin:0 auto 10px;"></div>
-        <p style="margin:0; color:#666; font-size:14px;">로그인 중...</p>
+  <div id="login-view" class="animate-slide-in-up">
+    <div class="login-container card">
+      <div class="card-body">
+        <h3 class="neon-glow">로그인</h3>
+        <form id="login-form" onsubmit="return false;" autocomplete="on">
+          <div class="form-group">
+            <input 
+              type="email" 
+              id="email" 
+              class="form-input"
+              placeholder="이메일" 
+              required 
+              aria-label="이메일 입력"
+              autocomplete="email"
+              inputmode="email"
+            >
+          </div>
+          <div class="form-group">
+            <input 
+              type="password" 
+              id="password" 
+              class="form-input"
+              placeholder="비밀번호" 
+              required 
+              aria-label="비밀번호 입력"
+              autocomplete="current-password"
+            >
+          </div>
+          <button id="loginBtn" type="button" class="btn btn-primary btn-lg ripple-effect" aria-label="로그인하기">로그인</button>
+        </form>
+        
+        <!-- 로딩 상태 표시 -->
+        <div id="login-loading" class="loading" style="display:none;">
+          <div class="spinner-modern"></div>
+          <p class="loading-text">로그인 중...</p>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- 메인 영역 -->
-  <div id="main-view" style="display:none;">
+  <div id="main-view" style="display:none;" class="animate-fade-in">
     <!-- 관리자용 홈 버튼 그리드 -->
     <div id="home-buttons" class="button-grid" style="display:none;">
-      <button class="menu-button" id="task-btn" aria-label="작업지시 관리">
-        📋<br><span style="margin-top:8px; display:block;">작업지시</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-100" id="task-btn" aria-label="작업지시 관리">
+        <div class="icon-tasks-line"></div>
+        <span style="margin-top:12px; display:block;">작업지시</span>
       </button>
-      <button class="menu-button" id="reserve-btn" aria-label="예약 관리">
-        📅<br><span style="margin-top:8px; display:block;">예약</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-200" id="reserve-btn" aria-label="예약 관리">
+        <div class="icon-calendar-line"></div>
+        <span style="margin-top:12px; display:block;">예약</span>
       </button>
-      <button class="menu-button" id="settle-btn" aria-label="정산 관리">
-        💰<br><span style="margin-top:8px; display:block;">정산</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-300" id="settle-btn" aria-label="정산 관리">
+        <div class="icon-calculator-line"></div>
+        <span style="margin-top:12px; display:block;">정산</span>
       </button>
-      <button class="menu-button" id="company-funds-btn" aria-label="회사운영비 관리">
-        💸<br><span style="margin-top:8px; display:block;">회사운영비</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-500" id="company-funds-btn" aria-label="회사운영비 관리">
+        <div class="icon-wallet-line"></div>
+        <span style="margin-top:12px; display:block;">회사운영비</span>
       </button>
-      <button class="menu-button" id="inventory-btn" aria-label="입출고 관리">
-        📦<br><span style="margin-top:8px; display:block;">입출고</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-700" id="inventory-btn" aria-label="입출고 관리">
+        <div class="icon-box-line"></div>
+        <span style="margin-top:12px; display:block;">입출고</span>
       </button>
-      <button class="menu-button" id="print-workorder-btn" aria-label="작업지시서 인쇄">
-        🖨️<br><span style="margin-top:8px; display:block;">작업지시서 인쇄</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-1000" id="print-workorder-btn" aria-label="작업지시서 인쇄">
+        <div class="icon-printer-line"></div>
+        <span style="margin-top:12px; display:block;">작업지시서 인쇄</span>
       </button>
-      <button class="menu-button" id="holiday-btn" aria-label="휴무 관리">
-        🏖️<br><span style="margin-top:8px; display:block;">휴무관리</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-1000" id="holiday-btn" aria-label="휴무 관리">
+        <div class="icon-vacation-line"></div>
+        <span style="margin-top:12px; display:block;">휴무관리</span>
       </button>
     </div>
     
     <!-- 탭 컨텐츠 영역 -->
-    <div id="tab-content" style="display:none;">
+    <div id="tab-content" style="display:none;" class="animate-slide-in-right">
       <div id="tab-title"></div>
       <div id="tab-body"></div>
     </div>
   </div>
 
   <!-- 로딩 스피너 (전역) -->
-  <div id="loading-spinner" style="display:none;" role="status" aria-live="polite">
-    <div class="spinner"></div>
-    <p>로딩 중...</p>
+  <div id="loading-spinner" class="loading" style="display:none;" role="status" aria-live="polite">
+    <div class="spinner-modern"></div>
+    <p class="loading-text">로딩 중...</p>
   </div>
 
   <!-- 에러/성공 메시지 표시 영역 -->
-  <div id="error-message" style="display:none;" role="alert" aria-live="assertive"></div>
+  <div id="error-message" class="toast" style="display:none;" role="alert" aria-live="assertive"></div>
 
   <!-- 오프라인 상태 알림 -->
-  <div id="offline-banner" style="display:none;" class="offline-banner">
+  <div id="offline-banner" style="display:none;" class="offline-banner animate-slide-in-down">
     <span>📶 오프라인 상태입니다. 인터넷 연결을 확인해주세요.</span>
   </div>
 
@@ -148,7 +171,7 @@
   <script type="module" src="scripts/inventory.js"></script>
   <script type="module" src="scripts/company-funds.js"></script>
 
-  <!-- 5. 작업지시서 인쇄 모듈 추가 -->
+  <!-- 5. 작업지시서 인쇄 모듈 -->
   <script type="module" src="scripts/print-work-orders.js"></script>
 
   <!-- 6. UI 컨트롤러 -->
@@ -157,14 +180,13 @@
   <!-- 7. 인증 (마지막) -->
   <script type="module" src="scripts/auth.js"></script>
 
-  <!-- 🔧 캐시 관리 스크립트 -->
+  <!-- 캐시 관리 스크립트 -->
   <script>
     // 개발용 캐시 삭제 함수
     window.clearAllCache = async function() {
       try {
         console.log('🧹 모든 캐시 삭제 시작...');
         
-        // Service Worker에게 캐시 삭제 요청
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           const messageChannel = new MessageChannel();
           
@@ -183,7 +205,6 @@
           });
         }
         
-        // 브라우저 캐시도 삭제
         if ('caches' in window) {
           const cacheNames = await caches.keys();
           await Promise.all(
@@ -204,18 +225,15 @@
       }
     };
 
-    // 개발용 Service Worker 재등록 함수
     window.reregisterServiceWorker = async function() {
       try {
         if ('serviceWorker' in navigator) {
-          // 기존 Service Worker 해제
           const registrations = await navigator.serviceWorker.getRegistrations();
           for (let registration of registrations) {
             await registration.unregister();
             console.log('Service Worker 해제:', registration.scope);
           }
           
-          // 새로 등록
           const registration = await navigator.serviceWorker.register('/service-worker.js');
           console.log('Service Worker 재등록 성공:', registration.scope);
           
@@ -228,14 +246,12 @@
       }
     };
 
-    // 콘솔에서 사용할 수 있도록 안내
     console.log(`
 🔧 개발용 캐시 관리 함수:
   - clearAllCache() : 모든 캐시 삭제
   - reregisterServiceWorker() : Service Worker 재등록
     `);
 
-    // 개발 모드에서 자동으로 캐시 무시 (선택사항)
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       console.log('🔧 개발 모드 - 캐시 정책 수정');
     }
@@ -243,20 +259,29 @@
 
   <!-- 메인 앱 로직 -->
   <script>
-    // 전역 함수 정의 (인라인으로 정의하여 onclick 이벤트에서 사용 가능)
+    // 전역 함수 정의
     function backToHome() {
       console.log('🏠 홈으로 돌아가기');
       const tabContent = document.getElementById('tab-content');
       const homeButtons = document.getElementById('home-buttons');
       
-      if (tabContent) tabContent.style.display = 'none';
-      if (homeButtons) homeButtons.style.display = 'grid';
+      if (tabContent) {
+        tabContent.classList.add('animate-fade-out');
+        setTimeout(() => {
+          tabContent.style.display = 'none';
+          tabContent.classList.remove('animate-fade-out');
+        }, 300);
+      }
+      
+      if (homeButtons) {
+        homeButtons.style.display = 'grid';
+        homeButtons.classList.add('animate-fade-in');
+      }
     }
     
     function openTab(name) {
       console.log('📂 탭 열기:', name);
       
-      // 관리자 권한 확인
       if (window.isCurrentUserAdmin && !window.isCurrentUserAdmin()) {
         console.log('❌ 작업자는 탭 이동 불가');
         return;
@@ -265,8 +290,18 @@
       const homeButtons = document.getElementById('home-buttons');
       const tabContent = document.getElementById('tab-content');
       
-      if (homeButtons) homeButtons.style.display = 'none';
-      if (tabContent) tabContent.style.display = 'block';
+      if (homeButtons) {
+        homeButtons.classList.add('animate-fade-out');
+        setTimeout(() => {
+          homeButtons.style.display = 'none';
+          homeButtons.classList.remove('animate-fade-out');
+        }, 300);
+      }
+      
+      if (tabContent) {
+        tabContent.style.display = 'block';
+        tabContent.classList.add('animate-slide-in-right');
+      }
       
       // 탭 제목 설정
       const tabTitleElement = document.getElementById('tab-title');
@@ -276,9 +311,25 @@
         
         switch(name) {
           case 'task':
-            titleText = '작업지시';
-            titleIcon = '📋';
-            break;
+  titleText = '작업지시';
+  titleIcon = `<div style="
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border: 2.5px solid currentColor;
+    border-radius: 6px;
+    position: relative;
+    vertical-align: middle;
+    margin-right: 8px;
+  ">
+    <div style="position: absolute; top: 6px; left: 6px; right: 6px; height: 2.5px; background: currentColor; border-radius: 1px;"></div>
+    <div style="position: absolute; top: 13px; left: 6px; right: 6px; height: 2.5px; background: currentColor; border-radius: 1px;"></div>
+    <div style="position: absolute; top: 20px; left: 6px; right: 6px; height: 2.5px; background: currentColor; border-radius: 1px;"></div>
+    <div style="position: absolute; top: 8px; left: 8px; width: 4px; height: 2px; border: solid currentColor; border-width: 0 0 2px 2px; transform: rotate(-45deg);"></div>
+    <div style="position: absolute; top: 15px; left: 8px; width: 4px; height: 2px; border: solid currentColor; border-width: 0 0 2px 2px; transform: rotate(-45deg);"></div>
+    <div style="position: absolute; top: 22px; left: 8px; width: 4px; height: 2px; border: solid currentColor; border-width: 0 0 2px 2px; transform: rotate(-45deg);"></div>
+  </div>`;
+  break;
           case 'reserve':
             titleText = '예약';
             titleIcon = '📅';
@@ -306,19 +357,15 @@
         }
         
         tabTitleElement.innerHTML = `
-          <div style="
-            background: white;
+          <div class="card animate-slide-in-down" style="
             padding: 20px 25px;
-            border-radius: 12px;
             margin-bottom: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             text-align: center;
-            border-left: 4px solid #8ecae6;
+            border-left: 4px solid var(--primary-color);
           ">
-            <h3 style="
+            <h3 class="neon-glow" style="
               margin: 0;
               font-size: 1.4rem;
-              color: #333;
               font-weight: 600;
             ">${titleIcon} ${titleText}</h3>
           </div>
@@ -341,46 +388,48 @@
       } else if (name === 'inventory' && window.loadInventoryManagement) {
         window.loadInventoryManagement();
       } else if (name === 'print-workorder' && window.loadWorkOrderPrint) {
-        // 작업지시서 인쇄 탭 로드
         window.loadWorkOrderPrint();
       }
     }
 
-    // 회사운영비 전용 함수 (직접 호출용)
+    // 회사운영비 전용 함수
     function loadCompanyFundsTab() {
       console.log('💸 회사운영비 직접 로드');
       
-      // 화면 전환
       const homeButtons = document.getElementById('home-buttons');
       const tabContent = document.getElementById('tab-content');
       
-      if (homeButtons) homeButtons.style.display = 'none';
-      if (tabContent) tabContent.style.display = 'block';
+      if (homeButtons) {
+        homeButtons.classList.add('animate-fade-out');
+        setTimeout(() => {
+          homeButtons.style.display = 'none';
+          homeButtons.classList.remove('animate-fade-out');
+        }, 300);
+      }
       
-      // 제목 설정
+      if (tabContent) {
+        tabContent.style.display = 'block';
+        tabContent.classList.add('animate-slide-in-right');
+      }
+      
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
         tabTitleElement.innerHTML = `
-          <div style="
-            background: white;
+          <div class="card animate-slide-in-down" style="
             padding: 20px 25px;
-            border-radius: 12px;
             margin-bottom: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             text-align: center;
-            border-left: 4px solid #8ecae6;
+            border-left: 4px solid var(--primary-color);
           ">
-            <h3 style="
+            <h3 class="neon-glow" style="
               margin: 0;
               font-size: 1.4rem;
-              color: #333;
               font-weight: 600;
             ">💸 회사운영비</h3>
           </div>
         `;
       }
       
-      // 내용 로드
       if (window.loadCompanyFunds) {
         console.log('💸 loadCompanyFunds 실행');
         window.loadCompanyFunds();
@@ -389,41 +438,44 @@
       }
     }
 
-    // 작업지시서 인쇄 전용 함수 (직접 호출용)
+    // 작업지시서 인쇄 전용 함수
     function loadPrintWorkOrderTab() {
       console.log('🖨️ 작업지시서 인쇄 직접 로드');
       
-      // 화면 전환
       const homeButtons = document.getElementById('home-buttons');
       const tabContent = document.getElementById('tab-content');
       
-      if (homeButtons) homeButtons.style.display = 'none';
-      if (tabContent) tabContent.style.display = 'block';
+      if (homeButtons) {
+        homeButtons.classList.add('animate-fade-out');
+        setTimeout(() => {
+          homeButtons.style.display = 'none';
+          homeButtons.classList.remove('animate-fade-out');
+        }, 300);
+      }
       
-      // 제목 설정
+      if (tabContent) {
+        tabContent.style.display = 'block';
+        tabContent.classList.add('animate-slide-in-right');
+      }
+      
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
         tabTitleElement.innerHTML = `
-          <div style="
-            background: white;
+          <div class="card animate-slide-in-down" style="
             padding: 20px 25px;
-            border-radius: 12px;
             margin-bottom: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             text-align: center;
-            border-left: 4px solid #8ecae6;
+            border-left: 4px solid var(--primary-color);
           ">
-            <h3 style="
+            <h3 class="neon-glow" style="
               margin: 0;
               font-size: 1.4rem;
-              color: #333;
               font-weight: 600;
             ">🖨️ 작업지시서 인쇄</h3>
           </div>
         `;
       }
       
-      // 내용 로드
       if (window.loadWorkOrderPrint) {
         console.log('🖨️ loadWorkOrderPrint 실행');
         window.loadWorkOrderPrint();
@@ -432,56 +484,49 @@
       }
     }
 
-    // DOM이 로드된 후 이벤트 리스너 등록
+    // DOM 로드 완료 후 초기화
     document.addEventListener('DOMContentLoaded', () => {
       console.log('📱 DOM 로드 완료');
+      
+      // 페이지 로드 애니메이션 적용
+      document.body.classList.add('animate-fade-in');
       
       // 홈 버튼 이벤트
       const homeBtn = document.getElementById('homeBtn');
       if (homeBtn) {
-        homeBtn.addEventListener('click', backToHome);
+        homeBtn.addEventListener('click', () => {
+          homeBtn.classList.add('animate-pulse');
+          setTimeout(() => homeBtn.classList.remove('animate-pulse'), 600);
+          backToHome();
+        });
       }
       
-      // 메뉴 버튼들 이벤트 - 확실한 연결을 위해 지연 추가
+      // 메뉴 버튼들 이벤트 - 애니메이션 효과 추가
       setTimeout(() => {
-        const taskBtn = document.getElementById('task-btn');
-        const reserveBtn = document.getElementById('reserve-btn');
-        const settleBtn = document.getElementById('settle-btn');
-        const companyFundsBtn = document.getElementById('company-funds-btn');
-        const inventoryBtn = document.getElementById('inventory-btn');
-        const printWorkOrderBtn = document.getElementById('print-workorder-btn');
-        const holidayBtn = document.getElementById('holiday-btn');
+        const buttons = [
+          { id: 'task-btn', action: () => openTab('task') },
+          { id: 'reserve-btn', action: () => openTab('reserve') },
+          { id: 'settle-btn', action: () => openTab('settle') },
+          { id: 'company-funds-btn', action: loadCompanyFundsTab },
+          { id: 'inventory-btn', action: () => openTab('inventory') },
+          { id: 'print-workorder-btn', action: loadPrintWorkOrderTab },
+          { id: 'holiday-btn', action: () => openTab('holiday') }
+        ];
         
-        if (taskBtn) {
-          taskBtn.addEventListener('click', () => openTab('task'));
-          console.log('✅ 작업지시 버튼 이벤트 연결');
-        }
-        if (reserveBtn) {
-          reserveBtn.addEventListener('click', () => openTab('reserve'));
-          console.log('✅ 예약 버튼 이벤트 연결');
-        }
-        if (settleBtn) {
-          settleBtn.addEventListener('click', () => openTab('settle'));
-          console.log('✅ 정산 버튼 이벤트 연결');
-        }
-        if (companyFundsBtn) {
-          // 회사운영비는 전용 함수 사용
-          companyFundsBtn.addEventListener('click', loadCompanyFundsTab);
-          console.log('✅ 회사운영비 버튼 이벤트 연결');
-        }
-        if (inventoryBtn) {
-          inventoryBtn.addEventListener('click', () => openTab('inventory'));
-          console.log('✅ 입출고 버튼 이벤트 연결');
-        }
-        if (printWorkOrderBtn) {
-          // 작업지시서 인쇄는 전용 함수 사용
-          printWorkOrderBtn.addEventListener('click', loadPrintWorkOrderTab);
-          console.log('✅ 작업지시서 인쇄 버튼 이벤트 연결');
-        }
-        if (holidayBtn) {
-          holidayBtn.addEventListener('click', () => openTab('holiday'));
-          console.log('✅ 휴무관리 버튼 이벤트 연결');
-        }
+        buttons.forEach(({ id, action }) => {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.addEventListener('click', () => {
+              // 클릭 애니메이션 효과
+              btn.classList.add('animate-pulse');
+              setTimeout(() => btn.classList.remove('animate-pulse'), 300);
+              
+              // 페이지 전환 효과
+              setTimeout(action, 150);
+            });
+            console.log(`✅ ${id} 버튼 이벤트 연결`);
+          }
+        });
       }, 300);
       
       // 온라인/오프라인 상태 감지
@@ -489,9 +534,14 @@
         const offlineBanner = document.getElementById('offline-banner');
         if (offlineBanner) {
           if (navigator.onLine) {
-            offlineBanner.style.display = 'none';
+            offlineBanner.classList.add('animate-slide-out-up');
+            setTimeout(() => {
+              offlineBanner.style.display = 'none';
+              offlineBanner.classList.remove('animate-slide-out-up');
+            }, 300);
           } else {
             offlineBanner.style.display = 'block';
+            offlineBanner.classList.add('animate-slide-in-down');
           }
         }
       }
@@ -514,20 +564,25 @@
 
       // 터치 스크롤 개선 (iOS)
       document.body.style.webkitOverflowScrolling = 'touch';
-      
-      // 탭 하이라이트 제거 (Android)
       document.body.style.webkitTapHighlightColor = 'transparent';
       
       // 키보드 대응 (모바일에서 input focus 시 스크롤 조정)
       const inputs = document.querySelectorAll('input, textarea, select');
       inputs.forEach(input => {
         input.addEventListener('focus', () => {
+          input.classList.add('animate-scale-in');
           setTimeout(() => {
             input.scrollIntoView({ 
               behavior: 'smooth', 
               block: 'center' 
             });
+            input.classList.remove('animate-scale-in');
           }, 300);
+        });
+        
+        input.addEventListener('blur', () => {
+          input.classList.add('animate-fade-in');
+          setTimeout(() => input.classList.remove('animate-fade-in'), 300);
         });
       });
 
@@ -535,12 +590,40 @@
       if (window.navigator.standalone) {
         document.body.classList.add('standalone');
       }
+      
+      // 스크롤 기반 애니메이션 초기화
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+          }
+        });
+      }, observerOptions);
+      
+      // 스크롤 애니메이션 대상 요소들 관찰
+      document.querySelectorAll('.scroll-fade-in, .scroll-slide-left, .scroll-slide-right').forEach(el => {
+        observer.observe(el);
+      });
     });
 
     // 백그라운드 동기화 감지
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && window.auth?.currentUser) {
         console.log('앱 다시 활성화 - 데이터 새로고침');
+        
+        // 새로고침 애니메이션 효과
+        const activeElements = document.querySelectorAll('.task-item, .menu-button');
+        activeElements.forEach((el, index) => {
+          setTimeout(() => {
+            el.classList.add('animate-pulse');
+            setTimeout(() => el.classList.remove('animate-pulse'), 300);
+          }, index * 50);
+        });
         
         const activeTab = document.querySelector('.worker-tab-btn.active');
         if (activeTab) {
@@ -560,12 +643,11 @@
     // 전역 에러 처리
     window.addEventListener('error', (event) => {
       console.error('전역 에러:', event.error);
-      // 특정 에러는 무시 (개발 환경)
       if (event.error && event.error.message && 
           (event.error.message.includes('backToHome') || 
            event.error.message.includes('openTab') ||
            event.error.message.includes('Live reload'))) {
-        return; // 개발 서버 관련 에러 무시
+        return;
       }
     });
 
@@ -579,134 +661,353 @@
     window.openTab = openTab;
     window.loadCompanyFundsTab = loadCompanyFundsTab;
     window.loadPrintWorkOrderTab = loadPrintWorkOrderTab;
+    
+    // 현대적 알림 시스템
+    window.showToast = function(message, type = 'info', duration = 3000) {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type} show animate-slide-in-right`;
+      toast.textContent = message;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.remove('animate-slide-in-right');
+        toast.classList.add('animate-slide-out-right');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, duration);
+    };
+    
+    // 애니메이션 유틸리티 함수
+    window.animateElement = function(element, animation, duration = 300) {
+      if (!element) return;
+      
+      element.classList.add(`animate-${animation}`);
+      setTimeout(() => {
+        element.classList.remove(`animate-${animation}`);
+      }, duration);
+    };
+    
+    // 리플 효과 적용
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('ripple-effect')) {
+        const ripple = document.createElement('span');
+        const rect = e.target.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.classList.add('ripple');
+        
+        e.target.appendChild(ripple);
+        
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
+      }
+    });
   </script>
 
-  <!-- PWA 및 모바일 전용 스타일 -->
+  <!-- PWA 및 모바일 전용 스타일 (인라인 최소화) -->
   <style>
-    /* 오프라인 배너 */
-    .offline-banner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #dc3545;
-      color: white;
-      padding: 10px 20px;
-      text-align: center;
-      font-size: 0.9rem;
-      font-weight: 600;
-      z-index: 1001;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    /* 스탠드얼론 모드 (PWA) 스타일 */
-    .standalone {
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    /* 키보드 대응 */
-    @media screen and (max-height: 500px) {
-      .header-bar {
-        padding: 10px 20px;
-      }
-      
-      .box {
-        padding: 15px;
-      }
-      
-      .menu-button {
-        padding: 20px 8px;
-        font-size: 16px;
-        min-height: 80px;
-      }
-    }
-
-    /* 접근성: 모션 감소 설정 */
-    @media (prefers-reduced-motion: reduce) {
-      * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-      
-      .task-item:hover {
-        transform: none;
-      }
-      
-      button:hover {
-        transform: none;
-      }
-    }
-
-    /* CSS 사용자 정의 속성 */
-    :root {
-      --vh: 1vh;
-      --safe-area-inset-top: env(safe-area-inset-top);
-      --safe-area-inset-bottom: env(safe-area-inset-bottom);
-    }
-
-    /* 로딩 스피너 */
-    .spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #219ebc;
+    /* 리플 효과 스타일 */
+    .ripple {
+      position: absolute;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
+      background: rgba(255, 255, 255, 0.6);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
     }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
     }
-
-    /* 에러 메시지 */
-    #error-message {
-      position: fixed;
-      top: 20px;
+    
+    /* 페이지 전환 애니메이션 */
+    .animate-slide-out-up {
+      animation: slideOutUp 0.3s ease-out forwards;
+    }
+    
+    .animate-slide-out-right {
+      animation: slideOutRight 0.3s ease-out forwards;
+    }
+    
+    @keyframes slideOutUp {
+      from { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+      to { 
+        opacity: 0; 
+        transform: translateY(-30px); 
+      }
+    }
+    
+    @keyframes slideOutRight {
+      from { 
+        opacity: 1; 
+        transform: translateX(0); 
+      }
+      to { 
+        opacity: 0; 
+        transform: translateX(30px); 
+      }
+    }
+    
+    /* 로딩 오버레이 개선 */
+    #loading-spinner {
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    
+    /* 성공/에러 메시지 스타일 개선 */
+    #error-message.success {
+      background: var(--success-color);
+      border-left: 4px solid #1e7e34;
+    }
+    
+    #error-message.error {
+      background: var(--accent-color);
+      border-left: 4px solid #c82333;
+    }
+    
+    #error-message.warning {
+      background: var(--warning-color);
+      border-left: 4px solid #d39e00;
+    }
+    
+    /* 라인 아이콘 스타일 */
+    .icon-tasks-line,
+    .icon-calendar-line,
+    .icon-calculator-line,
+    .icon-wallet-line,
+    .icon-box-line,
+    .icon-printer-line,
+    .icon-vacation-line {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto;
+      position: relative;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+    }
+    
+    /* 작업지시 아이콘 - 체크리스트 */
+    .icon-tasks-line {
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+    }
+    .icon-tasks-line::before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      right: 6px;
+      height: 2.5px;
+      background: currentColor;
+      border-radius: 1px;
+      box-shadow: 0 7px 0 currentColor, 0 14px 0 currentColor;
+    }
+    .icon-tasks-line::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 4px;
+      height: 2px;
+      border: solid currentColor;
+      border-width: 0 0 2px 2px;
+      transform: rotate(-45deg);
+      box-shadow: 0 7px 0 currentColor, 0 14px 0 currentColor;
+    }
+    
+    /* 예약 아이콘 - 달력 */
+    .icon-calendar-line {
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+    }
+    .icon-calendar-line::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 8px;
+      right: 8px;
+      height: 2.5px;
+      background: currentColor;
+      border-radius: 1px;
+    }
+    .icon-calendar-line::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 6px;
+      width: 3px;
+      height: 3px;
+      background: currentColor;
+      border-radius: 50%;
+      box-shadow: 8px 0 0 currentColor, 16px 0 0 currentColor, 0 8px 0 currentColor, 8px 8px 0 currentColor, 16px 8px 0 currentColor;
+    }
+    
+    /* 정산 아이콘 - 계산기 */
+    .icon-calculator-line {
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+    }
+    .icon-calculator-line::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: 4px;
+      height: 6px;
+      border: 2px solid currentColor;
+      border-radius: 2px;
+    }
+    .icon-calculator-line::after {
+      content: '';
+      position: absolute;
+      bottom: 8px;
+      left: 6px;
+      width: 2px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 50%;
+      box-shadow: 6px 0 0 currentColor, 12px 0 0 currentColor, 0 -6px 0 currentColor, 6px -6px 0 currentColor, 12px -6px 0 currentColor;
+    }
+    
+    /* 회사운영비 아이콘 - 지갑 */
+    .icon-wallet-line {
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+      position: relative;
+    }
+    .icon-wallet-line::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      right: -3px;
+      width: 8px;
+      height: 12px;
+      border: 2.5px solid currentColor;
+      border-left: none;
+      border-radius: 0 4px 4px 0;
+    }
+    .icon-wallet-line::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 1px;
+      box-shadow: 0 5px 0 currentColor, 0 10px 0 currentColor;
+    }
+    
+    /* 입출고 아이콘 - 박스 */
+    .icon-box-line {
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+      position: relative;
+    }
+    .icon-box-line::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: 8px;
+      right: 8px;
+      height: 8px;
+      border: 2.5px solid currentColor;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+    }
+    .icon-box-line::after {
+      content: '';
+      position: absolute;
+      top: 12px;
       left: 50%;
       transform: translateX(-50%);
-      background: #dc3545;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 1000;
-      font-weight: 600;
-      max-width: 90%;
-      text-align: center;
+      width: 0;
+      height: 0;
+      border: 4px solid transparent;
+      border-top: 4px solid currentColor;
     }
-
-    #error-message.success {
-      background: #28a745;
+    
+    /* 프린터 아이콘 */
+    .icon-printer-line {
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+      position: relative;
     }
-
-    #error-message.show {
-      display: block !important;
+    .icon-printer-line::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 6px;
+      right: 6px;
+      height: 6px;
+      border: 2.5px solid currentColor;
+      border-bottom: none;
+      border-radius: 3px 3px 0 0;
     }
-
-    /* 로딩 스피너 전역 */
-    #loading-spinner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255,255,255,0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
+    .icon-printer-line::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 6px;
+      right: 6px;
+      height: 8px;
+      border: 2.5px solid currentColor;
+      border-top: none;
+      border-radius: 0 0 3px 3px;
     }
-
-    #loading-spinner p {
-      margin-top: 20px;
-      color: #666;
-      font-size: 16px;
-      font-weight: 600;
+    
+    /* 휴무 아이콘 - 달력 + 휴식 */
+    .icon-vacation-line {
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+      position: relative;
+    }
+    .icon-vacation-line::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 8px;
+      right: 8px;
+      height: 2.5px;
+      background: currentColor;
+      border-radius: 1px;
+    }
+    .icon-vacation-line::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      border: 2.5px solid currentColor;
+      border-radius: 50%;
+    }
+    
+    /* 호버 효과 */
+    .menu-button:hover .icon-tasks-line,
+    .menu-button:hover .icon-calendar-line,
+    .menu-button:hover .icon-calculator-line,
+    .menu-button:hover .icon-wallet-line,
+    .menu-button:hover .icon-box-line,
+    .menu-button:hover .icon-printer-line,
+    .menu-button:hover .icon-vacation-line {
+      transform: scale(1.1) rotate(5deg);
+      filter: drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3));
     }
   </style>
 
