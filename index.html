@@ -11,9 +11,6 @@
   <link rel="stylesheet" href="styles/animations.css">
   <link rel="stylesheet" href="styles/responsive.css">
   
-  <!-- 🆕 탭별 현대적 디자인 CSS 추가 -->
-  <link rel="stylesheet" href="styles/modern/task-tab.css">
-  
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   
@@ -47,11 +44,14 @@
   <!-- 헤더 바 -->
   <div class="header-bar particles-bg">
     <span class="header-title">
-      <span class="header-icon">📋</span>
+      <span class="header-icon">📊</span>
       다담업무관리
     </span>
     <div class="header-actions">
-      <button id="logoutBtn" class="btn btn-danger btn-sm" aria-label="로그아웃" style="display:none;">로그아웃</button>
+      <button id="logoutBtn" class="btn btn-danger btn-sm modern-logout-btn" aria-label="로그아웃" style="display:none;">
+        <span class="logout-icon">🚪</span>
+        <span>로그아웃</span>
+      </button>
     </div>
   </div>
   
@@ -62,7 +62,7 @@
   <div id="login-view" class="animate-slide-in-up">
     <div class="login-container card">
       <div class="card-body">
-        <h3 class="neon-glow">로그인</h3>
+        <h3 class="enhanced-login-title">로그인</h3>
         <form id="login-form" onsubmit="return false;" autocomplete="on">
           <div class="form-group">
             <input 
@@ -303,74 +303,7 @@
         tabContent.classList.add('animate-slide-in-right');
       }
       
-      // 탭 제목 설정
-      const tabTitleElement = document.getElementById('tab-title');
-      if (tabTitleElement) {
-        let titleText = '';
-        let titleIcon = '';
-        
-        switch(name) {
-          case 'task':
-  titleText = '작업지시';
-  titleIcon = `<div style="
-    display: inline-block;
-    width: 36px;
-    height: 36px;
-    border: 2.5px solid currentColor;
-    border-radius: 6px;
-    position: relative;
-    vertical-align: middle;
-    margin-right: 8px;
-  ">
-    <div style="position: absolute; top: 6px; left: 6px; right: 6px; height: 2.5px; background: currentColor; border-radius: 1px;"></div>
-    <div style="position: absolute; top: 13px; left: 6px; right: 6px; height: 2.5px; background: currentColor; border-radius: 1px;"></div>
-    <div style="position: absolute; top: 20px; left: 6px; right: 6px; height: 2.5px; background: currentColor; border-radius: 1px;"></div>
-    <div style="position: absolute; top: 8px; left: 8px; width: 4px; height: 2px; border: solid currentColor; border-width: 0 0 2px 2px; transform: rotate(-45deg);"></div>
-    <div style="position: absolute; top: 15px; left: 8px; width: 4px; height: 2px; border: solid currentColor; border-width: 0 0 2px 2px; transform: rotate(-45deg);"></div>
-    <div style="position: absolute; top: 22px; left: 8px; width: 4px; height: 2px; border: solid currentColor; border-width: 0 0 2px 2px; transform: rotate(-45deg);"></div>
-  </div>`;
-  break;
-          case 'reserve':
-            titleText = '예약';
-            titleIcon = '📅';
-            break;
-          case 'settle':
-            titleText = '정산';
-            titleIcon = '💰';
-            break;
-          case 'company-funds':
-            titleText = '회사운영비';
-            titleIcon = '💸';
-            break;
-          case 'inventory':
-            titleText = '입출고';
-            titleIcon = '📦';
-            break;
-          case 'print-workorder':
-            titleText = '작업지시서 인쇄';
-            titleIcon = '🖨️';
-            break;
-          case 'holiday':
-            titleText = '휴무관리';
-            titleIcon = '🏖️';
-            break;
-        }
-        
-        tabTitleElement.innerHTML = `
-          <div class="card animate-slide-in-down" style="
-            padding: 20px 25px;
-            margin-bottom: 25px;
-            text-align: center;
-            border-left: 4px solid var(--primary-color);
-          ">
-            <h3 class="neon-glow" style="
-              margin: 0;
-              font-size: 1.4rem;
-              font-weight: 600;
-            ">${titleIcon} ${titleText}</h3>
-          </div>
-        `;
-      }
+
       
       // 탭별 로직 실행
       if (name === 'task' && window.showTaskTab) {
@@ -412,20 +345,41 @@
         tabContent.classList.add('animate-slide-in-right');
       }
       
+      // 회사운영비 탭 타이틀 직접 설정 (깔끔한 블랙 스타일)
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
+        const titleText = '회사운영비';
+        const titleIcon = `<div style="
+          display: inline-block;
+          width: 36px;
+          height: 36px;
+          border: 2.5px solid #000000;
+          border-radius: 6px;
+          position: relative;
+          vertical-align: middle;
+          margin-right: 8px;
+        ">
+          <div style="position: absolute; top: 8px; right: -3px; width: 8px; height: 12px; border: 2.5px solid #000000; border-left: none; border-radius: 0 4px 4px 0;"></div>
+          <div style="position: absolute; top: 6px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div>
+          <div style="position: absolute; top: 11px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div>
+          <div style="position: absolute; top: 16px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div>
+        </div>`;
+        
         tabTitleElement.innerHTML = `
-          <div class="card animate-slide-in-down" style="
+          <div class="card" style="
             padding: 20px 25px;
             margin-bottom: 25px;
             text-align: center;
             border-left: 4px solid var(--primary-color);
-          ">
-            <h3 class="neon-glow" style="
+            transition: none;
+            transform: none;
+          " onmouseover="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';">
+            <h3 style="
               margin: 0;
               font-size: 1.4rem;
               font-weight: 600;
-            ">💸 회사운영비</h3>
+              color: #000000;
+            ">${titleIcon} ${titleText}</h3>
           </div>
         `;
       }
@@ -458,20 +412,39 @@
         tabContent.classList.add('animate-slide-in-right');
       }
       
+      // 작업지시서 인쇄 탭 타이틀 직접 설정 (깔끔한 블랙 스타일)
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
+        const titleText = '작업지시서 인쇄';
+        const titleIcon = `<div style="
+          display: inline-block;
+          width: 36px;
+          height: 36px;
+          border: 2.5px solid #000000;
+          border-radius: 6px;
+          position: relative;
+          vertical-align: middle;
+          margin-right: 8px;
+        ">
+          <div style="position: absolute; top: -4px; left: 6px; right: 6px; height: 6px; border: 2.5px solid #000000; border-bottom: none; border-radius: 3px 3px 0 0;"></div>
+          <div style="position: absolute; bottom: -4px; left: 6px; right: 6px; height: 8px; border: 2.5px solid #000000; border-top: none; border-radius: 0 0 3px 3px;"></div>
+        </div>`;
+        
         tabTitleElement.innerHTML = `
-          <div class="card animate-slide-in-down" style="
+          <div class="card" style="
             padding: 20px 25px;
             margin-bottom: 25px;
             text-align: center;
             border-left: 4px solid var(--primary-color);
-          ">
-            <h3 class="neon-glow" style="
+            transition: none;
+            transform: none;
+          " onmouseover="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';">
+            <h3 style="
               margin: 0;
               font-size: 1.4rem;
               font-weight: 600;
-            ">🖨️ 작업지시서 인쇄</h3>
+              color: #000000;
+            ">${titleIcon} ${titleText}</h3>
           </div>
         `;
       }
@@ -782,6 +755,155 @@
     #error-message.warning {
       background: var(--warning-color);
       border-left: 4px solid #d39e00;
+    }
+
+    /* 개선된 UI 스타일 추가 */
+    
+    /* 1. 로그인 제목 더 선명하게 */
+    .enhanced-login-title {
+      margin-bottom: var(--space-6) !important;
+      color: var(--gray-900) !important;
+      font-size: var(--font-size-3xl) !important;
+      font-weight: 900 !important;
+      background: linear-gradient(135deg, #1d7fa8 0%, #219ebc 30%, #9b59b6 70%, #2c3e50 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      text-shadow: 0 4px 12px rgba(33, 158, 188, 0.4) !important;
+      position: relative !important;
+      z-index: 2 !important;
+      letter-spacing: -0.5px !important;
+      text-align: center !important;
+      animation: titlePulse 3s ease-in-out infinite !important;
+    }
+
+    @keyframes titlePulse {
+      0%, 100% { 
+        transform: scale(1);
+        filter: brightness(1);
+      }
+      50% { 
+        transform: scale(1.02);
+        filter: brightness(1.1);
+      }
+    }
+
+    /* 2. 깔끔한 타이틀바 */
+    .header-bar {  
+      background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.8) !important;
+      box-shadow: 
+        0 4px 16px rgba(33, 158, 188, 0.08),
+        0 2px 8px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+      position: relative !important;
+    }
+
+    .header-bar::before {
+      height: 3px !important;
+      background: var(--primary-color) !important;
+      opacity: 0.8 !important;
+      animation: none !important;
+    }
+
+    .header-title {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      font-weight: 900 !important;
+      letter-spacing: -1px !important;
+      position: relative !important;
+      z-index: 3 !important;
+    }
+
+    .header-icon {
+      filter: drop-shadow(0 4px 8px rgba(33, 158, 188, 0.3)) !important;
+      animation: iconFloat 3s ease-in-out infinite !important;
+      transform-origin: center !important;
+    }
+
+    @keyframes iconFloat {
+      0%, 100% { 
+        transform: translateY(0px) rotate(0deg); 
+      }
+      50% { 
+        transform: translateY(-3px) rotate(2deg); 
+      }
+    }
+
+    /* 3. 깔끔한 로그아웃 버튼 */
+    .modern-logout-btn {
+      background: rgba(231, 76, 60, 0.1) !important;
+      border: 2px solid rgba(231, 76, 60, 0.3) !important;
+      border-radius: 12px !important;
+      padding: var(--space-2) var(--space-4) !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: var(--space-2) !important;
+      font-weight: 600 !important;
+      font-size: var(--font-size-sm) !important;
+      color: var(--accent-color) !important;
+      transition: all var(--duration-normal) var(--easing) !important;
+      position: relative !important;
+      overflow: hidden !important;
+      box-shadow: var(--shadow-md) !important;
+    }
+
+    .modern-logout-btn::before {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: -100% !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent
+      ) !important;
+      transition: left var(--duration-slow) var(--easing) !important;
+    }
+
+    .modern-logout-btn:hover::before {
+      left: 100% !important;
+    }
+
+    .modern-logout-btn:hover {
+      background: var(--accent-color) !important;
+      color: var(--white) !important;
+      border-color: var(--accent-color) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: var(--shadow-xl) !important;
+    }
+
+    .logout-icon {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
+    }
+
+    /* 통일된 탭 타이틀 스타일 */
+    .unified-tab-title::before {
+      content: '' !important;
+      position: absolute !important;
+      top: -50% !important;
+      left: -50% !important;
+      width: 200% !important;
+      height: 200% !important;
+      background: linear-gradient(45deg, 
+        transparent 40%, 
+        rgba(33, 158, 188, 0.1) 50%, 
+        transparent 60%
+      ) !important;
+      animation: tabShimmer 4s ease-in-out infinite !important;
+      pointer-events: none !important;
+    }
+
+    @keyframes tabShimmer {
+      0% { transform: translateX(-100%) translateY(-100%); }
+      50% { transform: translateX(0%) translateY(0%); }
+      100% { transform: translateX(100%) translateY(100%); }
     }
     
     /* 라인 아이콘 스타일 */

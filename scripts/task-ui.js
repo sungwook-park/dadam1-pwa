@@ -831,7 +831,7 @@ if (name === 'task') {
     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border: 2.5px solid currentColor; border-radius: 50%;"></div>
   </div>`;
 }
-
+  
   // 박스 스타일로 제목 설정
   tabTitleElement.innerHTML = `
     <div style="
