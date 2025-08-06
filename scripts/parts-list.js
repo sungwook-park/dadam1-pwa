@@ -2,6 +2,7 @@
 
 export const PARTS_LIST = [
   {name: 'CT60', price: 12500},
+  {name: 'W-60', price: 18700},        // ⭐️ 새로 추가된 부품
   {name: 'W-60T', price: 27500},
   {name: 'WB60', price: 35000},
   {name: 'WB70', price: 40000},
@@ -14,7 +15,8 @@ export const PARTS_LIST = [
   {name: '가벽키트', price: 20000},
   {name: '하부커버40', price: 20000},
   {name: '하부커버85', price: 30000},
-  {name: '정품', price: 100000}, // 기타는 별도 입력
+  {name: '정품', price: 100000},
+  
 ];
 
 // 부품명만 필요한 곳을 위한 배열
