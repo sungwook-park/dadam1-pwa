@@ -2,19 +2,19 @@ import { db } from './firebase-config.js';
 import { collection, addDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getTodayStart, getTomorrowStart } from './utils/date-utils.js';
 
-// 🔧 전역 변수 안전 초기화
+// 전역 변수 안전 초기화
 window.editingTaskId = window.editingTaskId || null;
 window.editingTabType = window.editingTabType || null;
 window.selectedParts = window.selectedParts || [];
 window.parts = window.parts || [];
 window.currentParts = window.currentParts || [];
 
-console.log('✅ task-save.js 전역 변수 안전 초기화 완료');
+console.log('task-save.js 전역 변수 안전 초기화 완료');
 
 window.handleTaskSave = async function(isEdit = false, editId = null, tabType = null) {
   const form = document.getElementById('task-form') || document.getElementById('worker-edit-form');
   if (!form) {
-    console.error('❌ 폼을 찾을 수 없습니다.');
+    console.error('폼을 찾을 수 없습니다.');
     return;
   }
 
@@ -108,8 +108,14 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       console.log('수정할 문서 ID:', finalEditId);
       
       await updateDoc(doc(db, "tasks", finalEditId), taskData);
-      console.log('✅ 수정 완료:', finalEditId);
+      console.log('수정 완료:', finalEditId);
       alert('수정되었습니다!');
+      
+      // 캐시 무효화 (수정된 작업의 상태가 변경됨)
+      if (window.clearCache) {
+        window.clearCache();
+        console.log('캐시 무효화 완료');
+      }
       
       // 편집 상태 초기화
       window.editingTaskId = null;
@@ -117,39 +123,47 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       
       // 작업자 폼인 경우 원래 화면으로 돌아가기
       if (isWorkerEditForm || !window.isCurrentUserAdmin()) {
-        console.log('📱 작업자 수정 완료 - 화면 복원');
+        console.log('작업자 수정 완료 - 화면 복원');
         if (finalTabType === 'done') {
           console.log('→ 완료작업탭으로 이동');
-          window.loadWorkerDoneTasks();
+          setTimeout(() => window.loadWorkerDoneTasks(), 100);
         } else {
           console.log('→ 오늘작업탭으로 이동');
-          window.loadWorkerTodayTasks();
+          setTimeout(() => window.loadWorkerTodayTasks(), 100);
         }
-        return; // 여기서 함수 종료
+        return;
       }
       
-      // 관리자 수정 완료 후 원래 탭으로 이동
-      if (finalTabType === 'reserve') {
-        console.log('→ 예약탭으로 이동');
-        window.loadReserveTasks();
-      } else if (finalTabType === 'done') {
-        console.log('→ 완료탭으로 이동');
-        window.loadDoneTasks();
-      } else {
-        console.log('→ 오늘작업탭으로 이동');
-        window.loadTodayTasks();
-      }
+      // 관리자 수정 완료 후 원래 탭으로 이동 (캐시 삭제 후 지연)
+      setTimeout(() => {
+        if (finalTabType === 'reserve') {
+          console.log('→ 예약탭으로 이동');
+          window.loadReserveTasks();
+        } else if (finalTabType === 'done') {
+          console.log('→ 완료탭으로 이동');
+          window.loadDoneTasks();
+        } else {
+          console.log('→ 오늘작업탭으로 이동');
+          window.loadTodayTasks();
+        }
+      }, 100);
       
     } else {
       console.log('=== 새 작업 저장 모드 실행 ===');
       const docRef = await addDoc(collection(db, "tasks"), taskData);
-      console.log('✅ 새 문서 저장 완료 ID:', docRef.id);
+      console.log('새 문서 저장 완료 ID:', docRef.id);
       alert('저장되었습니다!');
       
-      // 🔧 새 작업 저장 시 탭 이동 방지 - 더 확실하게
-      console.log('🔧 새 작업 저장 완료 - isEdit:', isEdit, 'editingTaskId:', window.editingTaskId);
+      // 새 작업 저장 시에도 캐시 무효화
+      if (window.clearCache) {
+        window.clearCache();
+        console.log('신규 작업 저장 후 캐시 무효화 완료');
+      }
+      
+      // 새 작업 저장 시 탭 이동 방지 - 더 확실하게
+      console.log('새 작업 저장 완료 - isEdit:', isEdit, 'editingTaskId:', window.editingTaskId);
       if (!isEdit && !window.editingTaskId) {
-        console.log('✅ 새 작업 저장 완료 - 작업입력탭에 머무름');
+        console.log('새 작업 저장 완료 - 작업입력탭에 머무름');
         
         // 관리자 폼만 초기화
         if (window.isCurrentUserAdmin()) {
@@ -160,11 +174,10 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
       }
     }
     
-    // 관리자 폼만 초기화는 위에서 이미 처리했으므로 제거
-    console.log('✅ 저장 프로세스 완료');
+    console.log('저장 프로세스 완료');
     
   } catch (error) {
-    console.error('❌ 저장 오류:', error);
+    console.error('저장 오류:', error);
     alert('저장 중 오류가 발생했습니다: ' + error.message);
   }
 };
@@ -172,7 +185,7 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
 // 관리자 폼 초기화 함수 (부품 초기화 강화)
 function resetAdminForm(form) {
   try {
-    console.log('🧹 관리자 폼 초기화 시작');
+    console.log('관리자 폼 초기화 시작');
     
     // 폼 리셋
     if (form && typeof form.reset === 'function') {
@@ -204,9 +217,9 @@ function resetAdminForm(form) {
       feeInfo.style.display = 'none';
     }
 
-    // 🔧 부품 초기화 강력 버전 (안전장치 추가)
+    // 부품 초기화 강력 버전 (안전장치 추가)
     try {
-      console.log('🧹 저장 후 부품 데이터 강력 초기화');
+      console.log('저장 후 부품 데이터 강력 초기화');
       
       // 1단계: 전역 변수 강제 초기화 (안전하게)
       if (typeof window !== 'undefined') {
@@ -218,7 +231,7 @@ function resetAdminForm(form) {
         if (window.inventoryData) window.inventoryData = [];
       }
       
-      console.log('✅ 전역 변수 초기화 완료');
+      console.log('전역 변수 초기화 완료');
       
       // 2단계: DOM 요소 강제 초기화 (안전하게)
       const clearPartsDOM = () => {
@@ -253,7 +266,7 @@ function resetAdminForm(form) {
             if (el) el.checked = false;
           });
           
-          console.log('✅ DOM 요소 초기화 완료');
+          console.log('DOM 요소 초기화 완료');
         } catch (error) {
           console.warn('DOM 초기화 중 오류:', error);
         }
@@ -265,7 +278,7 @@ function resetAdminForm(form) {
       // 3단계: 부품 입력 UI 완전 재생성 (안전하게)
       setTimeout(() => {
         try {
-          console.log('🔄 부품 UI 재생성 시작');
+          console.log('부품 UI 재생성 시작');
           
           const partsContainer = document.getElementById('items-input');
           if (partsContainer && window.renderItemsInput && typeof window.renderItemsInput === 'function') {
@@ -279,7 +292,7 @@ function resetAdminForm(form) {
             
             // UI 재생성
             window.renderItemsInput('items-input');
-            console.log('✅ 부품 입력 UI 재생성 완료');
+            console.log('부품 입력 UI 재생성 완료');
             
             // 재생성 후 추가 정리
             setTimeout(() => {
@@ -287,7 +300,7 @@ function resetAdminForm(form) {
               window.selectedParts = [];
               window.parts = [];
               window.currentParts = [];
-              console.log('✅ 재생성 후 추가 정리 완료');
+              console.log('재생성 후 추가 정리 완료');
             }, 100);
           }
         } catch (error) {
@@ -302,7 +315,7 @@ function resetAdminForm(form) {
           window.selectedParts = [];
           window.parts = [];
           window.currentParts = [];
-          console.log('✅ 최종 확인 초기화 완료');
+          console.log('최종 확인 초기화 완료');
         } catch (error) {
           console.warn('최종 확인 초기화 중 오류:', error);
         }
@@ -312,7 +325,7 @@ function resetAdminForm(form) {
       console.error('부품 초기화 중 오류:', error);
     }
     
-    console.log('✅ 관리자 폼 초기화 완료');
+    console.log('관리자 폼 초기화 완료');
     
   } catch (error) {
     console.error('관리자 폼 초기화 중 전체 오류:', error);
