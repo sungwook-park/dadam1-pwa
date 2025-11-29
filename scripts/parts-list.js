@@ -7,6 +7,7 @@ export const PARTS_LIST = [
   {name: 'WB60', price: 35000},
   {name: 'WB70', price: 40000},
   {name: 'LW221(32인치용)', price: 11000},
+  {name: 'LPA-696', price: 110000},
   {name: 'DN60', price: 65000},
   {name: 'DN85', price: 90000},
   {name: 'DN110', price: 100000},
@@ -24,4 +25,5 @@ export const PARTS_NAMES = PARTS_LIST.map(item => item.name);
 
 // 기존 전역 변수와의 호환성을 위해 window에도 등록
 window.PARTS_LIST = PARTS_LIST;
+
 window.PARTS_NAMES = PARTS_NAMES;
