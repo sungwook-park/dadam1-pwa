@@ -277,10 +277,10 @@ export function getTaskInputFormHTML(defaultDate) {
       
       <div id="items-input"></div>
       
-      <input type="number" name="amount" id="amount-input" placeholder="금액">
+      <input type="text" name="amount" id="amount-input" placeholder="금액">
       
       <!-- 수수료 필드 추가 (비고 바로 위) -->
-      <input type="number" name="fee" id="fee-input" placeholder="수수료" readonly>
+      <input type="text" name="fee" id="fee-input" placeholder="수수료" readonly>
       <div class="fee-info" id="fee-info" style="font-size:14px;color:#666;margin-top:-5px;margin-bottom:10px;display:none;"></div>
       
       <div id="parts-input"></div>
@@ -771,6 +771,4 @@ window.formatPartsForDisplay = formatPartsForDisplay;
 window.formatPhoneLink = formatPhoneLink;
 window.formatAddressLink = formatAddressLink;
 window.handleMapLink = handleMapLink;
-
 window.cleanAddressForMap = cleanAddressForMap;
-
