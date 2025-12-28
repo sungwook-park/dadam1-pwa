@@ -471,4 +471,11 @@ window.refreshTaskList = function() {
   }
 };
 
-console.log('Agreement system loaded');
+// 페이지 로드 시 모달 생성
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', createModals);
+} else {
+  createModals();
+}
+
+console.log('✅ Agreement system loaded');
