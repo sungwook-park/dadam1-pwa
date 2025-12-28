@@ -8,7 +8,8 @@ import {
   getDocs, 
   query,
   doc,
-  getDoc
+  getDoc,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { 
   getAuth, 
@@ -76,6 +77,6 @@ window.db = db;
 window.auth = auth;
 window.getUserInfo = getUserInfo;
 window.firebase = {
-  getDocs, collection, where, query, doc, getDoc,
+  getDocs, collection, where, query, doc, getDoc, orderBy,
   signInWithEmailAndPassword, onAuthStateChanged, signOut
 };

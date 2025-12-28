@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { doc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 function createModals() {
   const modalsHTML = `
@@ -267,12 +267,58 @@ window.showAgreementActions = function(taskId, taskData) {
   modal.style.display = 'flex';
 };
 
-window.handleSendSMS = async function() {
-  const result = await sendAgreementSMS(window.currentAgreementTaskId, window.currentAgreementTaskData);
-  if (result.success) {
-    document.getElementById('agreementActionModal').style.display = 'none';
+// 작업 ID로 동의 모달 열기 (간단 버전)
+window.showAgreementModal = function(taskId) {
+  // taskData는 SMS 발송/직접 동의 시점에 다시 가져옴
+  window.currentAgreementTaskId = taskId;
+  window.currentAgreementTaskData = null; // 필요시 나중에 로드
+  const modal = document.getElementById('agreementActionModal');
+  if (modal) {
+    modal.style.display = 'flex';
   } else {
-    alert('문자 발송 실패: ' + result.error);
+    console.error('동의 모달을 찾을 수 없습니다');
+  }
+};
+
+window.handleSendSMS = async function() {
+  try {
+    // taskData가 없으면 Firebase에서 로드
+    let taskData = window.currentAgreementTaskData;
+    
+    if (!taskData && window.currentAgreementTaskId) {
+      const taskDoc = await getDoc(doc(db, 'tasks', window.currentAgreementTaskId));
+      if (taskDoc.exists()) {
+        taskData = taskDoc.data();
+      }
+    }
+    
+    const result = await sendAgreementSMS(window.currentAgreementTaskId, taskData);
+    if (result.success) {
+      document.getElementById('agreementActionModal').style.display = 'none';
+      
+      // 캐시 삭제 후 목록 새로고침
+      if (window.sessionStorage) {
+        const keysToRemove = [];
+        for (let i = 0; i < window.sessionStorage.length; i++) {
+          const key = window.sessionStorage.key(i);
+          if (key && key.includes('tasks')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => window.sessionStorage.removeItem(key));
+      }
+      
+      setTimeout(() => {
+        if (window.loadTodayTasks) window.loadTodayTasks();
+      }, 300);
+      
+      alert('문자가 발송되었습니다.');
+    } else {
+      alert('문자 발송 실패: ' + result.error);
+    }
+  } catch (error) {
+    console.error('SMS 발송 오류:', error);
+    alert('문자 발송 중 오류가 발생했습니다');
   }
 };
 
@@ -288,7 +334,25 @@ window.submitDirectAgreement = async function() {
   if (result.success) {
     alert('동의 완료!');
     document.getElementById('directAgreementModal').style.display = 'none';
-    if (window.loadTodayTasks) window.loadTodayTasks();
+    
+    // 모든 캐시 강제 삭제
+    if (window.sessionStorage) {
+      const keysToRemove = [];
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const key = window.sessionStorage.key(i);
+        if (key && key.includes('tasks')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => window.sessionStorage.removeItem(key));
+    }
+    
+    // 작업 목록 강제 새로고침
+    setTimeout(() => {
+      if (window.loadTodayTasks) {
+        window.loadTodayTasks();
+      }
+    }, 300);
   } else if (result.error) {
     alert('오류: ' + result.error);
   }
@@ -299,5 +363,25 @@ if (document.readyState === 'loading') {
 } else {
   createModals();
 }
+
+// 작업 목록 새로고침 함수
+window.refreshTaskList = function() {
+  // 모든 캐시 삭제
+  if (window.sessionStorage) {
+    const keysToRemove = [];
+    for (let i = 0; i < window.sessionStorage.length; i++) {
+      const key = window.sessionStorage.key(i);
+      if (key && key.includes('tasks')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => window.sessionStorage.removeItem(key));
+  }
+  
+  // 현재 탭 다시 로드
+  if (window.loadTodayTasks) {
+    window.loadTodayTasks();
+  }
+};
 
 console.log('Agreement system loaded');

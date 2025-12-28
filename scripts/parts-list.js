@@ -2,10 +2,11 @@
 
 export const PARTS_LIST = [
   {name: 'CT60', price: 12500},
+  {name: 'CT70', price: 17000},
   {name: 'W-60', price: 18700},        // ⭐️ 새로 추가된 부품
   {name: 'W-60T', price: 27500},
   {name: 'WB60', price: 35000},
-  {name: 'WB70', price: 40000},
+  {name: 'WB70', price: 42000},
   {name: 'LW221(32인치용)', price: 11000},
   {name: 'LPA-696', price: 110000},
   {name: 'DN60', price: 65000},
@@ -25,5 +26,4 @@ export const PARTS_NAMES = PARTS_LIST.map(item => item.name);
 
 // 기존 전역 변수와의 호환성을 위해 window에도 등록
 window.PARTS_LIST = PARTS_LIST;
-
 window.PARTS_NAMES = PARTS_NAMES;

@@ -8,7 +8,7 @@ import {
 
 // 외부 모듈들
 import "./task-save.js";
-import { loadSettlement } from './settle.js';
+import { loadSettlement } from './settlement/settlement-main.js';
 
 // Utils 임포트 (직접 임포트)
 import { formatKoreanDate, getTodayStart, getTomorrowStart, getNowYYYYMMDDHHMM } from './utils/date-utils.js';

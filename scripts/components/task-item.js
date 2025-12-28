@@ -16,13 +16,14 @@ export async function renderItemsInput(containerId) {
   
   try {
     const db = window.db;
-    const { getDocs, collection } = window.firebase;
+    const { getDocs, collection, query, orderBy } = window.firebase;
     
     if (db && getDocs) {
       console.log('🔧 Firebase에서 부품 목록 로드 시작...');
       
       // stock 컬렉션에서 부품 목록 조회
-      const stockSnapshot = await getDocs(collection(db, "stock"));
+      const stockQuery = query(collection(db, "stock"), orderBy("partName", "asc"));
+      const stockSnapshot = await getDocs(stockQuery);
       
       const parts = [];
       stockSnapshot.forEach(doc => {
@@ -32,9 +33,6 @@ export async function renderItemsInput(containerId) {
           price: data.unitPrice || 0
         });
       });
-      
-      // 클라이언트에서 정렬
-      parts.sort((a, b) => a.name.localeCompare(b.name));
       
       console.log(`✅ Firebase에서 ${parts.length}개 부품 로드 완료`);
       
