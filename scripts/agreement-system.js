@@ -3,9 +3,11 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gst
 
 function createModals() {
   const modalsHTML = `
-    <div id="agreementActionModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;pointer-events:none;">
-      <div id="agreementModalBackdrop" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);pointer-events:auto;"></div>
-      <div id="agreementModalContent" style="position:fixed;bottom:0;left:0;right:0;background:white;padding:20px 20px calc(20px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;width:100%;max-width:600px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s ease-out;pointer-events:auto;">
+    <div id="agreementActionModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;">
+      <!-- 배경 레이어 -->
+      <div id="agreementModalBackdrop" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);"></div>
+      <!-- 컨텐츠 레이어 -->
+      <div id="agreementModalContent" style="position:absolute;bottom:0;left:0;right:0;background:white;padding:20px 20px calc(20px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;width:100%;max-width:600px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s ease-out;">
         <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
         <h3 style="margin-bottom:20px;color:black;font-size:20px;text-align:center;">동의 받기 방법 선택</h3>
         <button onclick="handleSendSMS()" style="width:100%;padding:18px;margin-bottom:12px;background:#667eea;color:white;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:600;">문자로 링크 보내기</button>
