@@ -3,16 +3,13 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gst
 
 function createModals() {
   const modalsHTML = `
-    <!-- 배경: viewport 전체 -->
-    <div id="agreementModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:999998;"></div>
-    
-    <!-- 컨텐츠: viewport 하단 -->
-    <div id="agreementModalContent" style="display:none;position:fixed;bottom:0;left:0;right:0;background:white;padding:20px 20px calc(20px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;max-width:600px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s ease-out;z-index:999999;">
-      <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
-      <h3 style="margin-bottom:20px;color:black;font-size:20px;text-align:center;">동의 받기 방법 선택</h3>
-      <button onclick="handleSendSMS()" style="width:100%;padding:18px;margin-bottom:12px;background:#667eea;color:white;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:600;">문자로 링크 보내기</button>
-      <button onclick="handleDirectAgreement()" style="width:100%;padding:18px;margin-bottom:12px;background:#667eea;color:white;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:600;">직접 동의받기</button>
-      <button class="close-agreement-modal" style="width:100%;padding:18px;background:#f5f5f5;color:#333;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:600;">취소</button>
+    <div id="agreementActionModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999999;justify-content:center;align-items:center;">
+      <div style="background:white;padding:30px;border-radius:10px;max-width:400px;width:90%;">
+        <h3 style="margin-bottom:20px;color:black;font-size:20px;">동의 받기 방법 선택</h3>
+        <button onclick="handleSendSMS()" style="width:100%;padding:15px;margin-bottom:10px;background:#667eea;color:white;border:none;border-radius:5px;cursor:pointer;font-size:16px;">문자로 링크 보내기</button>
+        <button onclick="handleDirectAgreement()" style="width:100%;padding:15px;margin-bottom:10px;background:#667eea;color:white;border:none;border-radius:5px;cursor:pointer;font-size:16px;">직접 동의받기</button>
+        <button class="close-agreement-modal" style="width:100%;padding:15px;background:#ccc;color:black;border:none;border-radius:5px;cursor:pointer;font-size:16px;">취소</button>
+      </div>
     </div>
 
     <div id="directAgreementModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999999;justify-content:center;align-items:center;overflow-y:auto;">
@@ -89,51 +86,12 @@ function createModals() {
   
   document.body.insertAdjacentHTML('beforeend', modalsHTML);
   
-  // 모달 닫기 공통 함수
-  function closeAgreementModal() {
-    const modalBackdrop = document.getElementById('agreementModalBackdrop');
-    const modalContent = document.getElementById('agreementModalContent');
-    
-    console.log('🔥 모달 닫기 시작');
-    
-    // 슬라이드 다운 애니메이션
-    if (modalContent) {
-      modalContent.style.transform = 'translateY(100%)';
-      console.log('✅ 슬라이드 다운');
-    }
-    
-    // 애니메이션 완료 후 모달 숨기기 + body 스크롤 복원
-    setTimeout(() => {
-      if (modalBackdrop) {
-        modalBackdrop.style.display = 'none';
-        console.log('✅ 배경 숨김');
-      }
-      if (modalContent) {
-        modalContent.style.display = 'none';
-        console.log('✅ 컨텐츠 숨김');
-      }
-      
-      const directModal = document.getElementById('directAgreementModal');
-      if (directModal) directModal.style.display = 'none';
-      
-      // body 스크롤 복원
-      document.body.style.overflow = '';
-      console.log('✅ body 스크롤 복원');
-    }, 300);
-  }
-  
   document.querySelectorAll('.close-agreement-modal').forEach(btn => {
-    btn.addEventListener('click', closeAgreementModal);
+    btn.addEventListener('click', () => {
+      document.getElementById('agreementActionModal').style.display = 'none';
+      document.getElementById('directAgreementModal').style.display = 'none';
+    });
   });
-  
-  // 배경 클릭 시 닫기
-  const backdrop = document.getElementById('agreementModalBackdrop');
-  if (backdrop) {
-    backdrop.addEventListener('click', closeAgreementModal);
-  }
-  
-  // 전역으로 등록
-  window.closeAgreementModal = closeAgreementModal;
 }
 
 // 동의서 도메인 설정
@@ -309,40 +267,16 @@ window.showAgreementActions = function(taskId, taskData) {
   modal.style.display = 'flex';
 };
 
-// 작업 ID로 동의 모달 열기 (Bottom Sheet 애니메이션)
+// 작업 ID로 동의 모달 열기 (간단 버전)
 window.showAgreementModal = function(taskId) {
-  console.log('🔥 모달 열기 시작:', taskId);
-  
   // taskData는 SMS 발송/직접 동의 시점에 다시 가져옴
   window.currentAgreementTaskId = taskId;
-  window.currentAgreementTaskData = null;
-  
-  const modalBackdrop = document.getElementById('agreementModalBackdrop');
-  const modalContent = document.getElementById('agreementModalContent');
-  
-  console.log('배경 요소:', modalBackdrop);
-  console.log('컨텐츠 요소:', modalContent);
-  
-  if (modalBackdrop && modalContent) {
-    // body 스크롤 막기
-    document.body.style.overflow = 'hidden';
-    console.log('✅ body 스크롤 막음');
-    
-    // 배경 표시
-    modalBackdrop.style.display = 'block';
-    console.log('✅ 배경 표시');
-    
-    // 컨텐츠 표시
-    modalContent.style.display = 'block';
-    console.log('✅ 컨텐츠 표시');
-    
-    // 약간의 딜레이 후 슬라이드 업 애니메이션
-    setTimeout(() => {
-      modalContent.style.transform = 'translateY(0)';
-      console.log('✅ 슬라이드 업 애니메이션');
-    }, 10);
+  window.currentAgreementTaskData = null; // 필요시 나중에 로드
+  const modal = document.getElementById('agreementActionModal');
+  if (modal) {
+    modal.style.display = 'flex';
   } else {
-    console.error('❌ 동의 모달을 찾을 수 없습니다');
+    console.error('동의 모달을 찾을 수 없습니다');
   }
 };
 
@@ -360,10 +294,7 @@ window.handleSendSMS = async function() {
     
     const result = await sendAgreementSMS(window.currentAgreementTaskId, taskData);
     if (result.success) {
-      // 모달 닫기
-      if (window.closeAgreementModal) {
-        window.closeAgreementModal();
-      }
+      document.getElementById('agreementActionModal').style.display = 'none';
       
       // 캐시 삭제 후 목록 새로고침
       if (window.sessionStorage) {
@@ -392,25 +323,10 @@ window.handleSendSMS = async function() {
 };
 
 window.handleDirectAgreement = function() {
-  // 슬라이드 다운 애니메이션
-  const modalBackdrop = document.getElementById('agreementModalBackdrop');
-  const modalContent = document.getElementById('agreementModalContent');
-  
-  if (modalContent) {
-    modalContent.style.transform = 'translateY(100%)';
-  }
-  
-  setTimeout(() => {
-    // 배경과 컨텐츠 숨기기
-    if (modalBackdrop) modalBackdrop.style.display = 'none';
-    if (modalContent) modalContent.style.display = 'none';
-    
-    // 직접 동의 모달 열기
-    const directModal = document.getElementById('directAgreementModal');
-    directModal.style.display = 'flex';
-    setupSignatureCanvas();
-  }, 300);
-};
+  document.getElementById('agreementActionModal').style.display = 'none';
+  const modal = document.getElementById('directAgreementModal');
+  modal.style.display = 'flex';
+  setupSignatureCanvas();
 };
 
 window.submitDirectAgreement = async function() {
@@ -418,9 +334,6 @@ window.submitDirectAgreement = async function() {
   if (result.success) {
     alert('동의 완료!');
     document.getElementById('directAgreementModal').style.display = 'none';
-    
-    // body 스크롤 복원
-    document.body.style.overflow = '';
     
     // 모든 캐시 강제 삭제
     if (window.sessionStorage) {
@@ -471,11 +384,4 @@ window.refreshTaskList = function() {
   }
 };
 
-// 페이지 로드 시 모달 생성
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', createModals);
-} else {
-  createModals();
-}
-
-console.log('✅ Agreement system loaded');
+console.log('Agreement system loaded');
