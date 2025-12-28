@@ -1389,7 +1389,7 @@ export function getStockStatusHTML(stockData) {
         <td class="min-stock">${minStock}개</td>
         <td class="last-updated">${lastUpdated}</td>
         <td class="actions">
-          <button onclick="managePart('${item.id}', '${item.partName}', ${currentStock}, ${unitPrice})" class="adjust-btn">🔧 관리</button>
+          <button onclick="adjustStock('${item.partName}', ${currentStock})" class="adjust-btn">📝 조정</button>
         </td>
       </tr>
     `;

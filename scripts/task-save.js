@@ -25,28 +25,6 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
   console.log('window.editingTaskId:', window.editingTaskId);
   console.log('window.editingTabType:', window.editingTabType);
   
-  // 🔥 작업자 체크박스 → hidden input 동기화 (저장 전 필수!)
-  const isWorkerEditForm = form.id === 'worker-edit-form';
-  if (!isWorkerEditForm) {
-    // 관리자 폼인 경우: 체크박스에서 직접 읽어서 hidden input 업데이트
-    const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]:checked');
-    const selectedWorkers = Array.from(workerCheckboxes).map(cb => cb.value);
-    
-    let hiddenInput = document.getElementById('selected-workers');
-    if (!hiddenInput) {
-      // hidden input이 없으면 생성
-      hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.name = 'worker';
-      hiddenInput.id = 'selected-workers';
-      form.appendChild(hiddenInput);
-      console.log('✅ hidden input 자동 생성');
-    }
-    
-    hiddenInput.value = selectedWorkers.join(',');
-    console.log('✅ 작업자 동기화:', selectedWorkers.join(',') || '(미지정)');
-  }
-  
   // 편집 상태 정리 - 우선순위: 매개변수 > window 전역변수
   const finalIsEdit = isEdit || (window.editingTaskId !== null && window.editingTaskId !== undefined);
   const finalEditId = editId || window.editingTaskId;
@@ -60,7 +38,7 @@ window.handleTaskSave = async function(isEdit = false, editId = null, tabType = 
   console.log('최종 탭타입:', finalTabType);
 
   // 기존 필드들 - 폼 형태에 따라 다르게 처리
-  // isWorkerEditForm은 위에서 이미 선언됨
+  const isWorkerEditForm = form.id === 'worker-edit-form';
   
   let formData;
   if (isWorkerEditForm) {

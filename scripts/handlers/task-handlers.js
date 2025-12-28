@@ -551,6 +551,7 @@ function setupFormEventListeners() {
   
   if (clientInput) {
     clientInput.addEventListener('input', window.calculateFee);
+    clientInput.addEventListener('blur', window.calculateFee);
   }
   if (amountInput) {
     amountInput.addEventListener('input', window.calculateFee);

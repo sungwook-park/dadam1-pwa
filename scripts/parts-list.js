@@ -2,13 +2,11 @@
 
 export const PARTS_LIST = [
   {name: 'CT60', price: 12500},
-  {name: 'CT70', price: 17000},
   {name: 'W-60', price: 18700},        // ⭐️ 새로 추가된 부품
   {name: 'W-60T', price: 27500},
   {name: 'WB60', price: 35000},
-  {name: 'WB70', price: 42000},
+  {name: 'WB70', price: 40000},
   {name: 'LW221(32인치용)', price: 11000},
-  {name: 'LPA-696', price: 110000},
   {name: 'DN60', price: 65000},
   {name: 'DN85', price: 90000},
   {name: 'DN110', price: 100000},
