@@ -88,40 +88,37 @@ function createModals() {
   
   document.body.insertAdjacentHTML('beforeend', modalsHTML);
   
+  // 모달 닫기 공통 함수
+  function closeAgreementModal() {
+    const modal = document.getElementById('agreementActionModal');
+    const modalContent = document.getElementById('agreementModalContent');
+    
+    // 슬라이드 다운 애니메이션
+    if (modalContent) {
+      modalContent.style.transform = 'translateY(100%)';
+    }
+    
+    // 애니메이션 완료 후 모달 숨기기 + body 스크롤 복원
+    setTimeout(() => {
+      modal.style.display = 'none';
+      document.getElementById('directAgreementModal').style.display = 'none';
+      // body 스크롤 복원
+      document.body.style.overflow = '';
+    }, 300);
+  }
+  
   document.querySelectorAll('.close-agreement-modal').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const modal = document.getElementById('agreementActionModal');
-      const modalContent = document.getElementById('agreementModalContent');
-      
-      // 슬라이드 다운 애니메이션
-      if (modalContent) {
-        modalContent.style.transform = 'translateY(100%)';
-      }
-      
-      // 애니메이션 완료 후 모달 숨기기
-      setTimeout(() => {
-        modal.style.display = 'none';
-        document.getElementById('directAgreementModal').style.display = 'none';
-      }, 300);
-    });
+    btn.addEventListener('click', closeAgreementModal);
   });
   
   // 배경 클릭 시 닫기
   const backdrop = document.getElementById('agreementModalBackdrop');
   if (backdrop) {
-    backdrop.addEventListener('click', () => {
-      const modal = document.getElementById('agreementActionModal');
-      const modalContent = document.getElementById('agreementModalContent');
-      
-      if (modalContent) {
-        modalContent.style.transform = 'translateY(100%)';
-      }
-      
-      setTimeout(() => {
-        modal.style.display = 'none';
-      }, 300);
-    });
+    backdrop.addEventListener('click', closeAgreementModal);
   }
+  
+  // 전역으로 등록
+  window.closeAgreementModal = closeAgreementModal;
 }
 
 // 동의서 도메인 설정
@@ -306,6 +303,9 @@ window.showAgreementModal = function(taskId) {
   const modalContent = document.getElementById('agreementModalContent');
   
   if (modal && modalContent) {
+    // body 스크롤 막기
+    document.body.style.overflow = 'hidden';
+    
     modal.style.display = 'block';
     // 약간의 딜레이 후 슬라이드 업 애니메이션
     setTimeout(() => {
@@ -330,17 +330,10 @@ window.handleSendSMS = async function() {
     
     const result = await sendAgreementSMS(window.currentAgreementTaskId, taskData);
     if (result.success) {
-      // 슬라이드 다운 애니메이션
-      const modal = document.getElementById('agreementActionModal');
-      const modalContent = document.getElementById('agreementModalContent');
-      
-      if (modalContent) {
-        modalContent.style.transform = 'translateY(100%)';
+      // 모달 닫기
+      if (window.closeAgreementModal) {
+        window.closeAgreementModal();
       }
-      
-      setTimeout(() => {
-        modal.style.display = 'none';
-      }, 300);
       
       // 캐시 삭제 후 목록 새로고침
       if (window.sessionStorage) {
@@ -392,6 +385,9 @@ window.submitDirectAgreement = async function() {
   if (result.success) {
     alert('동의 완료!');
     document.getElementById('directAgreementModal').style.display = 'none';
+    
+    // body 스크롤 복원
+    document.body.style.overflow = '';
     
     // 모든 캐시 강제 삭제
     if (window.sessionStorage) {
