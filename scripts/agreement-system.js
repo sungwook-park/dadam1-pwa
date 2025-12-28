@@ -3,11 +3,11 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gst
 
 function createModals() {
   const modalsHTML = `
-    <div id="agreementActionModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;">
-      <!-- 배경 레이어 -->
-      <div id="agreementModalBackdrop" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);"></div>
-      <!-- 컨텐츠 레이어 -->
-      <div id="agreementModalContent" style="position:absolute;bottom:0;left:0;right:0;background:white;padding:20px 20px calc(20px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;width:100%;max-width:600px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s ease-out;">
+    <div id="agreementActionModal" style="display:none;">
+      <!-- 배경: viewport 전체를 덮음 -->
+      <div id="agreementModalBackdrop" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:999998;"></div>
+      <!-- 컨텐츠: viewport 하단에 고정 -->
+      <div id="agreementModalContent" style="position:fixed;bottom:0;left:0;right:0;background:white;padding:20px 20px calc(20px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;max-width:600px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s ease-out;z-index:999999;">
         <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
         <h3 style="margin-bottom:20px;color:black;font-size:20px;text-align:center;">동의 받기 방법 선택</h3>
         <button onclick="handleSendSMS()" style="width:100%;padding:18px;margin-bottom:12px;background:#667eea;color:white;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:600;">문자로 링크 보내기</button>
@@ -93,6 +93,7 @@ function createModals() {
   // 모달 닫기 공통 함수
   function closeAgreementModal() {
     const modal = document.getElementById('agreementActionModal');
+    const modalBackdrop = document.getElementById('agreementModalBackdrop');
     const modalContent = document.getElementById('agreementModalContent');
     
     // 슬라이드 다운 애니메이션
@@ -102,7 +103,9 @@ function createModals() {
     
     // 애니메이션 완료 후 모달 숨기기 + body 스크롤 복원
     setTimeout(() => {
-      modal.style.display = 'none';
+      if (modal) modal.style.display = 'none';
+      if (modalBackdrop) modalBackdrop.style.display = 'none';
+      if (modalContent) modalContent.style.display = 'none';
       document.getElementById('directAgreementModal').style.display = 'none';
       // body 스크롤 복원
       document.body.style.overflow = '';
@@ -302,13 +305,22 @@ window.showAgreementModal = function(taskId) {
   window.currentAgreementTaskId = taskId;
   window.currentAgreementTaskData = null; // 필요시 나중에 로드
   const modal = document.getElementById('agreementActionModal');
+  const modalBackdrop = document.getElementById('agreementModalBackdrop');
   const modalContent = document.getElementById('agreementModalContent');
   
-  if (modal && modalContent) {
+  if (modal && modalBackdrop && modalContent) {
     // body 스크롤 막기
     document.body.style.overflow = 'hidden';
     
+    // 모달 컨테이너 표시
     modal.style.display = 'block';
+    
+    // 배경 표시
+    modalBackdrop.style.display = 'block';
+    
+    // 컨텐츠 표시
+    modalContent.style.display = 'block';
+    
     // 약간의 딜레이 후 슬라이드 업 애니메이션
     setTimeout(() => {
       modalContent.style.transform = 'translateY(0)';
