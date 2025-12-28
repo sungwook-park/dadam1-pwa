@@ -16,31 +16,23 @@ function createModals() {
       <div style="background:white;padding:30px;border-radius:10px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;margin:20px;">
         <h3 style="margin-bottom:20px;color:black;font-size:20px;">고객 동의서</h3>
         
-        <div style="margin:20px 0;padding:15px;background:#f8f9fa;border-radius:5px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-            <h4 style="color:black;font-size:16px;margin:0;">개인정보 수집 및 이용 동의</h4>
-            <label style="display:flex;align-items:center;color:black;font-size:15px;white-space:nowrap;cursor:pointer;">
-              <input type="checkbox" id="privacyAgree" style="margin-right:8px;">
-              동의합니다
-            </label>
-          </div>
-          <div style="padding:12px;background:white;border-radius:5px;font-size:13px;color:#333;line-height:1.6;border:1px solid #ddd;">
+        <div style="margin:20px 0;">
+          <h4 style="color:black;font-size:16px;margin:0 0 15px 0;">개인정보 수집 및 이용 동의</h4>
+          <div style="padding:15px;background:#f8f9fa;border-radius:5px;font-size:14px;color:#333;line-height:1.6;border:1px solid #ddd;margin-bottom:10px;">
             <p style="margin-bottom:10px;"><strong>1. 수집 항목:</strong> 성명, 연락처, 주소</p>
             <p style="margin-bottom:10px;"><strong>2. 수집 목적:</strong> TV 설치 서비스 제공, 일정 안내 및 고객 관리</p>
             <p style="margin-bottom:10px;"><strong>3. 보유 기간:</strong> 서비스 완료 후 1년간 보관 후 파기(단, 관련 법령에 따라 보관이 필요한 경우는 예외)</p>
             <p style="margin-bottom:0;"><strong>4. 동의 거부 권리:</strong> 개인정보 수집·이용에 대한 동의를 거부할 수 있으나, 동의하지 않을 경우 서비스 제공이 제한될 수 있습니다.</p>
           </div>
+          <label style="display:flex;align-items:center;color:black;font-size:15px;cursor:pointer;font-weight:bold;">
+            <input type="checkbox" id="privacyAgree" style="margin-right:8px;width:20px;height:20px;">
+            동의합니다
+          </label>
         </div>
 
-        <div style="margin:20px 0;padding:15px;background:#f8f9fa;border-radius:5px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-            <h4 style="color:black;font-size:16px;margin:0;">TV 이전 설치 안내사항 및 책임 범위</h4>
-            <label style="display:flex;align-items:center;color:black;font-size:15px;white-space:nowrap;cursor:pointer;">
-              <input type="checkbox" id="noticeAgree" style="margin-right:8px;">
-              동의합니다
-            </label>
-          </div>
-          <div style="padding:12px;background:white;border-radius:5px;font-size:13px;color:#333;line-height:1.6;border:1px solid #ddd;">
+        <div style="margin:20px 0;">
+          <h4 style="color:black;font-size:16px;margin:0 0 15px 0;">TV 이전 설치 안내사항 및 책임 범위</h4>
+          <div style="padding:15px;background:#f8f9fa;border-radius:5px;font-size:14px;color:#333;line-height:1.6;border:1px solid #ddd;margin-bottom:10px;">
             <p style="margin-bottom:12px;font-weight:bold;">본인은 TV 이전 설치 서비스와 관련하여 아래 안내사항을 충분히 확인하고 이에 동의합니다.</p>
             
             <p style="margin-bottom:8px;font-weight:bold;">1. 제품 파손에 대한 책임</p>
@@ -72,6 +64,10 @@ function createModals() {
             <p style="margin-bottom:8px;font-weight:bold;">6. 설치 위치 및 추가 작업 안내</p>
             <p style="margin-bottom:0;">설치 완료 후 TV 위치 변경, 재설치, 추가 배선 또는 별도 작업 요청 시 추가 비용이 발생할 수 있음을 확인합니다.</p>
           </div>
+          <label style="display:flex;align-items:center;color:black;font-size:15px;cursor:pointer;font-weight:bold;">
+            <input type="checkbox" id="noticeAgree" style="margin-right:8px;width:20px;height:20px;">
+            동의합니다
+          </label>
         </div>
 
         <div style="margin:20px 0;">
@@ -99,7 +95,7 @@ function createModals() {
 }
 
 // 동의서 도메인 설정
-const AGREEMENT_DOMAIN = 'https://agreement.dadamnews.com';
+const AGREEMENT_DOMAIN = 'https://dadam1-pwa.vercel.app';
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
