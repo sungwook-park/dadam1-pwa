@@ -3,8 +3,9 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gst
 
 function createModals() {
   const modalsHTML = `
-    <div id="agreementActionModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999999;align-items:flex-end;">
-      <div id="agreementModalContent" style="background:white;padding:20px;border-radius:20px 20px 0 0;width:100%;max-width:600px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s ease-out;">
+    <div id="agreementActionModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;">
+      <div id="agreementModalBackdrop" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);"></div>
+      <div id="agreementModalContent" style="position:absolute;bottom:0;left:0;right:0;background:white;padding:20px 20px calc(20px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;width:100%;max-width:600px;margin:0 auto;transform:translateY(100%);transition:transform 0.3s ease-out;">
         <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px;"></div>
         <h3 style="margin-bottom:20px;color:black;font-size:20px;text-align:center;">동의 받기 방법 선택</h3>
         <button onclick="handleSendSMS()" style="width:100%;padding:18px;margin-bottom:12px;background:#667eea;color:white;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:600;">문자로 링크 보내기</button>
@@ -106,8 +107,9 @@ function createModals() {
   });
   
   // 배경 클릭 시 닫기
-  document.getElementById('agreementActionModal').addEventListener('click', (e) => {
-    if (e.target.id === 'agreementActionModal') {
+  const backdrop = document.getElementById('agreementModalBackdrop');
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
       const modal = document.getElementById('agreementActionModal');
       const modalContent = document.getElementById('agreementModalContent');
       
@@ -118,8 +120,8 @@ function createModals() {
       setTimeout(() => {
         modal.style.display = 'none';
       }, 300);
-    }
-  });
+    });
+  }
 }
 
 // 동의서 도메인 설정
@@ -304,7 +306,7 @@ window.showAgreementModal = function(taskId) {
   const modalContent = document.getElementById('agreementModalContent');
   
   if (modal && modalContent) {
-    modal.style.display = 'flex';
+    modal.style.display = 'block';
     // 약간의 딜레이 후 슬라이드 업 애니메이션
     setTimeout(() => {
       modalContent.style.transform = 'translateY(0)';
