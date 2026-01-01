@@ -2,10 +2,10 @@
 
 import { isCurrentUserAdmin } from '../utils/task-utils.js';
 import { loadTodayTasks, loadReserveTasks, loadDoneTasks } from '../loaders/task-loaders.js';
-import { loadSettlement } from '../settle.js';
+import { loadSettlement } from '../settlement/settlement-main.js';
 import { getTaskSubTabsHTML, getTaskInputFormHTML } from '../templates/task-templates.js';
 import { getNowYYYYMMDDHHMM } from '../utils/date-utils.js';
-import { renderItemsInput } from '../components/task-item.js';
+import { renderItemsInput, renderWorkerCheckboxes } from '../components/task-item.js';
 import { calculateFee, updateSelectedWorkers } from '../utils/task-utils.js';
 
 // 메인 탭 관리 (관리자만)
@@ -145,27 +145,46 @@ export function openTab(name) {
       <div style="position: absolute; top: -4px; left: 8px; right: 8px; height: 2.5px; background: currentColor; border-radius: 1px;"></div>
       <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border: 2.5px solid currentColor; border-radius: 50%;"></div>
     </div>`;
+  } else if (name === 'backup') {
+    titleText = '데이터 백업';
+    titleIcon = `<div style="
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      border: 2.5px solid currentColor;
+      border-radius: 6px;
+      position: relative;
+      vertical-align: middle;
+      margin-right: 8px;
+    ">
+      <div style="position: absolute; top: 8px; left: 6px; right: 6px; height: 2px; background: currentColor; border-radius: 1px;"></div>
+      <div style="position: absolute; top: 14px; left: 6px; right: 6px; height: 2px; background: currentColor; border-radius: 1px;"></div>
+      <div style="position: absolute; top: 20px; left: 6px; right: 6px; height: 2px; background: currentColor; border-radius: 1px;"></div>
+      <div style="position: absolute; bottom: 6px; right: 6px; width: 0; height: 0; border: 3px solid transparent; border-top: 5px solid currentColor;"></div>
+    </div>`;
   }
   
   // 박스 스타일로 제목 설정
-  tabTitleElement.innerHTML = `
-    <div style="
-      background: white;
-      padding: 20px 25px;
-      border-radius: 12px;
-      margin-bottom: 25px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      text-align: center;
-      border-left: 4px solid #8ecae6;
-    ">
-      <h3 style="
-        margin: 0;
-        font-size: 1.4rem;
-        color: #333;
-        font-weight: 600;
-      ">${titleIcon} ${titleText}</h3>
-    </div>
-  `;
+  if (titleText) {
+    tabTitleElement.innerHTML = `
+      <div style="
+        background: white;
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+        border-left: 4px solid #8ecae6;
+      ">
+        <h3 style="
+          margin: 0;
+          font-size: 1.4rem;
+          color: #333;
+          font-weight: 600;
+        ">${titleIcon} ${titleText}</h3>
+      </div>
+    `;
+  }
   
   if (name === 'task') showTaskTab('check');
   else if (name === 'reserve') loadReserveTasks();
@@ -179,6 +198,14 @@ export function openTab(name) {
     } else {
       console.error('입출고 관리 모듈을 찾을 수 없습니다.');
       document.getElementById('tab-body').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">입출고 관리 모듈을 로드할 수 없습니다.</div>';
+    }
+  } else if (name === 'backup') {
+    // 🔥 백업 탭 처리 추가
+    if (window.loadBackupTab) {
+      window.loadBackupTab();
+    } else {
+      console.error('백업 모듈을 찾을 수 없습니다.');
+      document.getElementById('tab-body').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">백업 모듈을 로드할 수 없습니다.</div>';
     }
   }
 }
@@ -251,10 +278,87 @@ export function showTaskTab(type) {
     // 부품 입력 렌더링
     renderItemsInput('items-input');
     
+    
     // 렌더링 후 추가 초기화
     setTimeout(() => {
       console.log('렌더링 후 추가 초기화');
       clearAllPartsDOM();
+      
+      // 🔥 작업자 체크박스 렌더링 (DOM 준비 후)
+      (async function loadWorkerCheckboxes() {
+        try {
+          // 1. 컨테이너 확인 및 생성
+          let container = document.getElementById('worker-checkboxes-container');
+          
+          if (!container) {
+            console.warn('⚠️ worker-checkboxes-container가 없음, 생성 시도...');
+            
+            // "작업자 선택" 라벨 찾기
+            const labels = Array.from(document.querySelectorAll('label'));
+            const targetLabel = labels.find(label => 
+              label.textContent.trim() === '작업자 선택'
+            );
+            
+            if (targetLabel) {
+              container = document.createElement('div');
+              container.id = 'worker-checkboxes-container';
+              container.style.cssText = 'display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px;';
+              targetLabel.parentElement.appendChild(container);
+              console.log('✅ worker-checkboxes-container 생성 완료');
+            } else {
+              console.error('❌ "작업자 선택" 라벨을 찾을 수 없습니다!');
+              return;
+            }
+          }
+          
+          // 2. renderWorkerCheckboxes 함수 호출
+          if (window.renderWorkerCheckboxes) {
+            await window.renderWorkerCheckboxes();
+            console.log('✅ 작업자 체크박스 로드 완료');
+          } else {
+            console.error('❌ renderWorkerCheckboxes 함수를 찾을 수 없습니다!');
+          }
+          
+          // 3. hidden input 생성 (없으면)
+          const form = document.getElementById('task-form');
+          if (form) {
+            let hiddenInput = document.getElementById('selected-workers');
+            if (!hiddenInput) {
+              hiddenInput = document.createElement('input');
+              hiddenInput.type = 'hidden';
+              hiddenInput.name = 'worker';
+              hiddenInput.id = 'selected-workers';
+              form.appendChild(hiddenInput);
+              console.log('✅ hidden input 생성');
+            }
+          }
+          
+          // 4. updateSelectedWorkers 함수 정의 (없으면)
+          if (!window.updateSelectedWorkers) {
+            window.updateSelectedWorkers = function() {
+              const checkboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
+              const selected = [];
+              
+              checkboxes.forEach(cb => {
+                if (cb.checked) {
+                  selected.push(cb.value);
+                }
+              });
+              
+              const hidden = document.getElementById('selected-workers');
+              if (hidden) {
+                hidden.value = selected.join(',');
+              }
+              
+              console.log('✅ 선택된 작업자:', selected.join(',') || '(없음)');
+            };
+            console.log('✅ updateSelectedWorkers 함수 등록');
+          }
+          
+        } catch (err) {
+          console.error('❌ 작업자 체크박스 로드 실패:', err);
+        }
+      })();
       
       // 이벤트 리스너 설정
       const clientInput = document.getElementById('client-input');

@@ -93,7 +93,7 @@ function showWorkerInterface(userInfo) {
     // 타이틀 제거 (헤더바에 이미 표시됨)
     tabTitle.innerHTML = '';
     
-    // 작업자용 서브탭 (오늘작업, 완료작업만) - 1줄 정렬
+    // 작업자용 서브탭 (오늘작업, 완료작업, 정산, 설정) - 1줄 정렬
     tabBody.innerHTML = `
       <div class="worker-subtabs">
         <button onclick="loadWorkerTodayTasks()" class="worker-tab-btn active" id="today-tab">
@@ -101,6 +101,12 @@ function showWorkerInterface(userInfo) {
         </button>
         <button onclick="loadWorkerDoneTasks()" class="worker-tab-btn" id="done-tab">
           ✅ 완료작업
+        </button>
+        <button onclick="loadWorkerSettlement()" class="worker-tab-btn" id="settlement-tab">
+          💰 정산
+        </button>
+        <button onclick="loadWorkerSettings()" class="worker-tab-btn" id="settings-tab">
+          ⚙️ 설정
         </button>
       </div>
       <div id="worker-task-content">

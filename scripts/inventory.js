@@ -891,19 +891,68 @@ window.checkLowStock = async function() {
   }
 };
 
-// 재고 조정 (관리자 전용)
-window.adjustStock = async function(partName, currentStock) {
-  console.log('🔧 재고 조정:', partName);
+// 부품 관리 (재고 조정, 단가 수정, 삭제) - 관리자 전용
+window.managePart = async function(partId, partName, currentStock, unitPrice) {
+  console.log('🔧 부품 관리:', partName);
   
   const userInfo = window.getCurrentUserInfo();
   const isAdmin = window.isCurrentUserAdmin && window.isCurrentUserAdmin();
   
   if (!isAdmin) {
-    alert('재고 조정은 관리자만 가능합니다.');
+    alert('부품 관리는 관리자만 가능합니다.');
     return;
   }
   
-  const newStock = prompt(`${partName}의 현재 재고는 ${currentStock}개입니다.\n새로운 재고 수량을 입력하세요:`, currentStock);
+  // 관리 옵션 선택
+  const options = [
+    '1️⃣ 재고 수량 조정',
+    '2️⃣ 단가 수정',
+    '3️⃣ 부품 정보 수정',
+    '4️⃣ 부품 삭제',
+    '❌ 취소'
+  ].join('\n');
+  
+  const choice = prompt(`${partName} 관리\n\n현재 재고: ${currentStock}개\n현재 단가: ${unitPrice?.toLocaleString() || 0}원\n\n${options}\n\n숫자를 입력하세요 (1-4):`);
+  
+  if (!choice || choice === '5') {
+    return; // 취소
+  }
+  
+  try {
+    switch(choice) {
+      case '1':
+        // 재고 수량 조정
+        await adjustStockQuantity(partId, partName, currentStock, userInfo);
+        break;
+      
+      case '2':
+        // 단가 수정
+        await updatePartPrice(partId, partName, unitPrice, userInfo);
+        break;
+      
+      case '3':
+        // 부품 정보 수정 (이름, 최소재고 등)
+        await updatePartInfo(partId, partName, currentStock, unitPrice, userInfo);
+        break;
+      
+      case '4':
+        // 부품 삭제
+        await deletePart(partId, partName, currentStock, userInfo);
+        break;
+      
+      default:
+        alert('올바른 숫자를 입력해주세요 (1-4)');
+    }
+  } catch (error) {
+    console.error('❌ 부품 관리 오류:', error);
+    alert('부품 관리 중 오류가 발생했습니다: ' + error.message);
+  }
+};
+
+// 재고 수량 조정
+async function adjustStockQuantity(partId, partName, currentStock, userInfo) {
+  const newStock = prompt(`${partName}의 현재 재고는 ${currentStock}개입니다.
+새로운 재고 수량을 입력하세요:`, currentStock);
   
   if (newStock === null || newStock === '') {
     return; // 취소
@@ -921,50 +970,185 @@ window.adjustStock = async function(partName, currentStock) {
     return;
   }
   
-  try {
-    // 재고 조정 내역 기록
-    const adjustmentQuantity = adjustedStock - currentStock;
-    const inventoryData = {
-      type: adjustmentQuantity > 0 ? 'in' : 'out',
-      partName: partName,
-      quantity: Math.abs(adjustmentQuantity),
-      unitPrice: 0,
-      totalAmount: 0,
-      reason: '재고조정 - ' + reason,
-      worker: userInfo?.name || '',
-      note: `${currentStock}개 → ${adjustedStock}개`,
-      date: new Date().toISOString(),
-      createdAt: Timestamp.now(),
-      createdBy: userInfo?.email || ''
-    };
-    
-    await addDoc(collection(db, "inventory"), inventoryData);
-    
-    // 재고 직접 업데이트
-    const stockQuery = query(
-      collection(db, "stock"),
-      where("partName", "==", partName)
-    );
-    
-    const stockSnapshot = await getDocs(stockQuery);
-    if (!stockSnapshot.empty) {
-      const stockDoc = stockSnapshot.docs[0];
-      await updateDoc(stockDoc.ref, {
-        currentStock: adjustedStock,
-        lastUpdated: Timestamp.now()
-      });
+  // 재고 조정 내역 기록
+  const adjustmentQuantity = adjustedStock - currentStock;
+  const inventoryData = {
+    type: adjustmentQuantity > 0 ? 'in' : 'out',
+    partName: partName,
+    quantity: Math.abs(adjustmentQuantity),
+    unitPrice: 0,
+    totalAmount: 0,
+    reason: '재고조정 - ' + reason,
+    worker: userInfo?.name || '',
+    note: `${currentStock}개 → ${adjustedStock}개`,
+    date: new Date().toISOString(),
+    createdAt: Timestamp.now(),
+    createdBy: userInfo?.email || ''
+  };
+  
+  await addDoc(collection(db, "inventory"), inventoryData);
+  
+  // 재고 업데이트
+  await updateDoc(doc(db, "stock", partId), {
+    currentStock: adjustedStock,
+    lastUpdated: Timestamp.now()
+  });
+  
+  alert(`재고 조정 완료!
+${partName}: ${currentStock}개 → ${adjustedStock}개`);
+  
+  // 재고 현황 새로고침
+  if (currentSubTab === 'stock') {
+    await loadStockStatus();
+  }
+}
+
+// 단가 수정
+async function updatePartPrice(partId, partName, currentPrice, userInfo) {
+  const newPrice = prompt(`${partName}의 현재 단가는 ${currentPrice?.toLocaleString() || 0}원입니다.
+새로운 단가를 입력하세요 (원):`, currentPrice || 0);
+  
+  if (newPrice === null || newPrice === '') {
+    return; // 취소
+  }
+  
+  const adjustedPrice = parseFloat(newPrice);
+  if (isNaN(adjustedPrice) || adjustedPrice < 0) {
+    alert('올바른 금액을 입력해주세요.');
+    return;
+  }
+  
+  const reason = prompt('단가 변경 사유를 입력하세요:', '단가 조정');
+  if (!reason) {
+    alert('변경 사유를 입력해주세요.');
+    return;
+  }
+  
+  // 단가 업데이트
+  await updateDoc(doc(db, "stock", partId), {
+    unitPrice: adjustedPrice,
+    lastUpdated: Timestamp.now(),
+    priceChangeHistory: {
+      oldPrice: currentPrice || 0,
+      newPrice: adjustedPrice,
+      reason: reason,
+      changedBy: userInfo?.email || '',
+      changedAt: Timestamp.now()
     }
-    
-    alert(`재고 조정 완료!\n${partName}: ${currentStock}개 → ${adjustedStock}개`);
-    
-    // 재고 현황 새로고침
-    if (currentSubTab === 'stock') {
-      await loadStockStatus();
+  });
+  
+  alert(`단가 수정 완료!
+${partName}: ${(currentPrice || 0).toLocaleString()}원 → ${adjustedPrice.toLocaleString()}원`);
+  
+  // 재고 현황 새로고침
+  if (currentSubTab === 'stock') {
+    await loadStockStatus();
+  }
+}
+
+// 부품 정보 수정 (이름, 최소재고 등)
+async function updatePartInfo(partId, partName, currentStock, unitPrice, userInfo) {
+  const newName = prompt(`부품명을 수정하세요:`, partName);
+  if (!newName || newName === '') {
+    alert('부품명을 입력해주세요.');
+    return;
+  }
+  
+  const stockDoc = await getDoc(doc(db, "stock", partId));
+  const currentMinStock = stockDoc.data().minStock || 5;
+  
+  const newMinStock = prompt(`최소 재고량을 수정하세요 (개):`, currentMinStock);
+  if (newMinStock === null || newMinStock === '') {
+    return; // 취소
+  }
+  
+  const minStock = parseInt(newMinStock);
+  if (isNaN(minStock) || minStock < 0) {
+    alert('올바른 수량을 입력해주세요.');
+    return;
+  }
+  
+  // 부품 정보 업데이트
+  await updateDoc(doc(db, "stock", partId), {
+    partName: newName,
+    minStock: minStock,
+    lastUpdated: Timestamp.now()
+  });
+  
+  alert(`부품 정보 수정 완료!
+${partName} → ${newName}
+최소재고: ${currentMinStock}개 → ${minStock}개`);
+  
+  // 재고 현황 새로고침
+  if (currentSubTab === 'stock') {
+    await loadStockStatus();
+  }
+}
+
+// 부품 삭제
+async function deletePart(partId, partName, currentStock, userInfo) {
+  if (currentStock > 0) {
+    const confirmDelete = confirm(`⚠️ 경고: ${partName}의 현재 재고가 ${currentStock}개 남아있습니다.
+
+그래도 삭제하시겠습니까?
+
+삭제 시 재고 내역도 함께 삭제됩니다.`);
+    if (!confirmDelete) {
+      return;
     }
-    
-  } catch (error) {
-    console.error('❌ 재고 조정 오류:', error);
-    alert('재고 조정 중 오류가 발생했습니다: ' + error.message);
+  } else {
+    const confirmDelete = confirm(`${partName} 부품을 삭제하시겠습니까?
+
+삭제 시 관련 입출고 내역은 유지되지만,
+부품 목록에서는 제거됩니다.`);
+    if (!confirmDelete) {
+      return;
+    }
+  }
+  
+  const reason = prompt('삭제 사유를 입력하세요:', '부품 사용 중단');
+  if (!reason) {
+    alert('삭제 사유를 입력해주세요.');
+    return;
+  }
+  
+  // 삭제 내역 기록 (선택사항)
+  const deleteLog = {
+    type: 'delete',
+    partName: partName,
+    deletedStock: currentStock,
+    reason: reason,
+    deletedBy: userInfo?.email || '',
+    deletedAt: Timestamp.now()
+  };
+  
+  await addDoc(collection(db, "part_deletion_log"), deleteLog);
+  
+  // 부품 삭제
+  await deleteDoc(doc(db, "stock", partId));
+  
+  alert(`부품 삭제 완료!
+${partName}이(가) 부품 목록에서 제거되었습니다.`);
+  
+  // 재고 현황 새로고침
+  if (currentSubTab === 'stock') {
+    await loadStockStatus();
+  }
+}
+
+// 기존 함수명 호환성 유지
+window.adjustStock = async function(partName, currentStock) {
+  // partId를 찾아서 managePart 호출
+  const stockQuery = query(
+    collection(db, "stock"),
+    where("partName", "==", partName)
+  );
+  
+  const stockSnapshot = await getDocs(stockQuery);
+  if (!stockSnapshot.empty) {
+    const stockDoc = stockSnapshot.docs[0];
+    const data = stockDoc.data();
+    await window.managePart(stockDoc.id, partName, currentStock, data.unitPrice);
   }
 };
 

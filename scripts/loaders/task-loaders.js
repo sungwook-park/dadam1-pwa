@@ -553,3 +553,25 @@ export async function searchDoneTasksEnhanced() {
     alert('검색 중 오류가 발생했습니다.');
   }
 }
+window.getAgreementStatusBadge = function(status) {
+  if (!status || status === 'none') {
+    return '<span style="background:#f5f5f5;color:#9e9e9e;padding:3px 8px;border-radius:3px;font-size:12px;">미발송</span>';
+  }
+  if (status === 'pending') {
+    return '<span style="background:#fff3e0;color:#f57c00;padding:3px 8px;border-radius:3px;font-size:12px;">대기</span>';
+  }
+  if (status === 'completed') {
+    return '<span style="background:#e8f5e9;color:#388e3c;padding:3px 8px;border-radius:3px;font-size:12px;">완료</span>';
+  }
+  return '<span style="background:#f5f5f5;color:#9e9e9e;padding:3px 8px;border-radius:3px;font-size:12px;">미발송</span>';
+};
+
+window.getAgreementSectionHTML = function(taskId, taskData) {
+  const status = taskData.agreementStatus || 'none';
+  const badge = window.getAgreementStatusBadge(status);
+  
+  const client = (taskData.client || '').replace(/'/g, "\\'");
+  const contact = (taskData.contact || '').replace(/'/g, "\\'");
+  
+  return '<div style="margin:10px 0;padding:10px;background:#f8f9fa;border-radius:5px;">동의상태: ' + badge + ' <button onclick="window.showAgreementActions(\'' + taskId + '\', {client:\'' + client + '\', contact:\'' + contact + '\'})" style="margin-left:10px;padding:5px 15px;background:#667eea;color:white;border:none;border-radius:5px;cursor:pointer;">동의</button></div>';
+};

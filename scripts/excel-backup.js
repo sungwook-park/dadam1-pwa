@@ -119,7 +119,8 @@ function convertToExcelFormat(rawData) {
     reservations: [],
     settlements: [],
     funds: [],
-    inventory: []
+    inventory: [],
+    agreements: [] // 동의서 데이터
   };
   
   const today = new Date();
@@ -231,6 +232,33 @@ function convertToExcelFormat(rawData) {
         '성욱(40%)': sungwook,
         '성호(30%)': sungho,
         '희종(30%)': heejong
+      });
+    }
+
+    // 동의서 데이터 추가
+    if (task.customerAgreement && task.agreementStatus === 'completed') {
+      const agreement = task.customerAgreement;
+      let agreedDate = '';
+      if (agreement.agreedAt) {
+        try {
+          const date = agreement.agreedAt.toDate ? agreement.agreedAt.toDate() : new Date(agreement.agreedAt);
+          agreedDate = formatDate(date);
+        } catch (e) {
+          agreedDate = '';
+        }
+      }
+      
+      excelData.agreements.push({
+        '작업ID': task.id,
+        '작업일시': formatDate(task.date),
+        '고객명': task.client || '',
+        '연락처': task.contact || '',
+        '설치주소': task.installAddress || '',
+        '동의일시': agreedDate,
+        '동의방법': agreement.method === 'direct' ? '직접동의' : 'SMS링크',
+        '개인정보동의': agreement.privacyAgreed ? 'Y' : 'N',
+        '안내사항동의': agreement.noticeAgreed ? 'Y' : 'N',
+        '서명여부': agreement.signatureData ? '있음' : '없음'
       });
     }
   });
@@ -482,6 +510,11 @@ window.downloadBothBackups = async function() {
     if (excelData.inventory.length > 0) {
       const ws5 = XLSX.utils.json_to_sheet(excelData.inventory);
       XLSX.utils.book_append_sheet(wb, ws5, "입출고");
+    }
+    
+    if (excelData.agreements.length > 0) {
+      const ws6 = XLSX.utils.json_to_sheet(excelData.agreements);
+      XLSX.utils.book_append_sheet(wb, ws6, "고객동의서");
     }
     
     const excelFileName = `다담업무_엑셀백업_${year}년${month}월.xlsx`;

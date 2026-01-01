@@ -128,9 +128,13 @@
         <div class="icon-printer-line"></div>
         <span style="margin-top:12px; display:block;">작업지시서 인쇄</span>
       </button>
-      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-1000" id="holiday-btn" aria-label="휴무 관리">
-        <div class="icon-vacation-line"></div>
-        <span style="margin-top:12px; display:block;">휴무관리</span>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-1100" id="backup-btn" aria-label="데이터 백업">
+        <div class="icon-backup-line"></div>
+        <span style="margin-top:12px; display:block;">데이터 백업</span>
+      </button>
+      <button class="menu-button hover-lift ripple-effect animate-slide-in-up animate-delay-1200" id="settings-btn" aria-label="설정">
+        <div class="icon-settings-line"></div>
+        <span style="margin-top:12px; display:block;">설정</span>
       </button>
     </div>
     
@@ -158,8 +162,9 @@
   <!-- 스크립트 로딩 (최적화된 순서) -->
   <!-- 1. 기본 설정 및 유틸리티 -->
   <script type="module" src="scripts/firebase-config.js"></script>
-  
-  <!-- 2. 데이터 모델 -->
+  <script type="module" src="scripts/agreement-system.js"></script>
+ 
+<!-- 2. 데이터 모델 -->
   <script type="module" src="scripts/parts-list.js"></script>
 
   <!-- 3. 템플릿 (UI 먼저) -->
@@ -167,19 +172,35 @@
 
   <!-- 4. 비즈니스 로직 -->
   <script type="module" src="scripts/task-save.js"></script>
-  <script type="module" src="scripts/settle.js"></script>
-  <script type="module" src="scripts/backup.js"></script>
+  <script type="module" src="scripts/settlement/settlement-init.js"></script>  <script type="module" src="scripts/backup.js"></script>
   <script type="module" src="scripts/inventory.js"></script>
   <script type="module" src="scripts/company-funds.js"></script>
 
   <!-- 5. 작업지시서 인쇄 모듈 -->
   <script type="module" src="scripts/print-work-orders.js"></script>
 
-  <!-- 6. UI 컨트롤러 -->
+  <!-- 6. 백업 모듈 -->
+  <script type="module" src="scripts/excel-backup.js"></script>
+
+  <!-- 7. 설정 모듈 -->
+  <script type="module" src="scripts/settings/settings-main.js"></script>
+  <script type="module" src="scripts/settings/employee-management.js"></script>
+  <script type="module" src="scripts/settings/holiday-management.js"></script>
+  <script type="module" src="scripts/settings/system-settings.js"></script>
+  <script type="module" src="scripts/settings/settings-init.js"></script>
+
+  <!-- 8. UI 컨트롤러 -->
   <script type="module" src="scripts/task-ui.js"></script>
 
-  <!-- 7. 인증 (마지막) -->
+  <!-- 9. 인증 (마지막) -->
   <script type="module" src="scripts/auth.js"></script>
+
+  <!-- 10. 직원용 모듈 -->
+  <script type="module" src="scripts/worker-settings.js"></script>
+  <script type="module" src="scripts/worker-settlement.js"></script>
+
+  <!-- 11. 뒤로가기 버튼 핸들러 (가장 마지막에 로드) -->
+  <script type="module" src="scripts/back-button-handler.js"></script>
 
   <!-- 캐시 관리 스크립트 -->
   <script>
@@ -304,8 +325,6 @@
         tabContent.classList.add('animate-slide-in-right');
       }
       
-
-      
       // 탭별 로직 실행
       if (name === 'task' && window.showTaskTab) {
         window.showTaskTab('check');
@@ -323,6 +342,8 @@
         window.loadInventoryManagement();
       } else if (name === 'print-workorder' && window.loadWorkOrderPrint) {
         window.loadWorkOrderPrint();
+      } else if (name === 'backup' && window.loadBackupTab) {
+        window.loadBackupTab();
       }
     }
 
@@ -346,50 +367,17 @@
         tabContent.classList.add('animate-slide-in-right');
       }
       
-      // 회사운영비 탭 타이틀 직접 설정 (깔끔한 블랙 스타일)
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
         const titleText = '회사운영비';
-        const titleIcon = `<div style="
-          display: inline-block;
-          width: 36px;
-          height: 36px;
-          border: 2.5px solid #000000;
-          border-radius: 6px;
-          position: relative;
-          vertical-align: middle;
-          margin-right: 8px;
-        ">
-          <div style="position: absolute; top: 8px; right: -3px; width: 8px; height: 12px; border: 2.5px solid #000000; border-left: none; border-radius: 0 4px 4px 0;"></div>
-          <div style="position: absolute; top: 6px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div>
-          <div style="position: absolute; top: 11px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div>
-          <div style="position: absolute; top: 16px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div>
-        </div>`;
+        const titleIcon = `<div style="display: inline-block; width: 36px; height: 36px; border: 2.5px solid #000000; border-radius: 6px; position: relative; vertical-align: middle; margin-right: 8px;"><div style="position: absolute; top: 8px; right: -3px; width: 8px; height: 12px; border: 2.5px solid #000000; border-left: none; border-radius: 0 4px 4px 0;"></div><div style="position: absolute; top: 6px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div><div style="position: absolute; top: 11px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div><div style="position: absolute; top: 16px; left: 4px; right: 4px; height: 2px; background: #000000; border-radius: 1px;"></div></div>`;
         
-        tabTitleElement.innerHTML = `
-          <div class="card" style="
-            padding: 20px 25px;
-            margin-bottom: 25px;
-            text-align: center;
-            border-left: 4px solid var(--primary-color);
-            transition: none;
-            transform: none;
-          " onmouseover="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';">
-            <h3 style="
-              margin: 0;
-              font-size: 1.4rem;
-              font-weight: 600;
-              color: #000000;
-            ">${titleIcon} ${titleText}</h3>
-          </div>
-        `;
+        tabTitleElement.innerHTML = `<div class="card" style="padding: 20px 25px; margin-bottom: 25px; text-align: center; border-left: 4px solid var(--primary-color); transition: none; transform: none;"><h3 style="margin: 0; font-size: 1.4rem; font-weight: 600; color: #000000;">${titleIcon} ${titleText}</h3></div>`;
       }
       
       if (window.loadCompanyFunds) {
         console.log('💸 loadCompanyFunds 실행');
         window.loadCompanyFunds();
-      } else {
-        console.error('❌ loadCompanyFunds 함수 없음');
       }
     }
 
@@ -413,48 +401,45 @@
         tabContent.classList.add('animate-slide-in-right');
       }
       
-      // 작업지시서 인쇄 탭 타이틀 직접 설정 (깔끔한 블랙 스타일)
       const tabTitleElement = document.getElementById('tab-title');
       if (tabTitleElement) {
         const titleText = '작업지시서 인쇄';
-        const titleIcon = `<div style="
-          display: inline-block;
-          width: 36px;
-          height: 36px;
-          border: 2.5px solid #000000;
-          border-radius: 6px;
-          position: relative;
-          vertical-align: middle;
-          margin-right: 8px;
-        ">
-          <div style="position: absolute; top: -4px; left: 6px; right: 6px; height: 6px; border: 2.5px solid #000000; border-bottom: none; border-radius: 3px 3px 0 0;"></div>
-          <div style="position: absolute; bottom: -4px; left: 6px; right: 6px; height: 8px; border: 2.5px solid #000000; border-top: none; border-radius: 0 0 3px 3px;"></div>
-        </div>`;
+        const titleIcon = `<div style="display: inline-block; width: 36px; height: 36px; border: 2.5px solid #000000; border-radius: 6px; position: relative; vertical-align: middle; margin-right: 8px;"><div style="position: absolute; top: -4px; left: 6px; right: 6px; height: 6px; border: 2.5px solid #000000; border-bottom: none; border-radius: 3px 3px 0 0;"></div><div style="position: absolute; bottom: -4px; left: 6px; right: 6px; height: 8px; border: 2.5px solid #000000; border-top: none; border-radius: 0 0 3px 3px;"></div></div>`;
         
-        tabTitleElement.innerHTML = `
-          <div class="card" style="
-            padding: 20px 25px;
-            margin-bottom: 25px;
-            text-align: center;
-            border-left: 4px solid var(--primary-color);
-            transition: none;
-            transform: none;
-          " onmouseover="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 16px rgba(33, 158, 188, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1)';">
-            <h3 style="
-              margin: 0;
-              font-size: 1.4rem;
-              font-weight: 600;
-              color: #000000;
-            ">${titleIcon} ${titleText}</h3>
-          </div>
-        `;
+        tabTitleElement.innerHTML = `<div class="card" style="padding: 20px 25px; margin-bottom: 25px; text-align: center; border-left: 4px solid var(--primary-color);"><h3 style="margin: 0; font-size: 1.4rem; font-weight: 600; color: #000000;">${titleIcon} ${titleText}</h3></div>`;
       }
       
       if (window.loadWorkOrderPrint) {
         console.log('🖨️ loadWorkOrderPrint 실행');
         window.loadWorkOrderPrint();
+      }
+    }
+
+    // 백업 전용 함수
+    function loadBackupTab() {
+      console.log('💾 데이터 백업 직접 로드');
+      
+      const homeButtons = document.getElementById('home-buttons');
+      const tabContent = document.getElementById('tab-content');
+      
+      if (homeButtons) {
+        homeButtons.classList.add('animate-fade-out');
+        setTimeout(() => {
+          homeButtons.style.display = 'none';
+          homeButtons.classList.remove('animate-fade-out');
+        }, 300);
+      }
+      
+      if (tabContent) {
+        tabContent.style.display = 'block';
+        tabContent.classList.add('animate-slide-in-right');
+      }
+      
+      if (window.loadBackupTab) {
+        console.log('💾 loadBackupTab 실행');
+        window.loadBackupTab();
       } else {
-        console.error('❌ loadWorkOrderPrint 함수 없음');
+        console.error('❌ loadBackupTab 함수 없음');
       }
     }
 
@@ -462,10 +447,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       console.log('📱 DOM 로드 완료');
       
-      // 페이지 로드 애니메이션 적용
       document.body.classList.add('animate-fade-in');
       
-      // 홈 버튼 이벤트
       const homeBtn = document.getElementById('homeBtn');
       if (homeBtn) {
         homeBtn.addEventListener('click', () => {
@@ -475,7 +458,6 @@
         });
       }
       
-      // 메뉴 버튼들 이벤트 - 애니메이션 효과 추가
       setTimeout(() => {
         const buttons = [
           { id: 'task-btn', action: () => openTab('task') },
@@ -484,18 +466,16 @@
           { id: 'company-funds-btn', action: loadCompanyFundsTab },
           { id: 'inventory-btn', action: () => openTab('inventory') },
           { id: 'print-workorder-btn', action: loadPrintWorkOrderTab },
-          { id: 'holiday-btn', action: () => openTab('holiday') }
+          { id: 'holiday-btn', action: () => openTab('holiday') },
+          { id: 'backup-btn', action: () => openTab('backup') }
         ];
         
         buttons.forEach(({ id, action }) => {
           const btn = document.getElementById(id);
           if (btn) {
             btn.addEventListener('click', () => {
-              // 클릭 애니메이션 효과
               btn.classList.add('animate-pulse');
               setTimeout(() => btn.classList.remove('animate-pulse'), 300);
-              
-              // 페이지 전환 효과
               setTimeout(action, 150);
             });
             console.log(`✅ ${id} 버튼 이벤트 연결`);
@@ -503,7 +483,6 @@
         });
       }, 300);
       
-      // 온라인/오프라인 상태 감지
       function updateOnlineStatus() {
         const offlineBanner = document.getElementById('offline-banner');
         if (offlineBanner) {
@@ -524,7 +503,6 @@
       window.addEventListener('offline', updateOnlineStatus);
       updateOnlineStatus();
 
-      // iOS Safari 100vh 이슈 해결
       function setViewportHeight() {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -536,20 +514,15 @@
         setTimeout(setViewportHeight, 100);
       });
 
-      // 터치 스크롤 개선 (iOS)
       document.body.style.webkitOverflowScrolling = 'touch';
       document.body.style.webkitTapHighlightColor = 'transparent';
       
-      // 키보드 대응 (모바일에서 input focus 시 스크롤 조정)
       const inputs = document.querySelectorAll('input, textarea, select');
       inputs.forEach(input => {
         input.addEventListener('focus', () => {
           input.classList.add('animate-scale-in');
           setTimeout(() => {
-            input.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
             input.classList.remove('animate-scale-in');
           }, 300);
         });
@@ -560,12 +533,10 @@
         });
       });
 
-      // 상태바 높이 감지 (iOS)
       if (window.navigator.standalone) {
         document.body.classList.add('standalone');
       }
       
-      // 스크롤 기반 애니메이션 초기화
       const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -579,18 +550,15 @@
         });
       }, observerOptions);
       
-      // 스크롤 애니메이션 대상 요소들 관찰
       document.querySelectorAll('.scroll-fade-in, .scroll-slide-left, .scroll-slide-right').forEach(el => {
         observer.observe(el);
       });
     });
 
-    // 백그라운드 동기화 감지
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && window.auth?.currentUser) {
         console.log('앱 다시 활성화 - 데이터 새로고침');
         
-        // 새로고침 애니메이션 효과
         const activeElements = document.querySelectorAll('.task-item, .menu-button');
         activeElements.forEach((el, index) => {
           setTimeout(() => {
@@ -614,7 +582,6 @@
       }
     });
 
-    // 전역 에러 처리
     window.addEventListener('error', (event) => {
       console.error('전역 에러:', event.error);
       if (event.error && event.error.message && 
@@ -630,13 +597,12 @@
       event.preventDefault();
     });
     
-    // 전역 함수를 window에 등록
     window.backToHome = backToHome;
     window.openTab = openTab;
     window.loadCompanyFundsTab = loadCompanyFundsTab;
     window.loadPrintWorkOrderTab = loadPrintWorkOrderTab;
+    window.loadBackupTab = loadBackupTab;
     
-    // 현대적 알림 시스템
     window.showToast = function(message, type = 'info', duration = 3000) {
       const toast = document.createElement('div');
       toast.className = `toast toast-${type} show animate-slide-in-right`;
@@ -653,7 +619,6 @@
       }, duration);
     };
     
-    // 애니메이션 유틸리티 함수
     window.animateElement = function(element, animation, duration = 300) {
       if (!element) return;
       
@@ -663,7 +628,6 @@
       }, duration);
     };
     
-    // 리플 효과 적용
     document.addEventListener('click', function(e) {
       if (e.target.classList.contains('ripple-effect')) {
         const ripple = document.createElement('span');
@@ -686,9 +650,8 @@
     });
   </script>
 
-  <!-- PWA 및 모바일 전용 스타일 (인라인 최소화) -->
+  <!-- 스타일 -->
   <style>
-    /* 리플 효과 스타일 */
     .ripple {
       position: absolute;
       border-radius: 50%;
@@ -705,7 +668,6 @@
       }
     }
     
-    /* 페이지 전환 애니메이션 */
     .animate-slide-out-up {
       animation: slideOutUp 0.3s ease-out forwards;
     }
@@ -715,34 +677,20 @@
     }
     
     @keyframes slideOutUp {
-      from { 
-        opacity: 1; 
-        transform: translateY(0); 
-      }
-      to { 
-        opacity: 0; 
-        transform: translateY(-30px); 
-      }
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-30px); }
     }
     
     @keyframes slideOutRight {
-      from { 
-        opacity: 1; 
-        transform: translateX(0); 
-      }
-      to { 
-        opacity: 0; 
-        transform: translateX(30px); 
-      }
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(30px); }
     }
     
-    /* 로딩 오버레이 개선 */
     #loading-spinner {
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
     
-    /* 성공/에러 메시지 스타일 개선 */
     #error-message.success {
       background: var(--success-color);
       border-left: 4px solid #1e7e34;
@@ -758,9 +706,6 @@
       border-left: 4px solid #d39e00;
     }
 
-    /* 개선된 UI 스타일 추가 */
-    
-    /* 1. 로그인 제목 더 선명하게 */
     .enhanced-login-title {
       margin-bottom: var(--space-6) !important;
       color: var(--gray-900) !important;
@@ -779,26 +724,16 @@
     }
 
     @keyframes titlePulse {
-      0%, 100% { 
-        transform: scale(1);
-        filter: brightness(1);
-      }
-      50% { 
-        transform: scale(1.02);
-        filter: brightness(1.1);
-      }
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.02); filter: brightness(1.1); }
     }
 
-    /* 2. 깔끔한 타이틀바 */
     .header-bar {  
       background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%) !important;
       backdrop-filter: blur(10px) !important;
       -webkit-backdrop-filter: blur(10px) !important;
       border: 1px solid rgba(255, 255, 255, 0.8) !important;
-      box-shadow: 
-        0 4px 16px rgba(33, 158, 188, 0.08),
-        0 2px 8px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+      box-shadow: 0 4px 16px rgba(33, 158, 188, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
       position: relative !important;
     }
 
@@ -827,15 +762,10 @@
     }
 
     @keyframes iconFloat {
-      0%, 100% { 
-        transform: translateY(0px) rotate(0deg); 
-      }
-      50% { 
-        transform: translateY(-3px) rotate(2deg); 
-      }
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-3px) rotate(2deg); }
     }
 
-    /* 3. 깔끔한 로그아웃 버튼 */
     .modern-logout-btn {
       background: rgba(231, 76, 60, 0.1) !important;
       border: 2px solid rgba(231, 76, 60, 0.3) !important;
@@ -860,11 +790,7 @@
       left: -100% !important;
       width: 100% !important;
       height: 100% !important;
-      background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.3), 
-        transparent
-      ) !important;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
       transition: left var(--duration-slow) var(--easing) !important;
     }
 
@@ -883,38 +809,9 @@
     .logout-icon {
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
     }
-
-    /* 통일된 탭 타이틀 스타일 */
-    .unified-tab-title::before {
-      content: '' !important;
-      position: absolute !important;
-      top: -50% !important;
-      left: -50% !important;
-      width: 200% !important;
-      height: 200% !important;
-      background: linear-gradient(45deg, 
-        transparent 40%, 
-        rgba(33, 158, 188, 0.1) 50%, 
-        transparent 60%
-      ) !important;
-      animation: tabShimmer 4s ease-in-out infinite !important;
-      pointer-events: none !important;
-    }
-
-    @keyframes tabShimmer {
-      0% { transform: translateX(-100%) translateY(-100%); }
-      50% { transform: translateX(0%) translateY(0%); }
-      100% { transform: translateX(100%) translateY(100%); }
-    }
     
     /* 라인 아이콘 스타일 */
-    .icon-tasks-line,
-    .icon-calendar-line,
-    .icon-calculator-line,
-    .icon-wallet-line,
-    .icon-box-line,
-    .icon-printer-line,
-    .icon-vacation-line {
+    .icon-tasks-line, .icon-calendar-line, .icon-calculator-line, .icon-wallet-line, .icon-box-line, .icon-printer-line, .icon-backup-line {
       width: 36px;
       height: 36px;
       margin: 0 auto;
@@ -923,7 +820,6 @@
       transition: all 0.3s ease;
     }
     
-    /* 작업지시 아이콘 - 체크리스트 */
     .icon-tasks-line {
       border: 2.5px solid currentColor;
       border-radius: 6px;
@@ -952,7 +848,6 @@
       box-shadow: 0 7px 0 currentColor, 0 14px 0 currentColor;
     }
     
-    /* 예약 아이콘 - 달력 */
     .icon-calendar-line {
       border: 2.5px solid currentColor;
       border-radius: 6px;
@@ -979,7 +874,6 @@
       box-shadow: 8px 0 0 currentColor, 16px 0 0 currentColor, 0 8px 0 currentColor, 8px 8px 0 currentColor, 16px 8px 0 currentColor;
     }
     
-    /* 정산 아이콘 - 계산기 */
     .icon-calculator-line {
       border: 2.5px solid currentColor;
       border-radius: 6px;
@@ -1006,7 +900,6 @@
       box-shadow: 6px 0 0 currentColor, 12px 0 0 currentColor, 0 -6px 0 currentColor, 6px -6px 0 currentColor, 12px -6px 0 currentColor;
     }
     
-    /* 회사운영비 아이콘 - 지갑 */
     .icon-wallet-line {
       border: 2.5px solid currentColor;
       border-radius: 6px;
@@ -1035,7 +928,6 @@
       box-shadow: 0 5px 0 currentColor, 0 10px 0 currentColor;
     }
     
-    /* 입출고 아이콘 - 박스 */
     .icon-box-line {
       border: 2.5px solid currentColor;
       border-radius: 6px;
@@ -1064,7 +956,6 @@
       border-top: 4px solid currentColor;
     }
     
-    /* 프린터 아이콘 */
     .icon-printer-line {
       border: 2.5px solid currentColor;
       border-radius: 6px;
@@ -1093,46 +984,78 @@
       border-radius: 0 0 3px 3px;
     }
     
-    /* 휴무 아이콘 - 달력 + 휴식 */
-    .icon-vacation-line {
+    .icon-backup-line {
       border: 2.5px solid currentColor;
       border-radius: 6px;
       position: relative;
     }
-    .icon-vacation-line::before {
+    .icon-backup-line::before {
       content: '';
       position: absolute;
-      top: -4px;
-      left: 8px;
-      right: 8px;
-      height: 2.5px;
+      top: 8px;
+      left: 6px;
+      right: 6px;
+      height: 2px;
       background: currentColor;
       border-radius: 1px;
+      box-shadow: 0 6px 0 currentColor, 0 12px 0 currentColor;
     }
-    .icon-vacation-line::after {
+    .icon-backup-line::after {
+      content: '';
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      width: 0;
+      height: 0;
+      border: 3px solid transparent;
+      border-top: 5px solid currentColor;
+    }
+    
+    .icon-settings-line {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto;
+      position: relative;
+      border: 2.5px solid currentColor;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+    .icon-settings-line::before {
       content: '';
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border: 2.5px solid currentColor;
       border-radius: 50%;
     }
+    .icon-settings-line::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 3px;
+      height: 18px;
+      background: currentColor;
+      box-shadow: 18px 0 0 currentColor, 9px 15.5px 0 currentColor, -9px 15.5px 0 currentColor, 9px -15.5px 0 currentColor, -9px -15.5px 0 currentColor;
+    }
     
-    /* 호버 효과 */
     .menu-button:hover .icon-tasks-line,
     .menu-button:hover .icon-calendar-line,
     .menu-button:hover .icon-calculator-line,
     .menu-button:hover .icon-wallet-line,
     .menu-button:hover .icon-box-line,
     .menu-button:hover .icon-printer-line,
-    .menu-button:hover .icon-vacation-line {
+    .menu-button:hover .icon-backup-line,
+    .menu-button:hover .icon-settings-line {
       transform: scale(1.1) rotate(5deg);
       filter: drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3));
     }
   </style>
+<script src="scripts/auto-logout.js"></script>
 
 </body>
 </html>

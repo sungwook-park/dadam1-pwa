@@ -234,27 +234,8 @@ export function getTaskInputFormHTML(defaultDate) {
       <!-- 작업자 선택 (체크박스 방식) -->
       <div style="margin: 5px 0;">
         <label style="display: block; margin-bottom: 5px; font-size: 16px; color: #333; font-weight: 600;">작업자 선택</label>
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-          <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-            <input type="checkbox" name="worker" value="박성욱" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;">
-            박성욱
-          </label>
-          <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-            <input type="checkbox" name="worker" value="박성호" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;">
-            박성호
-          </label>
-          <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-            <input type="checkbox" name="worker" value="배희종" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;">
-            배희종
-          </label>
-          <label style="display: flex; align-items: center; margin: 0; font-size: 16px;">
-            <input type="checkbox" name="worker" value="오태희" style="width: auto; margin: 0 8px 0 0; padding: 0; min-width: 20px; min-height: 20px;">
-            오태희
-          </label>
-          <div style="display: flex; gap: 8px; align-items: center; width: 100%; margin-top: 8px;">
-            <input type="text" id="custom-worker" placeholder="작업자 추가" style="flex: 1; margin: 0; padding: 8px 12px; font-size: 16px; min-height: 40px;">
-            <button type="button" onclick="addCustomWorker()" style="width: auto; margin: 0; padding: 8px 16px; font-size: 14px; min-height: 40px;">추가</button>
-          </div>
+        <div id="worker-checkboxes-container" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+          <!-- Settings > 직원관리에서 동적 로드 -->
         </div>
         <input type="hidden" name="worker" id="selected-workers">
       </div>
@@ -636,6 +617,9 @@ export function getTaskItemHTML(task, id, tabType) {
           ${task.fee ? `<div><strong>수수료:</strong> ${parseInt(task.fee).toLocaleString()}원</div>` : ''}
           ${partsDisplay ? `<div><strong>부품:</strong> ${partsDisplay}</div>` : ''}
           ${task.note ? `<div><strong>비고:</strong> ${task.note}</div>` : ''}
+          <div class="agreement-status-container" data-task-id="${id}">
+            ${window.getAgreementStatusHTML ? window.getAgreementStatusHTML(task) : ''}
+          </div>
           <div class="task-actions">
             ${tabType === 'today' ? `<button onclick="completeTask('${id}')" style="background:#28a745 !important;">완료</button>` : ''}
             <button onclick="editTask('${id}', '${tabType}')" style="background:#ffc107 !important;color:#333 !important;">수정</button>
@@ -665,6 +649,9 @@ export function getTaskItemHTML(task, id, tabType) {
           ${task.fee ? `<div><strong>수수료:</strong> ${parseInt(task.fee).toLocaleString()}원</div>` : ''}
           ${partsDisplay ? `<div><strong>부품:</strong> ${partsDisplay}</div>` : ''}
           ${task.note ? `<div><strong>비고:</strong> ${task.note}</div>` : ''}
+          <div class="agreement-status-container" data-task-id="${id}">
+            ${window.getAgreementStatusHTML ? window.getAgreementStatusHTML(task) : ''}
+          </div>
           <div class="task-actions">
             ${tabType === 'today' ? `<button onclick="completeTask('${id}')" style="background:#28a745 !important;">완료</button>` : ''}
             <button onclick="editTask('${id}', '${tabType}')" style="background:#ffc107 !important;color:#333 !important;">수정</button>
@@ -765,6 +752,138 @@ window.addEventListener('resize', () => {
 // DOM 로드 시 스타일 추가
 document.addEventListener('DOMContentLoaded', addPhoneStyles);
 
+// 동의 상태 HTML 생성 함수
+window.getAgreementStatusHTML = function(task) {
+  const status = task.agreementStatus || 'none';
+  
+  let html = '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">';
+  
+  if (status === 'completed') {
+    // 동의완료 - 초록 배경 (클릭하면 동의서 조회)
+    html += `
+      <button 
+        onclick="viewAgreement('${task.id}')"
+        style="
+          background:#4caf50;
+          color:white;
+          padding:8px 14px;
+          border:none;
+          border-radius:6px;
+          font-size:16px;
+          font-weight:bold;
+          cursor:pointer;
+          white-space:nowrap;
+        ">
+        동의완료 ✓
+      </button>
+    `;
+  } else {
+    // 동의대기 - 핑크 배경
+    html += `
+      <div style="
+        background:#ffebee;
+        color:#d32f2f;
+        padding:8px 14px;
+        border-radius:6px;
+        font-size:16px;
+        font-weight:bold;
+        display:inline-block;
+        border:2px solid #ef5350;
+        white-space:nowrap;
+      ">
+        동의대기 !
+      </div>
+    `;
+    
+    // 동의 버튼 - 인디고 블루
+    html += `
+      <button 
+        onclick="showAgreementModal('${task.id}')"
+        style="
+          background:#5c6bc0;
+          color:white;
+          padding:8px 14px;
+          border:none;
+          border-radius:6px;
+          font-size:16px;
+          font-weight:bold;
+          cursor:pointer;
+          white-space:nowrap;
+        ">
+        동의받기
+      </button>
+    `;
+  }
+  
+  // 새로고침 버튼 - 배경 제거
+  html += `
+    <button 
+      onclick="refreshSingleTask('${task.id}')"
+      style="
+        background:transparent;
+        color:#666;
+        padding:8px;
+        border:none;
+        outline:none;
+        border-radius:50%;
+        font-size:20px;
+        cursor:pointer;
+        width:36px;
+        height:36px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:none;
+      "
+      title="상태 새로고침">
+      🔄
+    </button>
+  `;
+  
+  html += '</div>';
+  
+  return html;
+};
+
+// 개별 작업 새로고침 함수 (강력 새로고침)
+window.refreshSingleTask = function(taskId) {
+  console.log('🔄 강력 새로고침 시작');
+  
+  try {
+    // 1. 현재 탭 정보 저장 (localStorage 사용)
+    if (window.localStorage) {
+      window.localStorage.setItem('returnToTab', 'today');
+    }
+    
+    // 2. 모든 캐시 삭제
+    if (window.sessionStorage) {
+      window.sessionStorage.clear();
+      console.log('✅ SessionStorage 완전 삭제');
+    }
+    
+    if (window.localStorage) {
+      // tasks 관련 캐시만 삭제
+      const keysToRemove = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (key && key.includes('tasks') && key !== 'returnToTab') {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => window.localStorage.removeItem(key));
+      console.log('✅ LocalStorage tasks 삭제');
+    }
+    
+    // 3. 강제 새로고침 (캐시 무시)
+    window.location.reload(true);
+    
+  } catch (error) {
+    console.error('새로고침 오류:', error);
+    // 오류 시에도 강제 새로고침
+    window.location.reload(true);
+  }
+};
+
 // 전역 함수 등록
 window.formatDate = formatKoreanDate;
 window.formatPartsForDisplay = formatPartsForDisplay;
@@ -772,3 +891,34 @@ window.formatPhoneLink = formatPhoneLink;
 window.formatAddressLink = formatAddressLink;
 window.handleMapLink = handleMapLink;
 window.cleanAddressForMap = cleanAddressForMap;
+
+// 페이지 로드 시 탭 자동 복원
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.localStorage) {
+    const returnToTab = window.localStorage.getItem('returnToTab');
+    if (returnToTab === 'today') {
+      console.log('🔄 오늘작업 탭으로 자동 복원');
+      
+      // returnToTab 플래그 제거
+      window.localStorage.removeItem('returnToTab');
+      
+      // 약간의 딜레이 후 오늘작업 탭 클릭
+      setTimeout(function() {
+        // 작업지시 탭 먼저 클릭
+        const taskTab = document.querySelector('[onclick="showTab(\'tasks\')"]');
+        if (taskTab) {
+          taskTab.click();
+          
+          // 그 다음 오늘작업 서브탭 클릭
+          setTimeout(function() {
+            const todayTab = document.querySelector('[onclick="showTaskTab(\'check\')"]');
+            if (todayTab) {
+              todayTab.click();
+              console.log('✅ 오늘작업 탭 복원 완료');
+            }
+          }, 100);
+        }
+      }, 300);
+    }
+  }
+});

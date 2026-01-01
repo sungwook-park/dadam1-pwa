@@ -1,8 +1,13 @@
 import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot, query, collection, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // jsPDF와 html2canvas 동적 로드
 async function loadPDFLibraries() {
+  if (window.jsPDF && window.html2canvas) {
+    console.log('✅ PDF 라이브러리 이미 로드됨');
+    return;
+  }
+  
   console.log('📥 PDF 라이브러리 로딩 중...');
   
   // html2canvas 로드
@@ -10,38 +15,21 @@ async function loadPDFLibraries() {
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      script.onload = () => {
-        console.log('✅ html2canvas 로드 완료');
-        resolve();
-      };
-      script.onerror = (err) => {
-        console.error('❌ html2canvas 로드 실패:', err);
-        reject(err);
-      };
+      script.onload = resolve;
+      script.onerror = reject;
       document.head.appendChild(script);
     });
-  } else {
-    console.log('✅ html2canvas 이미 로드됨');
   }
   
-  // jsPDF 로드 (window.jspdf.jsPDF로 접근)
-  if (!window.jspdf) {
+  // jsPDF 로드
+  if (!window.jsPDF) {
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      script.onload = () => {
-        console.log('✅ jsPDF 로드 완료');
-        console.log('jsPDF 접근 가능:', !!window.jspdf);
-        resolve();
-      };
-      script.onerror = (err) => {
-        console.error('❌ jsPDF 로드 실패:', err);
-        reject(err);
-      };
+      script.onload = resolve;
+      script.onerror = reject;
       document.head.appendChild(script);
     });
-  } else {
-    console.log('✅ jsPDF 이미 로드됨');
   }
   
   console.log('✅ PDF 라이브러리 로드 완료');
@@ -307,7 +295,7 @@ async function saveDirectAgreement(taskId) {
       noticeAgreed: true,
       agreedAt: serverTimestamp(),
       agreementType: 'signature',
-      signatureData: canvas.toDataURL('image/jpeg', 0.7) // JPEG 압축 (용량 50% 절감)
+      signatureData: canvas.toDataURL()
     };
     
     await updateDoc(doc(db, 'tasks', taskId), {
@@ -464,7 +452,7 @@ window.viewAgreement = async function(taskId) {
   }
 };
 
-// PDF 다운로드 함수 (scale: 1로 용량 절약)
+// PDF 다운로드 함수
 window.downloadAgreementPDF = async function() {
   try {
     await loadPDFLibraries();
@@ -478,9 +466,9 @@ window.downloadAgreementPDF = async function() {
     const task = window.currentViewingTask;
     const fileName = `동의서_${task.client || '고객'}_${new Date().toISOString().split('T')[0]}.pdf`;
     
-    // html2canvas로 이미지 생성 (scale: 1로 용량 절약)
+    // html2canvas로 이미지 생성
     const canvas = await html2canvas(element, {
-      scale: 1, // Firebase 용량 절약을 위해 scale 1 사용
+      scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff'
@@ -488,8 +476,8 @@ window.downloadAgreementPDF = async function() {
     
     const imgData = canvas.toDataURL('image/png');
     
-    // jsPDF로 PDF 생성 (window.jspdf.jsPDF로 접근)
-    const { jsPDF } = window.jspdf;
+    // jsPDF로 PDF 생성
+    const { jsPDF } = window.jsPDF;
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -517,7 +505,7 @@ window.downloadAgreementPDF = async function() {
     
   } catch (error) {
     console.error('PDF 생성 오류:', error);
-    alert('PDF 생성 중 오류가 발생했습니다: ' + error.message);
+    alert('PDF 생성 중 오류가 발생했습니다.');
   }
 };
 
@@ -601,10 +589,7 @@ window.handleSendSMS = async function() {
     if (result.success) {
       document.getElementById('agreementActionModal').style.display = 'none';
       
-      // 해당 작업의 동의 상태만 즉시 업데이트
-      await updateAgreementStatusUI(window.currentAgreementTaskId);
-      
-      // 캐시 삭제
+      // 캐시 삭제 후 목록 새로고침
       if (window.sessionStorage) {
         const keysToRemove = [];
         for (let i = 0; i < window.sessionStorage.length; i++) {
@@ -615,6 +600,10 @@ window.handleSendSMS = async function() {
         }
         keysToRemove.forEach(key => window.sessionStorage.removeItem(key));
       }
+      
+      setTimeout(() => {
+        if (window.loadTodayTasks) window.loadTodayTasks();
+      }, 300);
       
       alert('문자가 발송되었습니다.');
     } else {
@@ -633,145 +622,13 @@ window.handleDirectAgreement = function() {
   setupSignatureCanvas();
 };
 
-// 실시간 리스너 관리
-let agreementListener = null;
-
-// 동의대기 작업 실시간 감지 시작
-window.startAgreementListener = function() {
-  // 이미 리스너가 있으면 중복 방지
-  if (agreementListener) {
-    console.log('⚠️ 실시간 리스너 이미 실행 중');
-    return;
-  }
-  
-  try {
-    console.log('🔔 동의대기 작업 실시간 감지 시작...');
-    
-    // agreementStatus가 'pending'인 작업들만 쿼리
-    const q = query(
-      collection(db, 'tasks'),
-      where('agreementStatus', '==', 'pending')
-    );
-    
-    // 실시간 리스너 연결
-    agreementListener = onSnapshot(q, (snapshot) => {
-      console.log(`📡 동의대기 작업 ${snapshot.size}건 감지 중...`);
-      
-      // 변경된 문서만 처리
-      snapshot.docChanges().forEach((change) => {
-        const taskId = change.doc.id;
-        const taskData = change.doc.data();
-        
-        if (change.type === 'modified') {
-          // 동의 상태가 변경된 경우
-          console.log(`✅ 작업 ${taskId} 동의 상태 변경 감지!`);
-          
-          // 해당 작업의 UI만 업데이트
-          const task = { id: taskId, ...taskData };
-          updateAgreementStatusUIQuick(task);
-        }
-        
-        if (change.type === 'removed') {
-          // 동의대기에서 제거된 경우 (완료되었거나 삭제됨)
-          console.log(`🔄 작업 ${taskId} 동의대기 목록에서 제거됨`);
-        }
-      });
-    }, (error) => {
-      console.error('❌ 실시간 리스너 오류:', error);
-      // 오류 발생시 리스너 초기화
-      agreementListener = null;
-    });
-    
-    console.log('✅ 실시간 리스너 연결 완료');
-  } catch (error) {
-    console.error('❌ 리스너 시작 실패:', error);
-    agreementListener = null;
-  }
-};
-
-// 실시간 리스너 중지
-window.stopAgreementListener = function() {
-  if (agreementListener) {
-    agreementListener();
-    agreementListener = null;
-    console.log('🔴 실시간 리스너 중지됨');
-  }
-};
-
-// 빠른 UI 업데이트 (이미 데이터가 있는 경우)
-function updateAgreementStatusUIQuick(task) {
-  try {
-    const taskId = task.id;
-    
-    // 동의 상태 컨테이너 찾기
-    const agreementContainer = document.querySelector(`.agreement-status-container[data-task-id="${taskId}"]`);
-    
-    if (agreementContainer && window.getAgreementStatusHTML) {
-      // 동의 상태 HTML 교체
-      agreementContainer.innerHTML = window.getAgreementStatusHTML(task);
-      console.log(`✨ 작업 ${taskId} UI 즉시 업데이트 완료`);
-      
-      // 캐시 삭제 (다음 새로고침시 최신 데이터 보장)
-      if (window.sessionStorage) {
-        const keysToRemove = [];
-        for (let i = 0; i < window.sessionStorage.length; i++) {
-          const key = window.sessionStorage.key(i);
-          if (key && key.includes('tasks')) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach(key => window.sessionStorage.removeItem(key));
-      }
-    } else {
-      console.log(`⚠️ 작업 ${taskId} 컨테이너를 찾을 수 없음 - 전체 새로고침`);
-      if (window.loadTodayTasks) window.loadTodayTasks();
-    }
-  } catch (error) {
-    console.error('UI 업데이트 오류:', error);
-  }
-}
-
-// 특정 작업의 동의 상태만 즉시 업데이트하는 함수
-async function updateAgreementStatusUI(taskId) {
-  try {
-    // Firebase에서 최신 작업 데이터 가져오기
-    const taskDoc = await getDoc(doc(db, 'tasks', taskId));
-    if (!taskDoc.exists()) {
-      console.log('작업 데이터를 찾을 수 없습니다');
-      return;
-    }
-    
-    const task = { id: taskId, ...taskDoc.data() };
-    
-    // 동의 상태 컨테이너 직접 찾기
-    const agreementContainer = document.querySelector(`.agreement-status-container[data-task-id="${taskId}"]`);
-    
-    if (agreementContainer && window.getAgreementStatusHTML) {
-      // 동의 상태 HTML 교체
-      agreementContainer.innerHTML = window.getAgreementStatusHTML(task);
-      console.log('✅ 동의 상태 즉시 업데이트 완료');
-    } else {
-      // 컨테이너를 찾을 수 없으면 전체 새로고침
-      console.log('동의 상태 컨테이너를 찾을 수 없어 전체 새로고침');
-      if (window.loadTodayTasks) window.loadTodayTasks();
-    }
-  } catch (error) {
-    console.error('동의 상태 업데이트 오류:', error);
-    // 오류 발생시 전체 새로고침
-    if (window.loadTodayTasks) window.loadTodayTasks();
-  }
-}
-
 window.submitDirectAgreement = async function() {
   const result = await saveDirectAgreement(window.currentAgreementTaskId);
   if (result.success) {
     alert('동의 완료!');
     document.getElementById('directAgreementModal').style.display = 'none';
     
-    // 해당 작업의 동의 상태만 즉시 업데이트
-    await updateAgreementStatusUI(window.currentAgreementTaskId);
-    
-    // 캐시 삭제 (다음 전체 새로고침시 최신 데이터 보장)
+    // 모든 캐시 강제 삭제
     if (window.sessionStorage) {
       const keysToRemove = [];
       for (let i = 0; i < window.sessionStorage.length; i++) {
@@ -782,50 +639,23 @@ window.submitDirectAgreement = async function() {
       }
       keysToRemove.forEach(key => window.sessionStorage.removeItem(key));
     }
+    
+    // 작업 목록 강제 새로고침
+    setTimeout(() => {
+      if (window.loadTodayTasks) {
+        window.loadTodayTasks();
+      }
+    }, 300);
   } else if (result.error) {
     alert('오류: ' + result.error);
   }
 };
 
-// 초기화 함수
-function initAgreementSystem() {
-  createModals();
-  
-  // 실시간 리스너 시작
-  setTimeout(() => {
-    if (window.startAgreementListener) {
-      window.startAgreementListener();
-    }
-  }, 1000); // 1초 후 시작 (다른 초기화 완료 대기)
-}
-
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAgreementSystem);
+  document.addEventListener('DOMContentLoaded', createModals);
 } else {
-  initAgreementSystem();
+  createModals();
 }
-
-// 페이지 벗어날 때 리스너 정리
-window.addEventListener('beforeunload', () => {
-  if (window.stopAgreementListener) {
-    window.stopAgreementListener();
-  }
-});
-
-// 페이지 숨김 처리시에도 정리 (모바일 대응)
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    // 페이지 숨겨짐 - 리스너 중지 (배터리 절약)
-    if (window.stopAgreementListener) {
-      window.stopAgreementListener();
-    }
-  } else {
-    // 페이지 다시 보임 - 리스너 재시작
-    if (window.startAgreementListener && !agreementListener) {
-      window.startAgreementListener();
-    }
-  }
-});
 
 // 작업 목록 새로고침 함수
 window.refreshTaskList = function() {
@@ -845,7 +675,4 @@ window.refreshTaskList = function() {
   }
 };
 
-console.log('✅ Agreement system loaded');
-console.log('📡 실시간 동의 상태 감지 활성화 (동의대기 작업만)');
-console.log('💾 JPEG 압축 적용 (용량 50% 절감)');
-console.log('📥 PDF 다운로드/인쇄 기능 지원');
+console.log('✅ Agreement system loaded (Enhanced with PDF/Print)');
