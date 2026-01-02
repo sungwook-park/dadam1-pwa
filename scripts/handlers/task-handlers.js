@@ -291,7 +291,7 @@ function removeTaskFromDOM(taskId) {
 }
 
 // 관리자용 수정 폼 채우기 함수들 (분리됨)
-function populateEditForm(data, id, tabType) {
+async function populateEditForm(data, id, tabType) {
   console.log('=== 관리자 수정 폼 채우기 ===');
   console.log('데이터:', data);
   
@@ -306,25 +306,32 @@ function populateEditForm(data, id, tabType) {
     form.date.value = data.date;
   }
   
-  // 작업자 체크박스 설정
-  const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
-  workerCheckboxes.forEach(checkbox => {
-    checkbox.checked = false;
-  });
+  // 🔥 작업자 체크박스 렌더링 완료 대기
+  console.log('🔄 작업자 체크박스 렌더링 대기 중...');
+  if (window.renderWorkerCheckboxes) {
+    await window.renderWorkerCheckboxes();
+  }
   
-  if (data.worker) {
-    const workers = data.worker.split(', ');
+  // 🔥 작업자 체크 (재시도 로직 포함)
+  if (data.worker && window.checkWorkerCheckboxes) {
+    console.log('🔄 작업자 체크박스 체크 중:', data.worker);
+    await window.checkWorkerCheckboxes(data.worker);
+  } else if (data.worker) {
+    // checkWorkerCheckboxes가 없으면 기존 방식 사용
+    console.log('⚠️ checkWorkerCheckboxes 함수 없음, 기존 방식 사용');
+    const workers = data.worker.split(',').map(w => w.trim());
     workers.forEach(workerName => {
-      const checkbox = document.querySelector(`input[name="worker"][value="${workerName.trim()}"]`);
+      const checkbox = document.querySelector(`input[name="worker"][value="${workerName}"]`);
       if (checkbox) {
         checkbox.checked = true;
       }
     });
-    
-    const selectedWorkersInput = document.getElementById('selected-workers');
-    if (selectedWorkersInput) {
-      selectedWorkersInput.value = data.worker;
-    }
+  }
+  
+  // selected-workers 입력 필드 업데이트
+  const selectedWorkersInput = document.getElementById('selected-workers');
+  if (selectedWorkersInput && data.worker) {
+    selectedWorkersInput.value = data.worker;
   }
   
   // 나머지 필드들 설정
@@ -370,7 +377,7 @@ function populateEditForm(data, id, tabType) {
   // 수수료 자동 계산
   window.calculateFee();
   
-  console.log('관리자 수정 폼 설정 완료');
+  console.log('✅ 관리자 수정 폼 설정 완료');
 }
 
 function showWorkerEditForm(data, id, tabType) {
@@ -436,7 +443,7 @@ function showWorkerEditForm(data, id, tabType) {
   targetElement.innerHTML = editFormHTML;
   
   // HTML 생성 직후 즉시 부품 초기화
-  setTimeout(() => {
+  setTimeout(async () => {
     // 부품 입력 렌더링
     window.renderItemsInput('items-input');
     
@@ -454,8 +461,8 @@ function showWorkerEditForm(data, id, tabType) {
     
     console.log('작업자 폼 HTML 생성 후 부품 초기화 완료');
     
-    // 기존 데이터로 폼 채우기 (부품 제외)
-    populateWorkerFormData(data);
+    // 🔥 기존 데이터로 폼 채우기 (부품 제외) - await 추가!
+    await populateWorkerFormData(data);
     
     // 이벤트 리스너 설정
     setupFormEventListeners();
@@ -485,7 +492,7 @@ function showWorkerEditForm(data, id, tabType) {
   }, 100);
 }
 
-function populateWorkerFormData(data) {
+async function populateWorkerFormData(data) {
   const form = document.getElementById('task-form');
   if (!form) return;
   
@@ -496,25 +503,32 @@ function populateWorkerFormData(data) {
     form.date.value = data.date;
   }
   
-  // 작업자 체크박스 설정
-  const workerCheckboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
-  workerCheckboxes.forEach(checkbox => {
-    checkbox.checked = false;
-  });
+  // 🔥 작업자 체크박스 렌더링 완료 대기
+  console.log('🔄 작업자 체크박스 렌더링 대기 중...');
+  if (window.renderWorkerCheckboxes) {
+    await window.renderWorkerCheckboxes();
+  }
   
-  if (data.worker) {
-    const workers = data.worker.split(', ');
+  // 🔥 작업자 체크 (재시도 로직 포함)
+  if (data.worker && window.checkWorkerCheckboxes) {
+    console.log('🔄 작업자 체크박스 체크 중:', data.worker);
+    await window.checkWorkerCheckboxes(data.worker);
+  } else if (data.worker) {
+    // checkWorkerCheckboxes가 없으면 기존 방식 사용
+    console.log('⚠️ checkWorkerCheckboxes 함수 없음, 기존 방식 사용');
+    const workers = data.worker.split(',').map(w => w.trim());
     workers.forEach(workerName => {
-      const checkbox = document.querySelector(`input[name="worker"][value="${workerName.trim()}"]`);
+      const checkbox = document.querySelector(`input[name="worker"][value="${workerName}"]`);
       if (checkbox) {
         checkbox.checked = true;
       }
     });
-    
-    const selectedWorkersInput = document.getElementById('selected-workers');
-    if (selectedWorkersInput) {
-      selectedWorkersInput.value = data.worker;
-    }
+  }
+  
+  // selected-workers 입력 필드 업데이트
+  const selectedWorkersInput = document.getElementById('selected-workers');
+  if (selectedWorkersInput && data.worker) {
+    selectedWorkersInput.value = data.worker;
   }
   
   // 나머지 필드들 설정 (부품 제외)
@@ -541,7 +555,7 @@ function populateWorkerFormData(data) {
   // 수수료 자동 계산
   window.calculateFee();
   
-  console.log('작업자 폼 데이터 채우기 완료 (부품 제외)');
+  console.log('✅ 작업자 폼 데이터 채우기 완료 (부품 제외)');
 }
 
 function setupFormEventListeners() {
