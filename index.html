@@ -1217,7 +1217,7 @@
     }
   });
   
-  // popstate 이벤트 (PWA 백업)
+  // popstate 이벤트 (PWA 백업) - 모바일용 강화
   window.addEventListener('popstate', function(e) {
     console.log('📍 popstate 이벤트 발생!');
     
@@ -1225,24 +1225,29 @@
     
     if (preventDefault) {
       console.log('✋ 기본 동작 방지 - history 복원');
-      // history에 새 항목 추가
-      setTimeout(() => {
-        history.pushState(null, '', location.pathname + '#main');
-      }, 10);
+      // 🔥 즉시 새 항목 추가 (모바일 핵심!)
+      history.pushState(null, '', location.pathname + '#main');
     }
   });
   
-  // 초기 해시 설정
-  console.log('🔧 초기 해시 설정...');
+  // 🔥 초기 해시 설정 + history stack 생성 (모바일 핵심!)
+  console.log('🔧 초기 설정 시작...');
+  
+  // 1. 해시 설정
   if (location.hash === '' || location.hash === '#') {
     history.replaceState(null, '', '#main');
     console.log('✅ 초기 해시 설정 완료: #main');
-  } else {
-    console.log('ℹ️ 현재 해시:', location.hash);
   }
   
-  // 추가: history에 항목 추가 (popstate 트리거용)
-  history.pushState(null, '', location.pathname + location.hash);
+  // 2. history stack 생성 (최소 2개 항목 유지)
+  history.pushState(null, '', location.pathname + '#main');
+  console.log('✅ History stack 생성 (항목 1 추가)');
+  
+  // 3. 추가로 하나 더 (확실하게!)
+  setTimeout(() => {
+    history.pushState(null, '', location.pathname + '#main');
+    console.log('✅ History stack 강화 (항목 2 추가)');
+  }, 100);
   
   // 페이지 이탈 경고
   window.addEventListener('beforeunload', function(e) {
