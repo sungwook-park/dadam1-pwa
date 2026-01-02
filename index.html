@@ -1056,52 +1056,196 @@
     }
   </style>
 <script src="scripts/auto-logout.js"></script>
-<script type="module" src="scripts/utils/back-button-handler.js"></script>
 
+<!-- 🔙 안드로이드 뒤로가기 버튼 핸들러 -->
 <script>
-// 뒤로가기 버튼 핸들러 (간단 버전)
-let backPressedOnce = false;
-
-window.addEventListener('popstate', function(e) {
-  e.preventDefault();
+(function() {
+  'use strict';
   
-  // 편집 중인지 확인
-  if (window.editingTaskId) {
-    if (confirm('변경사항을 저장하시겠습니까?')) {
-      const saveBtn = document.querySelector('#task-form button[type="button"]');
-      if (saveBtn) saveBtn.click();
+  console.log('🔧 뒤로가기 핸들러 초기화 시작...');
+  
+  let backPressedOnce = false;
+  let backPressTimer = null;
+  
+  // 현재 화면 상태 감지
+  function getCurrentScreenState() {
+    // 1. 작업 수정 중
+    if (window.editingTaskId) {
+      return 'editing';
+    }
+    
+    // 2. 작업자 수정 폼
+    const workerEditContainer = document.querySelector('.worker-edit-container');
+    if (workerEditContainer && workerEditContainer.offsetParent !== null) {
+      return 'worker-editing';
+    }
+    
+    // 3. 탭 화면 vs 홈 화면
+    const tabContent = document.getElementById('tab-content');
+    const homeButtons = document.getElementById('home-buttons');
+    
+    if (tabContent && tabContent.style.display === 'block') {
+      return 'task-list';
+    } else if (homeButtons && homeButtons.style.display !== 'none') {
+      return 'home';
+    }
+    
+    return 'home';
+  }
+  
+  // 토스트 메시지
+  function showToast(message, duration = 2000) {
+    const existingToast = document.getElementById('back-button-toast');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.id = 'back-button-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), duration);
+  }
+  
+  // 홈으로 이동
+  function goToHome() {
+    console.log('🏠 홈으로 이동');
+    window.editingTaskId = null;
+    window.editingTabType = null;
+    
+    const tabContent = document.getElementById('tab-content');
+    if (tabContent) tabContent.style.display = 'none';
+    
+    const homeButtons = document.getElementById('home-buttons');
+    if (homeButtons) homeButtons.style.display = 'grid';
+    
+    const homeBtn = document.querySelector('.home-btn');
+    if (homeBtn) homeBtn.style.display = 'block';
+  }
+  
+  // 작업 목록으로 이동
+  function goToTaskList() {
+    console.log('📋 작업 목록으로 이동');
+    window.editingTaskId = null;
+    window.editingTabType = null;
+    
+    const isWorkerMode = window.currentUserInfo && !window.isCurrentUserAdmin();
+    
+    if (isWorkerMode) {
+      const activeTab = document.querySelector('.worker-tab-btn.active');
+      if (activeTab && activeTab.id === 'done-tab') {
+        if (window.loadWorkerDoneTasks) window.loadWorkerDoneTasks();
+      } else {
+        if (window.loadWorkerTodayTasks) window.loadWorkerTodayTasks();
+      }
     } else {
-      if (window.cancelWorkerEdit) {
-        window.cancelWorkerEdit();
+      goToHome();
+    }
+  }
+  
+  // 뒤로가기 처리
+  function handleBackAction() {
+    const screenState = getCurrentScreenState();
+    console.log('🔙 뒤로가기 - 현재 화면:', screenState);
+    
+    switch (screenState) {
+      case 'editing':
+      case 'worker-editing':
+        // 저장 확인
+        const shouldSave = confirm('변경사항을 저장하시겠습니까?');
+        if (shouldSave) {
+          const saveButton = document.querySelector('#task-form button[type="button"]');
+          if (saveButton) saveButton.click();
+        } else {
+          if (screenState === 'worker-editing' && window.cancelWorkerEdit) {
+            window.cancelWorkerEdit();
+          } else {
+            goToTaskList();
+          }
+        }
+        return true;
+        
+      case 'task-list':
+        // 홈으로
+        goToHome();
+        return true;
+        
+      case 'home':
+        // 2번 누르기
+        if (backPressedOnce) {
+          console.log('👋 앱 종료');
+          return false; // 앱 종료 허용
+        } else {
+          showToast('한 번 더 누르면 종료됩니다');
+          backPressedOnce = true;
+          if (backPressTimer) clearTimeout(backPressTimer);
+          backPressTimer = setTimeout(() => {
+            backPressedOnce = false;
+          }, 2000);
+          return true;
+        }
+        
+      default:
+        return false;
+    }
+  }
+  
+  // hashchange 이벤트 (안드로이드 Chrome)
+  window.addEventListener('hashchange', function(e) {
+    console.log('📍 hashchange:', location.hash);
+    
+    if (location.hash === '#back') {
+      const preventDefault = handleBackAction();
+      if (preventDefault) {
+        e.preventDefault();
+        history.pushState(null, '', '#main');
       }
     }
-  } 
-  // 홈 화면인지 확인
-  else if (document.getElementById('home-buttons').style.display !== 'none') {
-    if (backPressedOnce) {
-      return; // 앱 종료
-    } else {
-      alert('한 번 더 누르면 종료됩니다');
-      backPressedOnce = true;
-      setTimeout(() => backPressedOnce = false, 2000);
+  });
+  
+  // popstate 이벤트 (PWA 백업)
+  window.addEventListener('popstate', function(e) {
+    console.log('📍 popstate');
+    
+    const preventDefault = handleBackAction();
+    if (preventDefault) {
+      e.preventDefault();
+      if (location.hash === '' || location.hash === '#') {
+        history.pushState(null, '', '#main');
+      }
     }
-  }
-  // 기타 화면
-  else {
-    const tabContent = document.getElementById('tab-content');
-    if (tabContent && tabContent.style.display === 'block') {
-      // 홈으로
-      tabContent.style.display = 'none';
-      document.getElementById('home-buttons').style.display = 'grid';
-    }
+  });
+  
+  // 초기 해시 설정
+  if (location.hash === '' || location.hash === '#') {
+    history.replaceState(null, '', '#main');
   }
   
-  history.pushState(null, '', location.href);
-});
-
-// 초기 히스토리
-history.pushState(null, '', location.href);
-</script>  
+  // 페이지 이탈 경고
+  window.addEventListener('beforeunload', function(e) {
+    if (window.editingTaskId) {
+      e.preventDefault();
+      e.returnValue = '작성 중인 내용이 있습니다.';
+      return e.returnValue;
+    }
+  });
+  
+  console.log('✅ 뒤로가기 핸들러 초기화 완료');
+})();
+</script>
 
 </body>
 </html>
