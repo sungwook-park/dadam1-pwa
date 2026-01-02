@@ -98,12 +98,15 @@ export async function renderItemsInput(containerId) {
 }
 
 /**
- * 작업자 체크박스 동적 렌더링
+ * 작업자 체크박스 동적 렌더링 (완료 보장)
  * Settings > 직원관리에서 로드
  */
 export async function renderWorkerCheckboxes() {
   const container = document.getElementById('worker-checkboxes-container');
-  if (!container) return;
+  if (!container) {
+    console.warn('⚠️ worker-checkboxes-container를 찾을 수 없습니다.');
+    return false;
+  }
 
   try {
     const db = window.db;
@@ -111,8 +114,10 @@ export async function renderWorkerCheckboxes() {
     
     if (!db || !getDocs) {
       console.error('Firebase가 초기화되지 않았습니다.');
-      return;
+      return false;
     }
+
+    console.log('🔄 작업자 체크박스 렌더링 시작...');
 
     // Firebase에서 직원 목록 로드
     const usersSnapshot = await getDocs(collection(db, "users"));
@@ -132,8 +137,6 @@ export async function renderWorkerCheckboxes() {
 
     // 이름순 정렬
     users.sort((a, b) => a.name.localeCompare(b.name));
-
-    console.log('✅ 작업자 체크박스 렌더링:', users.length, '명');
 
     // 체크박스 HTML 생성
     let checkboxesHTML = '';
@@ -165,6 +168,9 @@ export async function renderWorkerCheckboxes() {
     `;
 
     container.innerHTML = checkboxesHTML;
+    
+    console.log(`✅ 작업자 체크박스 렌더링 완료: ${users.length}명`);
+    return true;
 
   } catch (error) {
     console.error('❌ 작업자 체크박스 로드 실패:', error);
@@ -188,6 +194,8 @@ export async function renderWorkerCheckboxes() {
         <button type="button" onclick="addCustomWorker()" style="width: auto; margin: 0; padding: 8px 16px; font-size: 14px; min-height: 40px;">추가</button>
       </div>
     `;
+    
+    return true; // 기본 체크박스라도 렌더링 완료
   }
 }
 
@@ -359,3 +367,62 @@ window.decrementQuantity = function() {
 
 // 전역 함수로 등록 (중요!)
 window.renderWorkerCheckboxes = renderWorkerCheckboxes;
+
+/**
+ * 작업자 체크박스 체크 (재시도 로직 포함)
+ * @param {string} workerNames - 쉼표로 구분된 작업자 이름 (예: "박성욱, 배희종")
+ * @param {number} maxRetries - 최대 재시도 횟수 (기본 5회)
+ * @returns {Promise<boolean>} - 성공 여부
+ */
+export async function checkWorkerCheckboxes(workerNames, maxRetries = 5) {
+  if (!workerNames) {
+    console.log('작업자 이름이 없습니다.');
+    return true;
+  }
+
+  const workers = workerNames.split(',').map(w => w.trim());
+  console.log('🔍 체크할 작업자:', workers);
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const checkboxes = document.querySelectorAll('input[name="worker"][type="checkbox"]');
+    
+    if (checkboxes.length === 0) {
+      console.log(`⏳ 시도 ${attempt}/${maxRetries}: 체크박스가 아직 없음, 100ms 대기...`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      continue;
+    }
+
+    // 체크박스 초기화
+    checkboxes.forEach(cb => cb.checked = false);
+
+    // 작업자 체크
+    let checkedCount = 0;
+    workers.forEach(workerName => {
+      const checkbox = document.querySelector(`input[name="worker"][value="${workerName}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+        checkedCount++;
+        console.log(`✅ ${workerName} 체크 완료`);
+      } else {
+        console.warn(`⚠️ ${workerName} 체크박스를 찾을 수 없음`);
+      }
+    });
+
+    if (checkedCount === workers.length) {
+      console.log(`✅ 모든 작업자 체크 완료 (${checkedCount}/${workers.length})`);
+      return true;
+    } else if (checkedCount > 0) {
+      console.log(`⚠️ 일부 작업자만 체크됨 (${checkedCount}/${workers.length})`);
+      return true; // 일부라도 체크 성공
+    }
+
+    console.log(`⏳ 시도 ${attempt}/${maxRetries}: 체크 실패, 100ms 대기...`);
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  console.error('❌ 체크박스 체크 실패 (최대 재시도 횟수 초과)');
+  return false;
+}
+
+// 전역 함수로 등록
+window.checkWorkerCheckboxes = checkWorkerCheckboxes;
