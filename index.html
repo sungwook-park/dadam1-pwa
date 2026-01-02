@@ -1184,18 +1184,14 @@
         return true;
         
       case 'home':
-        // 2번 누르기
-        if (backPressedOnce) {
-          console.log('👋 앱 종료');
+        // 홈 화면: 확인 다이얼로그
+        console.log('🏠 홈 화면에서 뒤로가기');
+        if (confirm('종료하시겠습니까?')) {
+          console.log('👋 앱 종료 (사용자 확인)');
           return false; // 앱 종료 허용
         } else {
-          showToast('한 번 더 누르면 종료됩니다');
-          backPressedOnce = true;
-          if (backPressTimer) clearTimeout(backPressTimer);
-          backPressTimer = setTimeout(() => {
-            backPressedOnce = false;
-          }, 2000);
-          return true;
+          console.log('🚫 종료 취소');
+          return true; // 종료 취소
         }
         
       default:
@@ -1205,34 +1201,48 @@
   
   // hashchange 이벤트 (안드로이드 Chrome)
   window.addEventListener('hashchange', function(e) {
-    console.log('📍 hashchange:', location.hash);
+    console.log('📍 hashchange 이벤트 발생! hash:', location.hash);
     
-    if (location.hash === '#back') {
-      const preventDefault = handleBackAction();
-      if (preventDefault) {
-        e.preventDefault();
-        history.pushState(null, '', '#main');
+    // 뒤로가기 처리
+    const preventDefault = handleBackAction();
+    
+    if (preventDefault) {
+      console.log('✋ 기본 동작 방지 - hash 복원');
+      // 해시를 다시 #main으로
+      if (location.hash !== '#main') {
+        setTimeout(() => {
+          history.replaceState(null, '', '#main');
+        }, 10);
       }
     }
   });
   
   // popstate 이벤트 (PWA 백업)
   window.addEventListener('popstate', function(e) {
-    console.log('📍 popstate');
+    console.log('📍 popstate 이벤트 발생!');
     
     const preventDefault = handleBackAction();
+    
     if (preventDefault) {
-      e.preventDefault();
-      if (location.hash === '' || location.hash === '#') {
-        history.pushState(null, '', '#main');
-      }
+      console.log('✋ 기본 동작 방지 - history 복원');
+      // history에 새 항목 추가
+      setTimeout(() => {
+        history.pushState(null, '', location.pathname + '#main');
+      }, 10);
     }
   });
   
   // 초기 해시 설정
+  console.log('🔧 초기 해시 설정...');
   if (location.hash === '' || location.hash === '#') {
     history.replaceState(null, '', '#main');
+    console.log('✅ 초기 해시 설정 완료: #main');
+  } else {
+    console.log('ℹ️ 현재 해시:', location.hash);
   }
+  
+  // 추가: history에 항목 추가 (popstate 트리거용)
+  history.pushState(null, '', location.pathname + location.hash);
   
   // 페이지 이탈 경고
   window.addEventListener('beforeunload', function(e) {
