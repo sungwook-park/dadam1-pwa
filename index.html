@@ -1057,6 +1057,51 @@
   </style>
 <script src="scripts/auto-logout.js"></script>
 <script type="module" src="scripts/utils/back-button-handler.js"></script>
+
+<script>
+// 뒤로가기 버튼 핸들러 (간단 버전)
+let backPressedOnce = false;
+
+window.addEventListener('popstate', function(e) {
+  e.preventDefault();
   
+  // 편집 중인지 확인
+  if (window.editingTaskId) {
+    if (confirm('변경사항을 저장하시겠습니까?')) {
+      const saveBtn = document.querySelector('#task-form button[type="button"]');
+      if (saveBtn) saveBtn.click();
+    } else {
+      if (window.cancelWorkerEdit) {
+        window.cancelWorkerEdit();
+      }
+    }
+  } 
+  // 홈 화면인지 확인
+  else if (document.getElementById('home-buttons').style.display !== 'none') {
+    if (backPressedOnce) {
+      return; // 앱 종료
+    } else {
+      alert('한 번 더 누르면 종료됩니다');
+      backPressedOnce = true;
+      setTimeout(() => backPressedOnce = false, 2000);
+    }
+  }
+  // 기타 화면
+  else {
+    const tabContent = document.getElementById('tab-content');
+    if (tabContent && tabContent.style.display === 'block') {
+      // 홈으로
+      tabContent.style.display = 'none';
+      document.getElementById('home-buttons').style.display = 'grid';
+    }
+  }
+  
+  history.pushState(null, '', location.href);
+});
+
+// 초기 히스토리
+history.pushState(null, '', location.href);
+</script>  
+
 </body>
 </html>
