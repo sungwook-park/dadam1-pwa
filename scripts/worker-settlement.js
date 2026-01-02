@@ -245,6 +245,13 @@ function getWorkerSettlementHTML(userInfo, startDate, endDate) {
             <div class="stat-subtitle">${stats.collaborationNote}</div>
           </div>
           
+          ${userInfo.employeeType !== 'executive' ? `
+            <div class="stat-item stat-executive-share">
+              <div class="stat-label">매출×30%</div>
+              <div class="stat-value negative">${formatCurrency(stats.executiveShare)}</div>
+            </div>
+          ` : ''}
+          
           <div class="stat-item stat-part-cost">
             <div class="stat-label">부품비</div>
             <div class="stat-value negative">${formatCurrency(stats.myPartCost)}</div>
@@ -259,6 +266,11 @@ function getWorkerSettlementHTML(userInfo, startDate, endDate) {
             <div class="stat-item stat-final-payment">
               <div class="stat-label">최종 수령액</div>
               <div class="stat-value">${formatCurrency(stats.netAllowance)}</div>
+            </div>
+            
+            <div class="stat-item stat-company-payment">
+              <div class="stat-label">회사지급총액</div>
+              <div class="stat-value company-highlight">${formatCurrency(stats.companyPayment)}</div>
             </div>
           ` : `
             <div class="stat-item stat-profit">
@@ -303,7 +315,12 @@ function getWorkerSettlementHTML(userInfo, startDate, endDate) {
         <h4>💡 정산 안내</h4>
         <ul>
           <li>협업 작업의 경우 매출/부품비가 작업자 수로 균등 분할됩니다.</li>
-          <li>최종 수령액 = 매출 × ${userInfo.workerCommissionRate || 70}% - 부품비 - 수수료</li>
+          ${userInfo.employeeType !== 'executive' ? `
+            <li>최종 수령액 = 매출 × ${userInfo.workerCommissionRate || 70}% - 부품비 - 수수료</li>
+            <li>회사 지급 총액 = 매출 × 30% + 부품비 + 일반수수료</li>
+          ` : `
+            <li>순이익 = 매출 - 부품비 - 수수료</li>
+          `}
         </ul>
       </div>
     </div>
@@ -324,6 +341,8 @@ function calculateWorkerStats(tasks, userInfo) {
     grossAllowance: 0,     // 총 수당 (매출 × 70%)
     netAllowance: 0,       // 최종 수령액 (수당 - 부품비 - 일반수수료)
     netProfit: 0,          // 순이익 (임원용)
+    executiveShare: 0,     // 매출 × 30% (도급기사용)
+    companyPayment: 0,     // 회사 지급 총액 (도급기사용)
     allowanceRate: userInfo.workerCommissionRate || 70,
     collaborationNote: ''
   };
@@ -475,12 +494,20 @@ function calculateWorkerStats(tasks, userInfo) {
     // 최종 수령액 = 총 수당 - 부품비 - 일반수수료
     stats.netAllowance = Math.round(stats.grossAllowance - stats.myPartCost - stats.myGeneralFee);
     
+    // 매출 × 30% (임원 몫)
+    stats.executiveShare = Math.round(stats.myRevenue * 0.3);
+    
+    // 회사 지급 총액 = 매출×30% + 부품비 + 일반수수료
+    stats.companyPayment = stats.executiveShare + stats.myPartCost + stats.myGeneralFee;
+    
     console.log('\n📊 도급기사 최종 정산:');
     console.log(`  내 매출: ${stats.myRevenue.toLocaleString()}원`);
     console.log(`  총 수당 (${stats.allowanceRate}%): ${stats.grossAllowance.toLocaleString()}원`);
     console.log(`  (-) 부품비: ${stats.myPartCost.toLocaleString()}원`);
     console.log(`  (-) 일반수수료: ${stats.myGeneralFee.toLocaleString()}원 👈 확인!`);
     console.log(`  = 최종 수령액: ${stats.netAllowance.toLocaleString()}원`);
+    console.log(`  💰 매출×30%: ${stats.executiveShare.toLocaleString()}원`);
+    console.log(`  💰 회사 지급 총액: ${stats.companyPayment.toLocaleString()}원`);
   } else {
     // 임원 순이익
     stats.netProfit = stats.myRevenue - stats.myPartCost - stats.myGeneralFee;
@@ -837,6 +864,36 @@ function addWorkerSettlementStyles() {
       font-size: 20px;
     }
     
+    /* 매출×30% - 파스텔 노란 */
+    .stat-executive-share {
+      background: linear-gradient(135deg, #FFF9C4 0%, #FFF59D 100%);
+    }
+    
+    .stat-executive-share .stat-label {
+      color: #F57F17;
+    }
+    
+    .stat-executive-share .stat-value {
+      color: #F57F17;
+    }
+    
+    /* 회사지급총액 - 파스텔 레드 (강조) */
+    .stat-company-payment {
+      background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+      border: 2px solid #EF5350;
+    }
+    
+    .stat-company-payment .stat-label {
+      color: #C62828;
+      font-weight: 700;
+    }
+    
+    .stat-company-payment .stat-value.company-highlight {
+      color: #B71C1C;
+      font-size: 20px;
+      font-weight: 900;
+    }
+    
     .stat-label {
       font-size: 12px;
       font-weight: 600;
@@ -850,6 +907,10 @@ function addWorkerSettlementStyles() {
     
     .stat-value.negative {
       opacity: 0.85;
+    }
+    
+    .stat-value.company-highlight {
+      color: #dc2626;
     }
     
     .stat-subtitle {

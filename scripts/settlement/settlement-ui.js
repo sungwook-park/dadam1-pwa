@@ -100,51 +100,31 @@ export function getDailySettlementHTML(result, tasks, startDate, endDate = null,
       </div>
   `;
   
-  // 🔥 월 누적 수령액 카드
-  if (monthlyDistribution && Object.keys(monthlyDistribution).length > 0 && monthRange) {
-    const monthLabel = monthRange.startStr.substring(0, 7); // "2025-11"
-    const monthName = monthLabel.split('-')[1] + '월'; // "11월"
-    
-    html += `
-      <div class="monthly-distribution-section">
-        <h4 class="section-title">📊 이번 달 누적 수령액 (${monthName})</h4>
-        <div class="monthly-cards">
-    `;
-    
-    // 임원과 도급기사 구분
-    const allUsers = [...executives, ...contractWorkers];
-    const userColors = [
-      { bg: '#dbeafe', border: '#3b82f6', icon: '👤' },  // 파란색
-      { bg: '#e0e7ff', border: '#6366f1', icon: '👤' },  // 보라색
-      { bg: '#d1fae5', border: '#10b981', icon: '👤' },  // 초록색
-      { bg: '#fef3c7', border: '#f59e0b', icon: '👷' },  // 주황색
-      { bg: '#fecaca', border: '#dc2626', icon: '👷' },  // 빨간색
-      { bg: '#ddd6fe', border: '#8b5cf6', icon: '👷' },  // 보라2
-    ];
-    
-    allUsers.forEach((userName, index) => {
-      const amount = monthlyDistribution[userName] || 0;
-      const isExecutive = executives.includes(userName);
-      const label = isExecutive ? '임원 최종분배' : '도급기사 수당';
-      const color = userColors[index % userColors.length];
-      
-      html += `
-        <div class="monthly-card" style="background: ${color.bg}; border-left: 5px solid ${color.border};">
-          <div class="monthly-card-icon">${color.icon}</div>
-          <div class="monthly-card-content">
-            <div class="monthly-card-name">${userName}</div>
-            <div class="monthly-card-amount">${formatCurrency(amount)}</div>
-            <div class="monthly-card-label">${label}</div>
-          </div>
+  // 🔥 지출 내역 섹션 (실제 출고비 반영)
+  html += `
+    <div class="expense-section">
+      <h4 class="section-title">💸 지출 내역 (실제 출고비 반영)</h4>
+      <div class="expense-grid">
+        <div class="expense-item">
+          <span class="label">부품비 (실제 출고):</span>
+          <span class="value cyan">${formatCurrency(result.totalPartCost)}</span>
         </div>
-      `;
-    });
-    
-    html += `
+        <div class="expense-item">
+          <span class="label">부품비 (기존 계산):</span>
+          <span class="value gray">${formatCurrency(result.totalPartCost)}</span>
+        </div>
+        <div class="expense-item">
+          <span class="label">수수료:</span>
+          <span class="value orange">${formatCurrency(result.totalFee)}</span>
+        </div>
+        <div class="expense-separator"></div>
+        <div class="expense-item total">
+          <span class="label">총 지출:</span>
+          <span class="value red">${formatCurrency(result.totalPartCost + result.totalFee)}</span>
         </div>
       </div>
-    `;
-  }
+    </div>
+  `;
   
   // 🔥 상단 2개 섹션을 가로로 배치
   html += `<div class="settlement-two-columns">`;
@@ -349,26 +329,39 @@ export function getDailySettlementHTML(result, tasks, startDate, endDate = null,
 function getExecutiveWorkSettlementHTML(result) {
   return `
     <div class="section-box executive-work-section">
-      <div class="section-header-simple">
-        <h4>1️⃣ 임원 작업 정산</h4>
+      <div class="section-header-simple collapsible" onclick="toggleExecutiveDetail()">
+        <h4>1️⃣ 임원 작업 정산 <span class="toggle-icon" id="executive-toggle-icon">▼</span></h4>
       </div>
       
       <div class="simple-calc-box">
-        <div class="calc-line">
-          <span class="label">일별 담당 매출</span>
-          <span class="value revenue-color">${formatCurrency(result.executiveRevenue)}</span>
+        <!-- 기본 화면: 순이익만 표시 -->
+        <div class="executive-summary">
+          <div class="profit-summary-item">
+            <span class="label">순이익</span>
+            <span class="profit-amount">${formatCurrency(result.executiveProfit)}</span>
+          </div>
         </div>
-        <div class="calc-line">
-          <span class="label">(-) 부품비</span>
-          <span class="value expense-color">${formatCurrency(result.executivePartCost)}</span>
-        </div>
-        <div class="calc-line">
-          <span class="label">(-) 수수료 (일반 + 공간티비 수수료)</span>
-          <span class="value expense-color">${formatCurrency(result.executiveFee)}</span>
-        </div>
-        <div class="calc-line result-line">
-          <span class="label">= 순이익</span>
-          <span class="value profit-color">${formatCurrency(result.executiveProfit)}</span>
+        
+        <!-- 상세 내용 (기본 숨김) -->
+        <div id="executive-detail-content" style="display: none;">
+          <div class="calc-separator" style="margin: 20px 0;"></div>
+          
+          <div class="calc-line">
+            <span class="label">일별 담당 매출</span>
+            <span class="value revenue-color">${formatCurrency(result.executiveRevenue)}</span>
+          </div>
+          <div class="calc-line">
+            <span class="label">(-) 부품비</span>
+            <span class="value expense-color">${formatCurrency(result.executivePartCost)}</span>
+          </div>
+          <div class="calc-line">
+            <span class="label">(-) 수수료 (일반 + 공간티비 수수료)</span>
+            <span class="value expense-color">${formatCurrency(result.executiveFee)}</span>
+          </div>
+          <div class="calc-line result-line">
+            <span class="label">= 순이익</span>
+            <span class="value profit-color">${formatCurrency(result.executiveProfit)}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -381,46 +374,110 @@ function getExecutiveWorkSettlementHTML(result) {
 function getContractWorkerDetailHTML(result, contractWorkers) {
   return `
     <div class="section-box contract-section">
-      <div class="section-header-simple">
-        <h4>2️⃣ 도급기사 정산</h4>
+      <div class="section-header-simple collapsible" onclick="toggleContractDetail()">
+        <h4>2️⃣ 도급기사 정산 <span class="toggle-icon" id="contract-toggle-icon">▼</span></h4>
       </div>
       
       <div class="simple-calc-box">
-        <div class="section-subtitle">분배 가능액</div>
-        <div class="calc-line">
-          <span class="label">도급기사 매출</span>
-          <span class="value revenue-color">${formatCurrency(result.contractRevenue)}</span>
-        </div>
-        
-        <div class="calc-separator"></div>
-        
-        ${contractWorkers.map(name => {
-          const payment = result.contractPayments[name] || 0;
-          return `
-            <div class="worker-allocation">
-              <div class="worker-name">👷 ${name}</div>
-              <div class="calc-line">
-                <span class="label">도급기사 수당 (70%)</span>
-                <span class="value contract-color">${formatCurrency(payment)}</span>
+        <!-- 기본 화면: 각 기사별 회사 지급 총액만 표시 -->
+        <div class="contract-summary">
+          ${contractWorkers.map(name => {
+            const details = result.contractWorkerDetails && result.contractWorkerDetails[name] ? 
+                           result.contractWorkerDetails[name] : 
+                           { companyPayment: 0 };
+            
+            const companyPayment = details.companyPayment || 0;
+            
+            return `
+              <div class="worker-summary-item">
+                <span class="worker-name">👷 ${name}</span>
+                <span class="company-payment">${formatCurrency(companyPayment)}</span>
               </div>
-              <div class="calc-detail">매출 × 70% - 부품비 - 일반수수료</div>
+            `;
+          }).join('')}
+        </div>
+        
+        <!-- 상세 내용 (기본 숨김) -->
+        <div id="contract-detail-content" style="display: none;">
+          <div class="calc-separator" style="margin: 20px 0;"></div>
+          
+          <div class="section-subtitle">분배 가능액</div>
+          <div class="calc-line">
+            <span class="label">도급기사 매출</span>
+            <span class="value revenue-color">${formatCurrency(result.contractRevenue)}</span>
+          </div>
+          
+          <div class="calc-separator"></div>
+          
+          ${contractWorkers.map(name => {
+            const payment = result.contractPayments[name] || 0;
+            const details = result.contractWorkerDetails && result.contractWorkerDetails[name] ? 
+                           result.contractWorkerDetails[name] : 
+                           { revenue: 0, partsCost: 0, generalFee: 0 };
+            
+            const revenue = details.revenue || 0;
+            const partsCost = details.partsCost || 0;
+            const generalFee = details.generalFee || 0;
+            const grossPay = revenue * 0.7; // 70%
+            
+            return `
+              <div class="worker-allocation">
+                <div class="worker-name">👷 ${name}</div>
+                <div class="calc-line">
+                  <span class="label">도급기사 수당 (70%)</span>
+                  <span class="value contract-color">${formatCurrency(payment)}</span>
+                </div>
+                <div class="calc-detail-breakdown">
+                  <div class="breakdown-line">
+                    <span>매출 ${formatCurrency(revenue)} × 70% = ${formatCurrency(grossPay)}</span>
+                  </div>
+                  <div class="breakdown-line expense">
+                    <span>(-) 부품비 ${formatCurrency(partsCost)}</span>
+                  </div>
+                  <div class="breakdown-line expense">
+                    <span>(-) 일반수수료 ${formatCurrency(generalFee)}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+          
+          <div class="calc-separator"></div>
+          
+          <div class="calc-line">
+            <span class="label">임원 몫 (30%)</span>
+            <span class="value executive-color">${formatCurrency(result.contractToExecutivesBeforeFee || 0)}</span>
+          </div>
+          <div class="calc-line indent">
+            <span class="label">(-) 공간티비 수수료</span>
+            <span class="value expense-color">${formatCurrency(result.contractGongganFee || 0)}</span>
+          </div>
+          <div class="calc-line result-line">
+            <span class="label">= 임원에게 (30% - 공간티비수수료)</span>
+            <span class="value">${formatCurrency(result.contractRemainder)}</span>
+          </div>
+          
+          <div class="calc-separator"></div>
+          
+          <div class="company-payment-section">
+            <div class="section-subtitle" style="color: #dc2626; font-weight: 700;">회사 지급 총액</div>
+            <div class="calc-line">
+              <span class="label">임원 몫</span>
+              <span class="value">${formatCurrency(result.contractRemainder)}</span>
             </div>
-          `;
-        }).join('')}
-        
-        <div class="calc-separator"></div>
-        
-        <div class="calc-line">
-          <span class="label">임원 몫 (30%)</span>
-          <span class="value executive-color">${formatCurrency(result.contractToExecutivesBeforeFee || 0)}</span>
-        </div>
-        <div class="calc-line indent">
-          <span class="label">(-) 공간티비 수수료</span>
-          <span class="value expense-color">${formatCurrency(result.contractGongganFee || 0)}</span>
-        </div>
-        <div class="calc-line result-line">
-          <span class="label">= 임원에게 (30% - 공간티비수수료)</span>
-          <span class="value">${formatCurrency(result.contractRemainder)}</span>
+            <div class="calc-line">
+              <span class="label">(+) 부품비</span>
+              <span class="value">${formatCurrency(result.contractPartCost)}</span>
+            </div>
+            <div class="calc-line">
+              <span class="label">(+) 일반수수료</span>
+              <span class="value">${formatCurrency(result.contractFee)}</span>
+            </div>
+            <div class="calc-line result-line company-total">
+              <span class="label">= 도급기사 → 회사 총 지급액</span>
+              <span class="value red-emphasis">${formatCurrency(result.contractRemainder + result.contractPartCost + result.contractFee)}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -439,61 +496,99 @@ function getFinalExecutiveDistributionHTML(result, executives, hasContract) {
   
   return `
     <div class="section-box final-distribution-section">
-      <div class="section-header-simple">
-        <h4>3️⃣ 임원 최종 분배</h4>
+      <div class="section-header-simple collapsible" onclick="toggleFinalDistribution()">
+        <h4>3️⃣ 임원 최종 분배 <span class="toggle-icon" id="final-toggle-icon">▼</span></h4>
       </div>
       
       <div class="simple-calc-box">
-        <div class="section-subtitle">분배 가능액</div>
-        
-        ${executiveProfit > 0 ? `
-          <div class="calc-line">
-            <span class="label">임원 작업 순이익 (1번)</span>
-            <span class="value">${formatCurrency(executiveProfit)}</span>
+        <!-- 기본 화면: 회사자금 + 임원 카드 -->
+        <div class="final-distribution-summary">
+          <!-- 회사자금 카드 -->
+          <div class="distribution-card company-fund-card">
+            <div class="card-icon">🏢</div>
+            <div class="card-content">
+              <div class="card-label">회사자금 (10%)</div>
+              <div class="card-amount">${formatCurrency(companyFund)}</div>
+            </div>
           </div>
-        ` : ''}
-        
-        ${hasContract ? `
-          <div class="calc-line">
-            <span class="label">(+) 도급기사 30% (2번)</span>
-            <span class="value">${formatCurrency(contractRemainder)}</span>
-          </div>
-        ` : ''}
-        
-        <div class="calc-line result-line">
-          <span class="label">= 분배 총액</span>
-          <span class="value profit-color">${formatCurrency(totalBeforeFund)}</span>
-        </div>
-        
-        <div class="calc-separator"></div>
-        
-        <div class="calc-line">
-          <span class="label">(-) 회사자금 10%</span>
-          <span class="value company-color">${formatCurrency(companyFund)}</span>
-        </div>
-        <div class="calc-line result-line">
-          <span class="label">= 직원 분배액</span>
-          <span class="value">${formatCurrency(totalDistribution)}</span>
-        </div>
-        
-        <div class="calc-separator"></div>
-        
-        <div class="executive-list">
-          ${executives.map(name => {
+          
+          <!-- 임원 카드들 -->
+          ${executives.map((name, index) => {
             const amount = result.finalDistribution[name] || 0;
-            // 비율 계산
-            const totalExecDistribution = executives.reduce((sum, n) => sum + (result.finalDistribution[n] || 0), 0);
-            const ratio = totalExecDistribution > 0 ? ((amount / totalExecDistribution) * 10).toFixed(0) : 0;
+            const colors = [
+              { bg: '#dbeafe', border: '#3b82f6', icon: '👤' },  // 파란색
+              { bg: '#e0e7ff', border: '#6366f1', icon: '👤' },  // 보라색
+              { bg: '#d1fae5', border: '#10b981', icon: '👤' },  // 초록색
+            ];
+            const color = colors[index % colors.length];
             
             return `
-              <div class="exec-item">
-                <div class="calc-line">
-                  <span class="label">👤 ${name} (비율 ${ratio}/10)</span>
-                  <span class="value executive-color">${formatCurrency(amount)}</span>
+              <div class="distribution-card executive-card" style="background: ${color.bg}; border-left: 5px solid ${color.border};">
+                <div class="card-icon">${color.icon}</div>
+                <div class="card-content">
+                  <div class="card-label">${name}</div>
+                  <div class="card-amount">${formatCurrency(amount)}</div>
                 </div>
               </div>
             `;
           }).join('')}
+        </div>
+        
+        <!-- 상세 내용 (기본 숨김) -->
+        <div id="final-distribution-content" style="display: none;">
+          <div class="calc-separator" style="margin: 20px 0;"></div>
+          
+          <div class="section-subtitle">분배 가능액</div>
+          
+          ${executiveProfit > 0 ? `
+            <div class="calc-line">
+              <span class="label">임원 작업 순이익 (1번)</span>
+              <span class="value">${formatCurrency(executiveProfit)}</span>
+            </div>
+          ` : ''}
+          
+          ${hasContract ? `
+            <div class="calc-line">
+              <span class="label">(+) 도급기사 30% (2번)</span>
+              <span class="value">${formatCurrency(contractRemainder)}</span>
+            </div>
+          ` : ''}
+          
+          <div class="calc-line result-line">
+            <span class="label">= 분배 총액</span>
+            <span class="value profit-color">${formatCurrency(totalBeforeFund)}</span>
+          </div>
+          
+          <div class="calc-separator"></div>
+          
+          <div class="calc-line">
+            <span class="label">(-) 회사자금 10%</span>
+            <span class="value company-color">${formatCurrency(companyFund)}</span>
+          </div>
+          <div class="calc-line result-line">
+            <span class="label">= 직원 분배액</span>
+            <span class="value">${formatCurrency(totalDistribution)}</span>
+          </div>
+          
+          <div class="calc-separator"></div>
+          
+          <div class="executive-list">
+            ${executives.map(name => {
+              const amount = result.finalDistribution[name] || 0;
+              // 비율 계산
+              const totalExecDistribution = executives.reduce((sum, n) => sum + (result.finalDistribution[n] || 0), 0);
+              const ratio = totalExecDistribution > 0 ? ((amount / totalExecDistribution) * 10).toFixed(0) : 0;
+              
+              return `
+                <div class="exec-item">
+                  <div class="calc-line">
+                    <span class="label">👤 ${name} (비율 ${ratio}/10)</span>
+                    <span class="value executive-color">${formatCurrency(amount)}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
       </div>
     </div>
@@ -999,29 +1094,183 @@ function getSettlementStyles() {
       }
       
       /* 월 누적 수령액 섹션 */
-      .monthly-distribution-section {
+      /* 지출내역 섹션 - 회색톤 */
+      .expense-section {
         margin: 25px 0;
-        padding: 20px;
-        background: #f8fafc;
+        padding: 25px;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
         border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(148, 163, 184, 0.2);
       }
       
-      .monthly-distribution-section .section-title {
+      .expense-section .section-title {
         font-size: 18px;
         font-weight: 700;
         color: #0f172a;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
         padding-bottom: 10px;
-        border-bottom: 2px solid #e2e8f0;
+        border-bottom: 2px solid rgba(15, 23, 42, 0.15);
       }
       
-      .monthly-cards {
+      .expense-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .expense-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      
+      .expense-item.total {
+        background: rgba(255, 255, 255, 0.8);
+        font-weight: 700;
+        font-size: 1.1em;
+        padding: 15px;
+        margin-top: 5px;
+        border: 2px solid #64748b;
+      }
+      
+      .expense-item .label {
+        color: #475569;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .expense-item .value {
+        color: #0f172a;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      
+      .expense-item .value.cyan {
+        color: #0891b2;
+      }
+      
+      .expense-item .value.gray {
+        color: #64748b;
+      }
+      
+      .expense-item .value.orange {
+        color: #ea580c;
+      }
+      
+      .expense-item .value.red {
+        color: #dc2626;
+        font-size: 20px;
+      }
+      
+      .expense-separator {
+        height: 1px;
+        background: rgba(100, 116, 139, 0.3);
+        margin: 8px 0;
+      }
+      
+      /* 도급기사 상세 breakdown */
+      .calc-detail-breakdown {
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 6px;
+        border-left: 3px solid #f97316;
+      }
+      
+      .breakdown-line {
+        font-size: 13px;
+        color: #6b7280;
+        padding: 4px 0;
+        font-weight: 500;
+      }
+      
+      .breakdown-line.expense {
+        color: #dc2626;
+      }
+      
+      /* 회사 지급 총액 섹션 */
+      .company-payment-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border-radius: 10px;
+        border: 2px solid #dc2626;
+      }
+      
+      .company-payment-section .section-subtitle {
+        margin-bottom: 15px;
+      }
+      
+      .company-total {
+        background: rgba(220, 38, 38, 0.1);
+        padding: 15px !important;
+        border-radius: 8px;
+        margin-top: 10px;
+      }
+      
+      .company-total .value.red-emphasis {
+        color: #dc2626 !important;
+        font-size: 22px !important;
+        font-weight: 800 !important;
+      }
+      
+      /* 접기/펼치기 스타일 */
+      .collapsible {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.2s;
+      }
+      
+      .collapsible:hover {
+        background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+      }
+      
+      .toggle-icon {
+        font-size: 14px;
+        margin-left: 8px;
+        color: #64748b;
+        transition: transform 0.2s;
+      }
+      
+      /* 임원 작업 정산 요약 */
+      .executive-summary {
+        padding: 20px;
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        border-radius: 10px;
+        border-left: 5px solid #22c55e;
+      }
+      
+      .profit-summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .profit-summary-item .label {
+        font-size: 16px;
+        font-weight: 700;
+        color: #166534;
+      }
+      
+      .profit-summary-item .profit-amount {
+        font-size: 24px;
+        font-weight: 800;
+        color: #16a34a;
+      }
+      
+      /* 임원 최종 분배 카드 그리드 */
+      .final-distribution-summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 15px;
       }
       
-      .monthly-card {
+      .distribution-card {
         display: flex;
         align-items: center;
         gap: 15px;
@@ -1031,43 +1280,74 @@ function getSettlementStyles() {
         transition: transform 0.2s, box-shadow 0.2s;
       }
       
-      .monthly-card:hover {
+      .distribution-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.12);
       }
       
-      .monthly-card-icon {
+      .distribution-card.company-fund-card {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 5px solid #f59e0b;
+      }
+      
+      .distribution-card .card-icon {
         font-size: 36px;
         line-height: 1;
       }
       
-      .monthly-card-content {
+      .distribution-card .card-content {
         flex: 1;
       }
       
-      .monthly-card-name {
-        font-size: 16px;
-        font-weight: 700;
-        color: #0f172a;
+      .distribution-card .card-label {
+        font-size: 13px;
+        color: #374151;
+        font-weight: 600;
         margin-bottom: 5px;
       }
       
-      .monthly-card-amount {
-        font-size: 24px;
+      .distribution-card .card-amount {
+        font-size: 22px;
         font-weight: 800;
         color: #0f172a;
-        margin-bottom: 3px;
       }
       
-      .monthly-card-label {
-        font-size: 11px;
-        color: #6b7280;
-        font-weight: 500;
+      /* 도급기사 요약 화면 스타일 */
+      .contract-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .worker-summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-radius: 8px;
+        border-left: 4px solid #f59e0b;
+      }
+      
+      .worker-summary-item .worker-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      
+      .worker-summary-item .company-payment {
+        font-size: 20px;
+        font-weight: 800;
+        color: #dc2626;
       }
       
       @media (max-width: 768px) {
-        .monthly-cards {
-          grid-template-columns: 1fr;
+        .expense-section {
+          padding: 20px;
+        }
+        
+        .expense-item .value {
+          font-size: 16px;
         }
       }
       
@@ -1548,8 +1828,21 @@ export function getWorkerAnalysisHTML(workerStats, startDate, endDate = null) {
     const typeClass = worker.type === 'executive' ? 'executive' : 'contract';
     
     // 수익률 계산
-    const profitRate = worker.totalRevenue > 0 ? 
-      ((worker.totalProfit / worker.totalRevenue) * 100).toFixed(1) : 0;
+    let profitRate = 0;
+    let actualProfit = worker.totalProfit || 0;
+    
+    // 🔥 도급기사의 경우 순이익 재계산 (매출 - 부품비 - 수수료 - 매출×30%)
+    let executiveShare = 0;
+    let companyPayment = 0;
+    
+    if (worker.type === 'contract_worker') {
+      executiveShare = (worker.totalRevenue || 0) * 0.3;
+      actualProfit = (worker.totalRevenue || 0) - (worker.totalPartCost || 0) - (worker.totalFee || 0) - executiveShare;
+      companyPayment = executiveShare + (worker.totalPartCost || 0) + (worker.totalFee || 0);
+      profitRate = worker.totalRevenue > 0 ? ((actualProfit / worker.totalRevenue) * 100).toFixed(1) : 0;
+    } else {
+      profitRate = worker.totalRevenue > 0 ? ((actualProfit / worker.totalRevenue) * 100).toFixed(1) : 0;
+    }
     
     html += `
       <div class="worker-card ${typeClass}">
@@ -1567,6 +1860,12 @@ export function getWorkerAnalysisHTML(workerStats, startDate, endDate = null) {
                 <span class="label">매출</span>
                 <span class="value revenue">${formatCurrency(worker.totalRevenue)}</span>
               </div>
+              ${worker.type === 'contract_worker' ? `
+                <div class="summary-stat">
+                  <span class="label">매출×30%</span>
+                  <span class="value expense">${formatCurrency(executiveShare)}</span>
+                </div>
+              ` : ''}
               <div class="summary-stat">
                 <span class="label">부품비</span>
                 <span class="value expense">${formatCurrency(worker.totalPartCost || 0)}</span>
@@ -1577,9 +1876,15 @@ export function getWorkerAnalysisHTML(workerStats, startDate, endDate = null) {
               </div>
               <div class="summary-stat profit-stat">
                 <span class="label">순이익</span>
-                <span class="value profit">${formatCurrency(worker.totalProfit || 0)}</span>
+                <span class="value profit">${formatCurrency(actualProfit)}</span>
                 <span class="rate">${profitRate}%</span>
               </div>
+              ${worker.type === 'contract_worker' ? `
+                <div class="summary-stat company-payment-stat">
+                  <span class="label">회사지급총액</span>
+                  <span class="value company">${formatCurrency(companyPayment)}</span>
+                </div>
+              ` : ''}
             </div>
           </div>
         </div>
@@ -1712,6 +2017,11 @@ export function getWorkerAnalysisHTML(workerStats, startDate, endDate = null) {
         border: 1px solid #86efac;
       }
       
+      .summary-stat.company-payment-stat {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border: 1px solid #f87171;
+      }
+      
       .summary-stat .label {
         font-size: 11px;
         color: #6b7280;
@@ -1734,6 +2044,10 @@ export function getWorkerAnalysisHTML(workerStats, startDate, endDate = null) {
       
       .summary-stat .value.profit {
         color: #16a34a;
+      }
+      
+      .summary-stat .value.company {
+        color: #dc2626;
       }
       
       .summary-stat .rate {
@@ -1911,9 +2225,8 @@ export function getFeeAnalysisHTML(feeStats, startDate, endDate = null) {
         <div class="dash-card gonggan-fee">
           <div class="card-icon">🏢</div>
           <div class="card-content">
-            <div class="card-label">공간티비 (22%)</div>
+            <div class="card-label">공간/공간티비</div>
             <div class="card-value">${formatCurrency(feeStats.gongganTotal)}</div>
-            <div class="card-count">${feeStats.gongganTasks.length}건</div>
           </div>
         </div>
         
@@ -1922,7 +2235,6 @@ export function getFeeAnalysisHTML(feeStats, startDate, endDate = null) {
           <div class="card-content">
             <div class="card-label">기타 업체</div>
             <div class="card-value">${formatCurrency(feeStats.othersTotal)}</div>
-            <div class="card-count">${feeStats.othersTasks.length}건</div>
           </div>
         </div>
         
@@ -1931,74 +2243,112 @@ export function getFeeAnalysisHTML(feeStats, startDate, endDate = null) {
           <div class="card-content">
             <div class="card-label">총 수수료</div>
             <div class="card-value">${formatCurrency(feeStats.gongganTotal + feeStats.othersTotal)}</div>
-            <div class="card-count">${feeStats.gongganTasks.length + feeStats.othersTasks.length}건</div>
           </div>
         </div>
       </div>
       
-      <!-- 거래처별 수수료 상세 -->
-      <div class="client-fee-details">
-        <h4>📊 거래처별 수수료 상세</h4>
-        <div class="client-fee-grid">
+      <!-- 공간/공간티비 수수료 내역 -->
+      ${feeStats.gongganTasks.length > 0 ? `
+      <div class="fee-section">
+        <h4 class="fee-section-title">🏢 공간/공간티비 수수료 내역</h4>
+        <div class="fee-cards-grid">
+          ${feeStats.gongganTasks.map(task => {
+            const date = task.date ? new Date(task.date).toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) : '날짜 미상';
+            
+            return `
+              <div class="fee-task-card gonggan-border">
+                <div class="fee-card-header">
+                  <span class="fee-card-date">${date}</span>
+                  <span class="fee-card-amount">${formatCurrency(task.amount)}</span>
+                </div>
+                <div class="fee-card-body">
+                  <div class="fee-card-row">
+                    <span class="fee-icon-label">🏢</span>
+                    <span class="fee-text">${task.client || '공간'}</span>
+                  </div>
+                  <div class="fee-card-row">
+                    <span class="fee-icon-label">👤</span>
+                    <span class="fee-text">${task.worker || '미정'}</span>
+                  </div>
+                  <div class="fee-card-row">
+                    <span class="fee-icon-label">📍</span>
+                    <span class="fee-text">${task.displayAddress || '주소 미입력'}</span>
+                  </div>
+                </div>
+                <div class="fee-card-footer">
+                  <span class="fee-rate-badge gonggan">22%</span>
+                  <span class="fee-arrow">→</span>
+                  <span class="fee-result">${formatCurrency(task.calculatedFee)}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="fee-section-total">
+          공간/공간티비 총 수수료: <strong>${formatCurrency(feeStats.gongganTotal)}</strong>
+        </div>
+      </div>
+      ` : ''}
+      
+      <!-- 기타 업체 수수료 내역 -->
+      ${feeStats.othersTasks.length > 0 ? `
+      <div class="fee-section">
+        <h4 class="fee-section-title">🏪 기타 업체 수수료 내역</h4>
+        <div class="fee-cards-grid">
+          ${feeStats.othersTasks.map(task => {
+            const date = task.date ? new Date(task.date).toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) : '날짜 미상';
+            
+            const feeRate = task.amount > 0 ? ((task.calculatedFee / task.amount) * 100).toFixed(0) : 0;
+            
+            return `
+              <div class="fee-task-card others-border">
+                <div class="fee-card-header">
+                  <span class="fee-card-date">${date}</span>
+                  <span class="fee-card-amount">${formatCurrency(task.amount)}</span>
+                </div>
+                <div class="fee-card-body">
+                  <div class="fee-card-row">
+                    <span class="fee-icon-label">🏪</span>
+                    <span class="fee-text">${task.client || '미분류'}</span>
+                  </div>
+                  <div class="fee-card-row">
+                    <span class="fee-icon-label">👤</span>
+                    <span class="fee-text">${task.worker || '미정'}</span>
+                  </div>
+                  <div class="fee-card-row">
+                    <span class="fee-icon-label">📍</span>
+                    <span class="fee-text">${task.displayAddress || '주소 미입력'}</span>
+                  </div>
+                </div>
+                <div class="fee-card-footer">
+                  <span class="fee-rate-badge others">${feeRate}%</span>
+                  <span class="fee-arrow">→</span>
+                  <span class="fee-result">${formatCurrency(task.calculatedFee)}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="fee-section-total">
+          기타 업체 총 수수료: <strong>${formatCurrency(feeStats.othersTotal)}</strong>
+        </div>
+      </div>
+      ` : ''}
   `;
   
-  // 거래처별 정렬 (수수료 높은 순)
-  const clients = Object.entries(feeStats.clientStats || {})
-    .sort((a, b) => b[1].fee - a[1].fee);
-  
-  if (clients.length === 0) {
-    html += `
-          <div class="no-data-message">
-            거래처별 수수료 데이터가 없습니다.
-          </div>
-    `;
-  } else {
-    clients.forEach(([clientKey, stats]) => {
-      const feeRate = stats.revenue > 0 ? ((stats.fee / stats.revenue) * 100).toFixed(1) : 0;
-      const typeLabel = stats.type === 'gonggan' ? '공간티비' : '기타';
-      const typeClass = stats.type === 'gonggan' ? 'gonggan' : 'others';
-      
-      // 작업 주소 처리
-      const displayAddress = stats.address ? stats.address : '주소 미입력';
-      
-      // 작업자 표시
-      const workersText = stats.workers && stats.workers.length > 0 
-        ? stats.workers.join(', ') 
-        : '미정';
-      
-      html += `
-          <div class="client-fee-row ${typeClass}">
-            <div class="client-fee-header">
-              <div class="client-info">
-                <span class="client-name">${stats.client}</span>
-                <span class="client-address">🏗️ 작업 주소: ${displayAddress}</span>
-                <span class="client-workers">👤 작업자: ${workersText}</span>
-              </div>
-              <span class="type-badge ${typeClass}">${typeLabel}</span>
-            </div>
-            <div class="client-fee-stats">
-              <div class="cfs-item">
-                <span class="label">작업</span>
-                <span class="value">${stats.count}건</span>
-              </div>
-              <div class="cfs-item">
-                <span class="label">매출</span>
-                <span class="value">${formatCurrency(stats.revenue)}</span>
-              </div>
-              <div class="cfs-item highlight">
-                <span class="label">수수료</span>
-                <span class="value">${formatCurrency(stats.fee)}</span>
-                <span class="rate">(${feeRate}%)</span>
-              </div>
-            </div>
-          </div>
-      `;
-    });
-  }
-  
   html += `
-        </div>
-      </div>
     </div>
     
     <style>
@@ -2006,59 +2356,156 @@ export function getFeeAnalysisHTML(feeStats, startDate, endDate = null) {
         padding: 20px;
       }
       
-      .fee-summary {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 15px;
-        margin-bottom: 25px;
+      /* 수수료 섹션 */
+      .fee-section {
+        margin: 30px 0;
       }
       
-      .fee-card {
+      .fee-section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      
+      /* 카드 그리드 */
+      .fee-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      
+      /* 개별 작업 카드 */
+      .fee-task-card {
         background: white;
         border-radius: 12px;
         padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      
+      .fee-task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      }
+      
+      .fee-task-card.gonggan-border {
+        border-left: 5px solid #22c55e;
+      }
+      
+      .fee-task-card.others-border {
+        border-left: 5px solid #f59e0b;
+      }
+      
+      /* 카드 헤더 */
+      .fee-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f3f4f6;
+      }
+      
+      .fee-card-date {
+        font-size: 13px;
+        color: #0891b2;
+        font-weight: 600;
+      }
+      
+      .fee-card-amount {
+        font-size: 16px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      
+      /* 카드 본문 */
+      .fee-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 15px;
+      }
+      
+      .fee-card-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      
+      .fee-icon-label {
+        font-size: 14px;
+        min-width: 20px;
+      }
+      
+      .fee-text {
+        font-size: 13px;
+        color: #475569;
+        line-height: 1.4;
+        word-break: break-all;
+      }
+      
+      /* 카드 푸터 */
+      .fee-card-footer {
         display: flex;
         align-items: center;
-        gap: 15px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        justify-content: space-between;
+        padding: 12px 15px;
+        background: #f9fafb;
+        border-radius: 8px;
       }
       
-      .fee-card.gonggan {
-        border-left: 4px solid #f59e0b;
-      }
-      
-      .fee-card.others {
-        border-left: 4px solid #10b981;
-      }
-      
-      .fee-card.total {
-        border-left: 4px solid #ef4444;
-      }
-      
-      .fee-icon {
-        font-size: 36px;
-      }
-      
-      .fee-content {
-        flex: 1;
-      }
-      
-      .fee-card h4 {
-        margin: 0 0 8px 0;
+      .fee-rate-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
         font-size: 13px;
-        color: #6b7280;
-      }
-      
-      .fee-amount {
-        font-size: 22px;
         font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 4px;
+        color: white;
       }
       
-      .fee-count {
-        font-size: 12px;
-        color: #9ca3af;
+      .fee-rate-badge.gonggan {
+        background: #22c55e;
+      }
+      
+      .fee-rate-badge.others {
+        background: #f59e0b;
+      }
+      
+      .fee-arrow {
+        color: #94a3b8;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      
+      .fee-result {
+        font-size: 16px;
+        font-weight: 800;
+        color: #0891b2;
+      }
+      
+      /* 섹션 합계 */
+      .fee-section-total {
+        text-align: right;
+        padding: 15px 20px;
+        background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+        border-radius: 10px;
+        font-size: 15px;
+        color: #475569;
+      }
+      
+      .fee-section-total strong {
+        color: #0f172a;
+        font-size: 18px;
+      }
+      
+      /* 반응형 */
+      @media (max-width: 768px) {
+        .fee-cards-grid {
+          grid-template-columns: 1fr;
+        }
       }
       
       /* 거래처별 상세 */
@@ -2322,5 +2769,59 @@ window.loadFeeAnalysisByFilter = async function(filter) {
   // 정산 실행
   if (window.filterFeeByDateRange) {
     await window.filterFeeByDateRange();
+  }
+};
+
+/**
+ * 도급기사 정산 상세 토글 함수
+ */
+window.toggleContractDetail = function() {
+  const content = document.getElementById('contract-detail-content');
+  const icon = document.getElementById('contract-toggle-icon');
+  
+  if (content && icon) {
+    if (content.style.display === 'none') {
+      content.style.display = 'block';
+      icon.textContent = '▲';
+    } else {
+      content.style.display = 'none';
+      icon.textContent = '▼';
+    }
+  }
+};
+
+/**
+ * 임원 작업 정산 상세 토글 함수
+ */
+window.toggleExecutiveDetail = function() {
+  const content = document.getElementById('executive-detail-content');
+  const icon = document.getElementById('executive-toggle-icon');
+  
+  if (content && icon) {
+    if (content.style.display === 'none') {
+      content.style.display = 'block';
+      icon.textContent = '▲';
+    } else {
+      content.style.display = 'none';
+      icon.textContent = '▼';
+    }
+  }
+};
+
+/**
+ * 임원 최종 분배 상세 토글 함수
+ */
+window.toggleFinalDistribution = function() {
+  const content = document.getElementById('final-distribution-content');
+  const icon = document.getElementById('final-toggle-icon');
+  
+  if (content && icon) {
+    if (content.style.display === 'none') {
+      content.style.display = 'block';
+      icon.textContent = '▲';
+    } else {
+      content.style.display = 'none';
+      icon.textContent = '▼';
+    }
   }
 };

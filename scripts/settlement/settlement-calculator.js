@@ -69,6 +69,20 @@ export function calculateNewDaySettlement(tasks, allUsers, allOutboundParts, pri
     result.finalDistribution[worker.name] = 0;
   });
   
+  // 🔥 도급기사별 상세 내역 추적
+  result.contractWorkerDetails = {};
+  contractWorkers.forEach(worker => {
+    result.contractWorkerDetails[worker.name] = {
+      partsCost: 0,          // 사용한 부품비
+      generalFee: 0,         // 일반 수수료
+      revenue: 0,            // 담당 매출
+      payment: 0,            // 최종 수령액 (70%)
+      companyPayment: 0,     // 회사 지급 총액
+      executiveShare: 0,     // 임원 몫 (30%)
+      gongganFee: 0          // 공간티비 수수료
+    };
+  });
+  
   // 📌 작업별 처리 (협업 시 작업자별 분할)
   tasks.forEach(task => {
     const revenue = Number(task.amount) || 0;
@@ -210,6 +224,21 @@ export function calculateNewDaySettlement(tasks, allUsers, allOutboundParts, pri
         const toExecutives = workerRevenue * 0.3; // 30%는 임원에게
         console.log(`  → 임원에게: ${workerRevenue.toLocaleString()} × 30% = ${toExecutives.toLocaleString()}원`);
         
+        // 🔥 상세 내역 기록
+        if (result.contractWorkerDetails[workerName]) {
+          result.contractWorkerDetails[workerName].revenue += workerRevenue;
+          result.contractWorkerDetails[workerName].partsCost += workerPartCost;
+          result.contractWorkerDetails[workerName].generalFee += workerFee;
+          result.contractWorkerDetails[workerName].payment += netPayment;
+          result.contractWorkerDetails[workerName].executiveShare += toExecutives;
+          
+          // 공간티비 수수료 기록
+          if (isGongganFee) {
+            const myGongganFee = fee / workerCount;
+            result.contractWorkerDetails[workerName].gongganFee += myGongganFee;
+          }
+        }
+        
         // 도급기사 통계에 추가
         result.contractRevenue += workerRevenue;
         result.contractPartCost += workerPartCost;
@@ -292,6 +321,19 @@ export function calculateNewDaySettlement(tasks, allUsers, allOutboundParts, pri
   
   // 총 순이익
   result.totalProfit = result.totalRevenue - result.totalPartCost - result.totalFee;
+  
+  // 🔥 도급기사별 회사 지급 총액 계산
+  contractWorkers.forEach(worker => {
+    const details = result.contractWorkerDetails[worker.name];
+    if (details) {
+      // 회사 지급 총액 = 임원 몫(30% - 공간티비수수료) + 부품비 + 일반수수료
+      const executiveShareNet = details.executiveShare - details.gongganFee;
+      details.companyPayment = executiveShareNet + details.partsCost + details.generalFee;
+      
+      console.log(`💰 ${worker.name} 회사 지급 총액: ${details.companyPayment.toLocaleString()}원`);
+      console.log(`  = 임원몫 ${executiveShareNet.toLocaleString()} + 부품비 ${details.partsCost.toLocaleString()} + 수수료 ${details.generalFee.toLocaleString()}`);
+    }
+  });
   
   // 출고 상세 정보
   const selectedTaskIds = tasks.map(task => task.id);
