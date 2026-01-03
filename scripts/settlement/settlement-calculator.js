@@ -297,13 +297,16 @@ export function calculateNewDaySettlement(tasks, allUsers, allOutboundParts, pri
     const toExecutivesBeforeFee = result.contractToExecutivesBeforeFee || 0;
     const gongganFee = result.contractGongganFee || 0;
     
-    result.contractRemainder = Math.round(toExecutivesBeforeFee - gongganFee);
-    result.contractCompanyFund = Math.round(result.contractRemainder * 0.1); // 10%
+    // 공간티비 차감 후 금액 (3번 임원 최종 분배에서 사용)
+    const afterFee = toExecutivesBeforeFee - gongganFee;
+    
+    result.contractRemainder = Math.round(afterFee); // 공간티비 차감 후
+    result.contractCompanyFund = Math.round(afterFee * 0.1); // 10%는 차감 후 금액 기준
     
     console.log(`📊 도급기사 → 임원 정산:`);
     console.log(`  도급기사 매출 × 30% = ${toExecutivesBeforeFee.toLocaleString()}원`);
     console.log(`  (-) 공간티비 수수료 = ${gongganFee.toLocaleString()}원`);
-    console.log(`  = 임원에게 = ${result.contractRemainder.toLocaleString()}원`);
+    console.log(`  = 임원에게 = ${afterFee.toLocaleString()}원`);
     console.log(`  (-) 회사자금 10% = ${result.contractCompanyFund.toLocaleString()}원`);
     
     const contractToExecRemain = result.contractRemainder - result.contractCompanyFund;
@@ -371,7 +374,7 @@ export function calculateWorkerAnalysis(tasks, allUsers, outboundParts = [], pri
     };
   });
   
-  // 🔥 작업별 처리 (모든 작업자에게 분할)
+  // 🔥 작업별 처리 (협업 시 분배 로직 개선)
   tasks.forEach(task => {
     if (!task.worker) return;
     
@@ -381,9 +384,54 @@ export function calculateWorkerAnalysis(tasks, allUsers, outboundParts = [], pri
     const amount = Number(task.amount) || 0;
     const client = task.client || '미분류';
     
-    // 🔥 협업일 경우 작업자 수로 분할
-    const workerCount = workers.length;
-    const amountPerWorker = amount / workerCount;
+    // 🔥 협업 여부 확인
+    const isCollaboration = workers.length > 1;
+    
+    // 🔥 협업 시 분배 로직
+    let distributionMap = {}; // 작업자별 분배 비율 (0~1)
+    
+    if (!isCollaboration) {
+      // 단독 작업: 100%
+      distributionMap[workers[0]] = 1.0;
+    } else {
+      // 협업: 도급기사 포함 여부 확인
+      const hasContractWorker = workers.some(name => {
+        const user = allUsers.find(u => u.name === name);
+        return user && user.type === 'contract_worker';
+      });
+      
+      if (hasContractWorker) {
+        // 도급기사가 포함된 협업: 무조건 1/n 균등 분할
+        workers.forEach(name => {
+          distributionMap[name] = 1.0 / workers.length;
+        });
+        console.log(`  🤝 [도급기사 협업] ${workers.join(', ')} → 균등 분할 (1/${workers.length})`);
+      } else {
+        // 임원끼리만 협업: 우선순위가 높은 한 명에게 100%
+        const executivePriority = ['박성욱', '박성호', '배희종'];
+        
+        // 우선순위가 가장 높은 사람 찾기
+        let selectedExecutive = null;
+        for (const exec of executivePriority) {
+          if (workers.includes(exec)) {
+            selectedExecutive = exec;
+            break;
+          }
+        }
+        
+        // 만약 우선순위에 없는 임원이면 첫 번째 사람에게
+        if (!selectedExecutive) {
+          selectedExecutive = workers[0];
+        }
+        
+        // 선택된 임원에게 100%, 나머지는 0%
+        workers.forEach(name => {
+          distributionMap[name] = (name === selectedExecutive) ? 1.0 : 0.0;
+        });
+        
+        console.log(`  🤝 [임원 협업] ${workers.join(', ')} → ${selectedExecutive}에게 100% 배정`);
+      }
+    }
     
     // 부품비 계산
     let partCost = 0;
@@ -444,8 +492,6 @@ export function calculateWorkerAnalysis(tasks, allUsers, outboundParts = [], pri
       console.log(`  ⚠️ [직원별] 작업 ${task.id} 부품 데이터 없음`);
     }
     
-    const partCostPerWorker = partCost / workerCount;
-    
     // 수수료 계산
     let fee = 0;
     let isGongganFee = false;
@@ -455,26 +501,32 @@ export function calculateWorkerAnalysis(tasks, allUsers, outboundParts = [], pri
     } else if (task.fee && task.fee > 0) {
       fee = Number(task.fee);
     }
-    const feePerWorker = fee / workerCount;
     
-    // 🔥 각 작업자에게 분할해서 집계
+    // 🔥 각 작업자에게 distributionMap에 따라 분배 (비율 0이어도 리스트에 표시!)
     workers.forEach(workerName => {
       if (!workerStats[workerName]) return;
       
+      const distributionRatio = distributionMap[workerName] || 0;
+      
+      // 작업자 몫 계산 (비율이 0이면 금액도 0)
+      const workerAmount = amount * distributionRatio;
+      const workerPartCost = partCost * distributionRatio;
+      const workerFeeBase = fee * distributionRatio;
+      
       // 도급기사는 공간티비 수수료 차감 안 함!
       const workerType = workerStats[workerName].type;
-      let workerFee = feePerWorker;
+      let workerFee = workerFeeBase;
       if (workerType === 'contract_worker' && isGongganFee) {
         workerFee = 0; // 도급기사는 공간티비 수수료 차감 안 함
       }
       
       // 순이익 (도급기사는 공간티비 수수료 제외)
-      const profit = amountPerWorker - partCostPerWorker - workerFee;
+      const profit = workerAmount - workerPartCost - workerFee;
       
       // 작업자별 집계
       workerStats[workerName].taskCount += 1;
-      workerStats[workerName].totalRevenue += amountPerWorker;
-      workerStats[workerName].totalPartCost += partCostPerWorker;
+      workerStats[workerName].totalRevenue += workerAmount;
+      workerStats[workerName].totalPartCost += workerPartCost;
       workerStats[workerName].totalFee += workerFee;
       workerStats[workerName].totalProfit += profit;
       
@@ -485,15 +537,28 @@ export function calculateWorkerAnalysis(tasks, allUsers, outboundParts = [], pri
           amount: 0,
           partCost: 0,
           fee: 0,
-          profit: 0
+          profit: 0,
+          tasks: [] // 🔥 협업 표시를 위한 작업 목록
         };
       }
       
       workerStats[workerName].clientDetails[client].count += 1;
-      workerStats[workerName].clientDetails[client].amount += amountPerWorker;
-      workerStats[workerName].clientDetails[client].partCost += partCostPerWorker;
+      workerStats[workerName].clientDetails[client].amount += workerAmount;
+      workerStats[workerName].clientDetails[client].partCost += workerPartCost;
       workerStats[workerName].clientDetails[client].fee += workerFee;
       workerStats[workerName].clientDetails[client].profit += profit;
+      
+      // 🔥 작업 상세 정보 저장 (협업 여부 표시)
+      workerStats[workerName].clientDetails[client].tasks.push({
+        id: task.id,
+        isCollaboration: isCollaboration,
+        workers: workers,
+        amount: workerAmount,
+        partCost: workerPartCost,
+        fee: workerFee,
+        profit: profit,
+        distributionRatio: distributionRatio // 분배 비율 저장
+      });
     });
   });
   

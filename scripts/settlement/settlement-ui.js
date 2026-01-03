@@ -379,19 +379,15 @@ function getContractWorkerDetailHTML(result, contractWorkers) {
       </div>
       
       <div class="simple-calc-box">
-        <!-- 기본 화면: 각 기사별 회사 지급 총액만 표시 -->
+        <!-- 기본 화면: 각 기사별 실제 수령액 표시 -->
         <div class="contract-summary">
           ${contractWorkers.map(name => {
-            const details = result.contractWorkerDetails && result.contractWorkerDetails[name] ? 
-                           result.contractWorkerDetails[name] : 
-                           { companyPayment: 0 };
-            
-            const companyPayment = details.companyPayment || 0;
+            const payment = result.contractPayments[name] || 0;
             
             return `
               <div class="worker-summary-item">
                 <span class="worker-name">👷 ${name}</span>
-                <span class="company-payment">${formatCurrency(companyPayment)}</span>
+                <span class="company-payment">${formatCurrency(payment)}</span>
               </div>
             `;
           }).join('')}
@@ -448,14 +444,13 @@ function getContractWorkerDetailHTML(result, contractWorkers) {
             <span class="label">임원 몫 (30%)</span>
             <span class="value executive-color">${formatCurrency(result.contractToExecutivesBeforeFee || 0)}</span>
           </div>
-          <div class="calc-line indent">
-            <span class="label">(-) 공간티비 수수료</span>
-            <span class="value expense-color">${formatCurrency(result.contractGongganFee || 0)}</span>
+          
+          ${result.contractGongganFee > 0 ? `
+          <div class="calc-line" style="opacity: 0.7;">
+            <span class="label">공간티비 수수료 (표기용)</span>
+            <span class="value expense-color">${formatCurrency(result.contractGongganFee)}</span>
           </div>
-          <div class="calc-line result-line">
-            <span class="label">= 임원에게 (30% - 공간티비수수료)</span>
-            <span class="value">${formatCurrency(result.contractRemainder)}</span>
-          </div>
+          ` : ''}
           
           <div class="calc-separator"></div>
           
@@ -463,7 +458,7 @@ function getContractWorkerDetailHTML(result, contractWorkers) {
             <div class="section-subtitle" style="color: #dc2626; font-weight: 700;">회사 지급 총액</div>
             <div class="calc-line">
               <span class="label">임원 몫</span>
-              <span class="value">${formatCurrency(result.contractRemainder)}</span>
+              <span class="value">${formatCurrency(result.contractToExecutivesBeforeFee || 0)}</span>
             </div>
             <div class="calc-line">
               <span class="label">(+) 부품비</span>
@@ -475,7 +470,7 @@ function getContractWorkerDetailHTML(result, contractWorkers) {
             </div>
             <div class="calc-line result-line company-total">
               <span class="label">= 도급기사 → 회사 총 지급액</span>
-              <span class="value red-emphasis">${formatCurrency(result.contractRemainder + result.contractPartCost + result.contractFee)}</span>
+              <span class="value red-emphasis">${formatCurrency((result.contractToExecutivesBeforeFee || 0) + result.contractPartCost + result.contractFee)}</span>
             </div>
           </div>
         </div>
@@ -489,8 +484,13 @@ function getContractWorkerDetailHTML(result, contractWorkers) {
  */
 function getFinalExecutiveDistributionHTML(result, executives, hasContract) {
   const executiveProfit = result.executiveProfit || 0;
-  const contractRemainder = hasContract ? (result.contractRemainder || 0) : 0;
-  const totalBeforeFund = executiveProfit + contractRemainder;
+  
+  // 🔥 도급기사 관련 (calculator에서 이미 공간티비 차감됨)
+  const contractToExecutivesBeforeFee = hasContract ? (result.contractToExecutivesBeforeFee || 0) : 0;
+  const contractGongganFee = hasContract ? (result.contractGongganFee || 0) : 0;
+  const contractRemainder = hasContract ? (result.contractRemainder || 0) : 0; // 이미 차감된 값
+  
+  const totalBeforeFund = executiveProfit + contractRemainder; // contractRemainder는 이미 공간티비 차감됨
   const companyFund = result.companyFund || 0;
   const totalDistribution = totalBeforeFund - companyFund;
   
@@ -550,8 +550,14 @@ function getFinalExecutiveDistributionHTML(result, executives, hasContract) {
           ${hasContract ? `
             <div class="calc-line">
               <span class="label">(+) 도급기사 30% (2번)</span>
-              <span class="value">${formatCurrency(contractRemainder)}</span>
+              <span class="value">${formatCurrency(contractToExecutivesBeforeFee)}</span>
             </div>
+            ${contractGongganFee > 0 ? `
+            <div class="calc-line">
+              <span class="label">(-) 도급기사 공간티비 수수료</span>
+              <span class="value expense-color">${formatCurrency(contractGongganFee)}</span>
+            </div>
+            ` : ''}
           ` : ''}
           
           <div class="calc-line result-line">
@@ -1901,8 +1907,12 @@ export function getWorkerAnalysisHTML(workerStats, startDate, endDate = null) {
       const clientProfitRate = detail.amount > 0 ? 
         ((detail.profit / detail.amount) * 100).toFixed(1) : 0;
       
+      // 🔥 협업 작업이 있는지 확인
+      const hasCollaboration = detail.tasks && detail.tasks.some(t => t.isCollaboration);
+      const collaborationClass = hasCollaboration ? 'has-collaboration' : '';
+      
       html += `
-            <div class="client-row-enhanced">
+            <div class="client-row-enhanced ${collaborationClass}">
               <div class="client-header">
                 <span class="client-name">${client}</span>
                 <span class="client-count">${detail.count}건</span>
@@ -2104,6 +2114,12 @@ export function getWorkerAnalysisHTML(workerStats, startDate, endDate = null) {
         border-radius: 8px;
         margin-bottom: 8px;
         border-left: 3px solid #e5e7eb;
+      }
+      
+      /* 🔥 협업 작업 표시 (빨간 세로줄) */
+      .client-row-enhanced.has-collaboration {
+        border-left: 4px solid #ef4444;
+        background: #fef2f2;
       }
       
       .client-header {
