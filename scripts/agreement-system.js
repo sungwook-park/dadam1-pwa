@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot, query, collection, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, query, collection, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // jsPDF와 html2canvas 동적 로드
 async function loadPDFLibraries() {
@@ -572,6 +572,11 @@ window.showAgreementActions = function(taskId, taskData) {
   window.currentAgreementTaskData = taskData;
   const modal = document.getElementById('agreementActionModal');
   modal.style.display = 'flex';
+  
+  // ⭐ 동의받기 클릭시 조건부 폴링 시작
+  if (window.startConditionalPolling) {
+    window.startConditionalPolling(taskId);
+  }
 };
 
 // 작업 ID로 동의 모달 열기 (간단 버전)
@@ -617,6 +622,19 @@ window.handleSendSMS = async function() {
       }
       
       alert('문자가 발송되었습니다.');
+      
+      // ⭐ SMS 발송 후 폴링 확인 (이미 시작되었을 것)
+      setTimeout(() => {
+        if (pollingInterval) {
+          console.log('✅ 조건부 폴링 정상 작동 중 (2분마다, 20분간)');
+        } else {
+          console.log('⚠️ 폴링이 시작되지 않았습니다. 시작합니다...');
+          if (window.startConditionalPolling) {
+            window.startConditionalPolling(window.currentAgreementTaskId);
+          }
+        }
+      }, 1000);
+      
     } else {
       alert('문자 발송 실패: ' + result.error);
     }
@@ -633,75 +651,137 @@ window.handleDirectAgreement = function() {
   setupSignatureCanvas();
 };
 
-// 실시간 리스너 관리
-let agreementListener = null;
+// 조건부 폴링 관리
+let pollingInterval = null;
+let pollingTimeout = null;
+let lastPendingTasks = new Set();
 
-// 동의대기 작업 실시간 감지 시작
-window.startAgreementListener = function() {
-  // 이미 리스너가 있으면 중복 방지
-  if (agreementListener) {
-    console.log('⚠️ 실시간 리스너 이미 실행 중');
+// 동의대기 작업 조건부 폴링 시작 (동의받기 클릭시에만)
+window.startConditionalPolling = function(taskId) {
+  // 이미 폴링 중이면 타이머만 연장
+  if (pollingInterval) {
+    console.log('⚠️ 폴링 이미 실행 중 - 타이머 연장');
+    resetPollingTimeout();
     return;
   }
   
+  console.log(`🔔 조건부 폴링 시작 (작업 ${taskId})`);
+  console.log('⏱️  2분마다 체크, 20분 후 자동 중지');
+  
+  // 즉시 한 번 체크
+  checkPendingAgreements();
+  
+  // 2분(120초)마다 체크
+  pollingInterval = setInterval(() => {
+    checkPendingAgreements();
+  }, 120000); // 2분
+  
+  // 20분 후 자동 중지
+  resetPollingTimeout();
+  
+  console.log('✅ 조건부 폴링 활성화 완료');
+};
+
+// 폴링 타이머 재설정 (20분)
+function resetPollingTimeout() {
+  // 기존 타이머 제거
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout);
+  }
+  
+  // 20분 후 자동 중지
+  pollingTimeout = setTimeout(() => {
+    console.log('⏰ 20분 경과 - 폴링 자동 중지');
+    stopConditionalPolling();
+  }, 1200000); // 20분 = 1,200,000ms
+}
+
+// 조건부 폴링 중지
+window.stopConditionalPolling = function() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+    console.log('🔴 폴링 중지됨');
+  }
+  
+  if (pollingTimeout) {
+    clearTimeout(pollingTimeout);
+    pollingTimeout = null;
+  }
+  
+  lastPendingTasks.clear();
+};
+
+// 동의대기 작업 확인
+async function checkPendingAgreements() {
   try {
-    console.log('🔔 동의대기 작업 실시간 감지 시작...');
+    console.log('🔍 동의대기 작업 체크 중...');
     
-    // agreementStatus가 'pending'인 작업들만 쿼리
+    // Firebase에서 동의대기 작업만 조회
     const q = query(
       collection(db, 'tasks'),
       where('agreementStatus', '==', 'pending')
     );
     
-    // 실시간 리스너 연결
-    agreementListener = onSnapshot(q, (snapshot) => {
-      console.log(`📡 동의대기 작업 ${snapshot.size}건 감지 중...`);
-      
-      // 변경된 문서만 처리
-      snapshot.docChanges().forEach((change) => {
-        const taskId = change.doc.id;
-        const taskData = change.doc.data();
-        
-        if (change.type === 'modified') {
-          // 동의 상태가 변경된 경우
-          console.log(`✅ 작업 ${taskId} 동의 상태 변경 감지!`);
-          
-          // 해당 작업의 UI만 업데이트
-          const task = { id: taskId, ...taskData };
-          updateAgreementStatusUIQuick(task);
-        }
-        
-        if (change.type === 'removed') {
-          // 동의대기에서 제거된 경우 (완료되었거나 삭제됨)
-          console.log(`🔄 작업 ${taskId} 동의대기 목록에서 제거됨`);
-        }
-      });
-    }, (error) => {
-      console.error('❌ 실시간 리스너 오류:', error);
-      // 오류 발생시 리스너 초기화
-      agreementListener = null;
+    const snapshot = await getDocs(q);
+    const currentPendingTasks = new Set();
+    
+    // 현재 동의대기 작업 ID 수집
+    snapshot.forEach(doc => {
+      currentPendingTasks.add(doc.id);
     });
     
-    console.log('✅ 실시간 리스너 연결 완료');
+    console.log(`📊 현재 동의대기: ${currentPendingTasks.size}건`);
+    
+    // 이전과 비교하여 사라진 작업 찾기 (= 동의 완료된 작업)
+    const completedTasks = [];
+    lastPendingTasks.forEach(taskId => {
+      if (!currentPendingTasks.has(taskId)) {
+        completedTasks.push(taskId);
+      }
+    });
+    
+    // 동의 완료된 작업이 있으면 UI 업데이트
+    if (completedTasks.length > 0) {
+      console.log(`✅ 동의 완료 감지: ${completedTasks.length}건`);
+      completedTasks.forEach(taskId => {
+        console.log(`   - 작업 ${taskId} 동의 완료!`);
+      });
+      
+      // 캐시 무효화 후 전체 새로고침
+      invalidateAllTaskCaches();
+      
+      if (window.loadTodayTasks) {
+        setTimeout(() => {
+          window.loadTodayTasks();
+          console.log('🔄 작업 목록 새로고침 완료');
+        }, 100);
+      }
+      
+      // 동의 완료 감지되면 폴링 중지 (더 이상 체크 불필요)
+      if (currentPendingTasks.size === 0) {
+        console.log('✅ 모든 동의 완료 - 폴링 중지');
+        stopConditionalPolling();
+      }
+    } else if (lastPendingTasks.size > 0) {
+      console.log('📌 변경사항 없음');
+    }
+    
+    // 현재 상태를 저장 (다음 체크시 비교용)
+    lastPendingTasks = currentPendingTasks;
+    
   } catch (error) {
-    console.error('❌ 리스너 시작 실패:', error);
-    agreementListener = null;
+    console.error('❌ 동의 체크 오류:', error);
   }
-};
-
-// 실시간 리스너 중지
-window.stopAgreementListener = function() {
-  if (agreementListener) {
-    agreementListener();
-    agreementListener = null;
-    console.log('🔴 실시간 리스너 중지됨');
-  }
-};
+}
 
 // 빠른 UI 업데이트 (이미 데이터가 있는 경우)
 function updateAgreementStatusUIQuick(task) {
   try {
     const taskId = task.id;
+    
+    // ⭐ 먼저 모든 캐시 무효화 (중요!)
+    invalidateAllTaskCaches();
     
     // 동의 상태 컨테이너 찾기
     const agreementContainer = document.querySelector(`.agreement-status-container[data-task-id="${taskId}"]`);
@@ -710,30 +790,71 @@ function updateAgreementStatusUIQuick(task) {
       // 동의 상태 HTML 교체
       agreementContainer.innerHTML = window.getAgreementStatusHTML(task);
       console.log(`✨ 작업 ${taskId} UI 즉시 업데이트 완료`);
-      
-      // 캐시 삭제 (다음 새로고침시 최신 데이터 보장)
-      if (window.sessionStorage) {
-        const keysToRemove = [];
-        for (let i = 0; i < window.sessionStorage.length; i++) {
-          const key = window.sessionStorage.key(i);
-          if (key && key.includes('tasks')) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach(key => window.sessionStorage.removeItem(key));
-      }
     } else {
+      // 컨테이너를 찾을 수 없으면 전체 새로고침
       console.log(`⚠️ 작업 ${taskId} 컨테이너를 찾을 수 없음 - 전체 새로고침`);
-      if (window.loadTodayTasks) window.loadTodayTasks();
+      
+      // 캐시 이미 삭제됨 → Firebase에서 최신 데이터 가져옴
+      if (window.loadTodayTasks) {
+        setTimeout(() => window.loadTodayTasks(), 100);
+      }
     }
   } catch (error) {
     console.error('UI 업데이트 오류:', error);
+    // 오류시에도 캐시 무효화 후 새로고침
+    invalidateAllTaskCaches();
+    if (window.loadTodayTasks) {
+      setTimeout(() => window.loadTodayTasks(), 100);
+    }
+  }
+}
+
+// 모든 작업 관련 캐시 무효화
+function invalidateAllTaskCaches() {
+  try {
+    // 1. sessionStorage 캐시 삭제
+    if (window.sessionStorage) {
+      const keysToRemove = [];
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const key = window.sessionStorage.key(i);
+        // tasks, today, cache 관련 모든 키 삭제
+        if (key && (key.includes('tasks') || key.includes('today') || key.includes('cache'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => {
+        window.sessionStorage.removeItem(key);
+      });
+      if (keysToRemove.length > 0) {
+        console.log(`🗑️ sessionStorage 캐시 ${keysToRemove.length}개 삭제`);
+      }
+    }
+    
+    // 2. appState 캐시 삭제
+    if (window.appState) {
+      if (typeof window.appState.clearAllCache === 'function') {
+        window.appState.clearAllCache();
+        console.log('🗑️ appState 캐시 삭제');
+      }
+      // taskCache도 직접 삭제 시도
+      if (window.appState.taskCache instanceof Map) {
+        window.appState.taskCache.clear();
+        console.log('🗑️ taskCache Map 삭제');
+      }
+    }
+    
+    console.log('✅ 모든 작업 캐시 무효화 완료');
+  } catch (error) {
+    console.error('❌ 캐시 무효화 오류:', error);
   }
 }
 
 // 특정 작업의 동의 상태만 즉시 업데이트하는 함수
 async function updateAgreementStatusUI(taskId) {
   try {
+    // ⭐ 먼저 캐시 무효화
+    invalidateAllTaskCaches();
+    
     // Firebase에서 최신 작업 데이터 가져오기
     const taskDoc = await getDoc(doc(db, 'tasks', taskId));
     if (!taskDoc.exists()) {
@@ -753,12 +874,17 @@ async function updateAgreementStatusUI(taskId) {
     } else {
       // 컨테이너를 찾을 수 없으면 전체 새로고침
       console.log('동의 상태 컨테이너를 찾을 수 없어 전체 새로고침');
-      if (window.loadTodayTasks) window.loadTodayTasks();
+      if (window.loadTodayTasks) {
+        setTimeout(() => window.loadTodayTasks(), 100);
+      }
     }
   } catch (error) {
     console.error('동의 상태 업데이트 오류:', error);
     // 오류 발생시 전체 새로고침
-    if (window.loadTodayTasks) window.loadTodayTasks();
+    invalidateAllTaskCaches();
+    if (window.loadTodayTasks) {
+      setTimeout(() => window.loadTodayTasks(), 100);
+    }
   }
 }
 
@@ -791,12 +917,9 @@ window.submitDirectAgreement = async function() {
 function initAgreementSystem() {
   createModals();
   
-  // 실시간 리스너 시작
-  setTimeout(() => {
-    if (window.startAgreementListener) {
-      window.startAgreementListener();
-    }
-  }, 1000); // 1초 후 시작 (다른 초기화 완료 대기)
+  // ⭐ 조건부 폴링은 자동 시작하지 않음!
+  // 동의받기 클릭시에만 시작됨
+  console.log('✅ 동의 시스템 초기화 완료 (조건부 폴링 대기 중)');
 }
 
 if (document.readyState === 'loading') {
@@ -805,27 +928,11 @@ if (document.readyState === 'loading') {
   initAgreementSystem();
 }
 
-// 페이지 벗어날 때 리스너 정리
-window.addEventListener('beforeunload', () => {
-  if (window.stopAgreementListener) {
-    window.stopAgreementListener();
-  }
-});
-
-// 페이지 숨김 처리시에도 정리 (모바일 대응)
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    // 페이지 숨겨짐 - 리스너 중지 (배터리 절약)
-    if (window.stopAgreementListener) {
-      window.stopAgreementListener();
-    }
-  } else {
-    // 페이지 다시 보임 - 리스너 재시작
-    if (window.startAgreementListener && !agreementListener) {
-      window.startAgreementListener();
-    }
-  }
-});
+// ⭐ 조건부 폴링 방식
+// - 동의받기 클릭시에만 활성화
+// - 2분마다 체크
+// - 20분 후 자동 중지
+// - 새벽 시간 읽기: 0!
 
 // 작업 목록 새로고침 함수
 window.refreshTaskList = function() {
@@ -846,6 +953,8 @@ window.refreshTaskList = function() {
 };
 
 console.log('✅ Agreement system loaded');
-console.log('📡 실시간 동의 상태 감지 활성화 (동의대기 작업만)');
+console.log('🎯 조건부 폴링 방식 (동의받기 클릭시에만 활성화)');
+console.log('⏱️  2분마다 체크, 20분 후 자동 중지');
+console.log('💰 Firebase 읽기 최소화 (~600 reads/일)');
 console.log('💾 JPEG 압축 적용 (용량 50% 절감)');
 console.log('📥 PDF 다운로드/인쇄 기능 지원');
