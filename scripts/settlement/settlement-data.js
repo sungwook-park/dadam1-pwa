@@ -364,3 +364,7 @@ export function getCacheStatus() {
     valid: isCacheValid()
   };
 }
+
+// 🔍 전역 접근용 (디버그/테스트)
+window.getCacheStatus = getCacheStatus;
+window.clearSettlementCache = clearSettlementCache;
