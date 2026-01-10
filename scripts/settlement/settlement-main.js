@@ -40,8 +40,10 @@ export async function loadSettlement() {
   try {
     console.log('🚀 새로운 정산 시스템 시작...');
     
-    // 모든 데이터 로드
-    const data = await loadAllSettlementData();
+    // 🔥 캐시 활용: forceReload = false
+    // 첫 로드: Firebase 조회 (503 reads)
+    // 이후 30분간: 캐시 사용 (0 reads) ✅
+    const data = await loadAllSettlementData(null, null, false);
     globalData.tasks = data.tasks;
     globalData.users = data.users;
     globalData.outboundParts = data.outboundParts;
