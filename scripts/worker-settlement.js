@@ -13,21 +13,31 @@ let PARTS_LIST = [];
 
 // 🔥 캐시 시스템 추가
 const dataCache = {
-  tasks: { data: null, timestamp: null },
+  tasks: { data: null, timestamp: null, dateRange: null },
   parts: { data: null, timestamp: null },
   users: { data: null, timestamp: null },
-  outbound: { data: null, timestamp: null },
+  outbound: { data: null, timestamp: null, dateRange: null },
   TTL: 60 * 60 * 1000  // 1시간
 };
 
 /**
  * 캐시 유효성 확인
  */
-function isCacheValid(cacheKey) {
+function isCacheValid(cacheKey, dateRange = null) {
   const cached = dataCache[cacheKey];
   if (!cached.data || !cached.timestamp) return false;
   const now = Date.now();
-  return (now - cached.timestamp) < dataCache.TTL;
+  const isTimeValid = (now - cached.timestamp) < dataCache.TTL;
+  
+  // 날짜 범위가 있는 캐시는 날짜도 비교
+  if (dateRange && cached.dateRange) {
+    const isSameDateRange = 
+      cached.dateRange.start === dateRange.start && 
+      cached.dateRange.end === dateRange.end;
+    return isTimeValid && isSameDateRange;
+  }
+  
+  return isTimeValid;
 }
 
 /**
@@ -55,18 +65,40 @@ window.getWorkerCacheStatus = function() {
 window.refreshWorkerCache = async function() {
   console.log('🔄 캐시 수동 새로고침...');
   
+  // 현재 선택된 날짜 범위 가져오기
+  const startInput = document.getElementById('worker-settlement-start');
+  const endInput = document.getElementById('worker-settlement-end');
+  
+  let startDate = startInput ? startInput.value : null;
+  let endDate = endInput ? endInput.value : null;
+  
+  // 날짜가 없으면 오늘로
+  if (!startDate || !endDate) {
+    const now = new Date();
+    const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    startDate = todayDate;
+    endDate = todayDate;
+  }
+  
   // 모든 캐시 무효화
   Object.keys(dataCache).forEach(key => {
     if (key !== 'TTL') {
-      dataCache[key] = { data: null, timestamp: null };
+      dataCache[key] = { data: null, timestamp: null, dateRange: null };
     }
   });
   
   // 데이터 다시 로드
   const userInfo = window.currentUserInfo;
   if (userInfo && userInfo.name) {
-    await loadAllData(userInfo.name);
-    console.log('✅ 캐시 새로고침 완료');
+    await loadAllData(userInfo.name, startDate, endDate);
+    
+    // 화면 갱신
+    const content = document.getElementById('worker-task-content');
+    if (content) {
+      content.innerHTML = getWorkerSettlementHTML(userInfo, startDate, endDate);
+    }
+    
+    console.log('✅ 캐시 새로고침 완료:', startDate, '~', endDate);
   }
 };
 
@@ -104,9 +136,6 @@ window.loadWorkerSettlement = async function() {
   `;
   
   try {
-    // 데이터 로드 (캐시 활용)
-    await loadAllData(userInfo.name);
-    
     // 오늘 날짜로 초기화
     const now = new Date();
     const year = now.getFullYear();
@@ -115,6 +144,9 @@ window.loadWorkerSettlement = async function() {
     const todayDate = `${year}-${month}-${day}`;
     
     console.log(`📅 기본 기간: ${todayDate} (오늘)`);
+    
+    // 🔥 데이터 로드 (오늘 날짜로!)
+    await loadAllData(userInfo.name, todayDate, todayDate);
     
     // HTML 생성 (오늘 날짜로)
     content.innerHTML = getWorkerSettlementHTML(userInfo, todayDate, todayDate);
@@ -138,11 +170,30 @@ window.loadWorkerSettlement = async function() {
 /**
  * 모든 데이터 로드 (최적화 버전 - 캐시 + 날짜 필터)
  */
-async function loadAllData(workerName) {
+async function loadAllData(workerName, startDate = null, endDate = null) {
   console.log('🔍 데이터 로드 시작, 작업자:', workerName);
   
-  // 🔥 1. 완료 작업 로드 (캐시 우선, 최근 3개월만)
-  if (isCacheValid('tasks')) {
+  // 🔥 날짜 범위 기본값: 최근 3개월 (기존 동작 유지!)
+  let useDefaultRange = false;
+  if (!startDate || !endDate) {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const year = threeMonthsAgo.getFullYear();
+    const month = String(threeMonthsAgo.getMonth() + 1).padStart(2, '0');
+    const day = String(threeMonthsAgo.getDate()).padStart(2, '0');
+    startDate = `${year}-${month}-${day}`;
+    
+    const now = new Date();
+    endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    useDefaultRange = true;
+  }
+  
+  console.log('📅 조회 날짜 범위:', startDate, '~', endDate, useDefaultRange ? '(기본 3개월)' : '(사용자 지정)');
+  
+  const dateRange = { start: startDate, end: endDate };
+  
+  // 🔥 1. 완료 작업 로드 (캐시 우선, 날짜 범위 고려!)
+  if (isCacheValid('tasks', dateRange)) {
     console.log('✅ 작업 캐시 사용 (Firebase 읽기 0회)');
     const allTasks = dataCache.tasks.data;
     
@@ -155,22 +206,16 @@ async function loadAllData(workerName) {
     
     console.log('👤 내 작업 수 (캐시):', allWorkerTasks.length);
   } else {
-    // 🔥 최근 3개월만 조회
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const year = threeMonthsAgo.getFullYear();
-    const month = String(threeMonthsAgo.getMonth() + 1).padStart(2, '0');
-    const day = String(threeMonthsAgo.getDate()).padStart(2, '0');
-    const dateFilter = `${year}-${month}-${day}T00:00:00`;
-    
-    console.log('🔥 날짜 필터 적용:', dateFilter, '이후');
+    // 🔥 선택한 날짜 범위만 조회!
+    console.log('🔥 날짜 필터 적용:', startDate, '~', endDate);
     
     const tasksRef = collection(db, 'tasks');
     const q = query(
       tasksRef,
       where('done', '==', true),
-      where('date', '>=', dateFilter),  // 🔥 날짜 필터!
-      orderBy('date', 'desc')            // 🔥 정렬!
+      where('date', '>=', startDate + 'T00:00:00'),  // 🔥 시작일!
+      where('date', '<=', endDate + 'T23:59:59'),    // 🔥 종료일!
+      orderBy('date', 'desc')
     );
     
     const snapshot = await getDocs(q);
@@ -183,11 +228,12 @@ async function loadAllData(workerName) {
       });
     });
     
-    console.log('📦 전체 완료 작업 수 (최근 3개월):', allTasks.length);
+    console.log('📦 전체 완료 작업 수 (' + startDate + ' ~ ' + endDate + '):', allTasks.length);
     
-    // 캐시 저장
+    // 캐시 저장 (날짜 범위 포함!)
     dataCache.tasks.data = allTasks;
     dataCache.tasks.timestamp = Date.now();
+    dataCache.tasks.dateRange = dateRange;
     
     // 본인 작업만 필터링
     allWorkerTasks = allTasks.filter(task => {
@@ -199,29 +245,23 @@ async function loadAllData(workerName) {
     console.log('👤 내 작업 수:', allWorkerTasks.length);
   }
   
-  // 🔥 2. 출고 부품 로드 (캐시 우선, 최근 3개월만)
-  if (isCacheValid('outbound')) {
+  // 🔥 2. 출고 부품 로드 (캐시 우선, 날짜 범위 고려!)
+  if (isCacheValid('outbound', dateRange)) {
     console.log('✅ 출고 캐시 사용 (Firebase 읽기 0회)');
     allOutboundParts = dataCache.outbound.data;
     console.log('📦 출고 부품 수 (캐시):', allOutboundParts.length);
   } else {
-    // 🔥 최근 3개월만 조회
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const year = threeMonthsAgo.getFullYear();
-    const month = String(threeMonthsAgo.getMonth() + 1).padStart(2, '0');
-    const day = String(threeMonthsAgo.getDate()).padStart(2, '0');
-    const dateFilter = `${year}-${month}-${day}T00:00:00`;
-    
-    console.log('🔥 출고 날짜 필터 적용:', dateFilter, '이후');
+    // 🔥 선택한 날짜 범위만 조회!
+    console.log('🔥 출고 날짜 필터 적용:', startDate, '~', endDate);
     
     const inventoryRef = collection(db, 'inventory');
     const outboundQuery = query(
       inventoryRef,
       where('type', '==', 'out'),
       where('reason', '==', '작업사용'),
-      where('date', '>=', dateFilter),  // 🔥 날짜 필터!
-      orderBy('date', 'desc')            // 🔥 정렬!
+      where('date', '>=', startDate + 'T00:00:00'),  // 🔥 시작일!
+      where('date', '<=', endDate + 'T23:59:59'),    // 🔥 종료일!
+      orderBy('date', 'desc')
     );
     const outboundSnapshot = await getDocs(outboundQuery);
     allOutboundParts = [];
@@ -233,11 +273,12 @@ async function loadAllData(workerName) {
       });
     });
     
-    console.log('📦 출고 부품 수 (최근 3개월):', allOutboundParts.length);
+    console.log('📦 출고 부품 수 (' + startDate + ' ~ ' + endDate + '):', allOutboundParts.length);
     
-    // 캐시 저장
+    // 캐시 저장 (날짜 범위 포함!)
     dataCache.outbound.data = allOutboundParts;
     dataCache.outbound.timestamp = Date.now();
+    dataCache.outbound.dateRange = dateRange;
     
     // 출고 부품 샘플 출력 (처음 3개)
     if (allOutboundParts.length > 0) {
@@ -703,7 +744,7 @@ window.toggleClientDetails = function() {
 /**
  * 기간 필터링
  */
-window.filterWorkerSettlement = function() {
+window.filterWorkerSettlement = async function() {
   const startDate = document.getElementById('worker-settlement-start').value;
   const endDate = document.getElementById('worker-settlement-end').value;
   
@@ -719,15 +760,38 @@ window.filterWorkerSettlement = function() {
   
   const userInfo = window.currentUserInfo;
   const content = document.getElementById('worker-task-content');
-  content.innerHTML = getWorkerSettlementHTML(userInfo, startDate, endDate);
   
-  console.log('정산 기간 필터링:', startDate, '~', endDate);
+  // 로딩 표시
+  content.innerHTML = `
+    <div class="worker-settlement-loading">
+      <div class="spinner"></div>
+      <p>정산 정보를 불러오는 중...</p>
+    </div>
+  `;
+  
+  try {
+    // 🔥 선택한 날짜 범위로 데이터 다시 로드!
+    await loadAllData(userInfo.name, startDate, endDate);
+    
+    // HTML 생성
+    content.innerHTML = getWorkerSettlementHTML(userInfo, startDate, endDate);
+    
+    console.log('✅ 정산 기간 필터링 완료:', startDate, '~', endDate);
+  } catch (error) {
+    console.error('❌ 필터링 실패:', error);
+    content.innerHTML = `
+      <div class="worker-settlement-error">
+        ❌ 정산 정보를 불러오지 못했습니다.<br>
+        ${error.message}
+      </div>
+    `;
+  }
 };
 
 /**
  * 오늘로 리셋
  */
-window.resetWorkerSettlement = function() {
+window.resetWorkerSettlement = async function() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -736,9 +800,32 @@ window.resetWorkerSettlement = function() {
   
   const userInfo = window.currentUserInfo;
   const content = document.getElementById('worker-task-content');
-  content.innerHTML = getWorkerSettlementHTML(userInfo, todayDate, todayDate);
   
-  console.log('오늘로 리셋:', todayDate);
+  // 로딩 표시
+  content.innerHTML = `
+    <div class="worker-settlement-loading">
+      <div class="spinner"></div>
+      <p>정산 정보를 불러오는 중...</p>
+    </div>
+  `;
+  
+  try {
+    // 🔥 오늘 날짜로 데이터 다시 로드!
+    await loadAllData(userInfo.name, todayDate, todayDate);
+    
+    // HTML 생성
+    content.innerHTML = getWorkerSettlementHTML(userInfo, todayDate, todayDate);
+    
+    console.log('✅ 오늘로 리셋 완료:', todayDate);
+  } catch (error) {
+    console.error('❌ 리셋 실패:', error);
+    content.innerHTML = `
+      <div class="worker-settlement-error">
+        ❌ 정산 정보를 불러오지 못했습니다.<br>
+        ${error.message}
+      </div>
+    `;
+  }
 };
 
 /**
