@@ -11,33 +11,95 @@ let allOutboundParts = [];
 let allUsers = [];
 let PARTS_LIST = [];
 
-// 🔥 캐시 시스템 추가
-const dataCache = {
-  tasks: { data: null, timestamp: null, dateRange: null },
-  parts: { data: null, timestamp: null },
-  users: { data: null, timestamp: null },
-  outbound: { data: null, timestamp: null, dateRange: null },
-  TTL: 60 * 60 * 1000  // 1시간
-};
+// 🔥 캐시 시스템 (sessionStorage 사용 - 탭 전환 시에도 유지!)
+const CACHE_KEY = 'worker_settlement_cache';
+const CACHE_TTL = 60 * 60 * 1000;  // 1시간
+
+/**
+ * 캐시 데이터 가져오기
+ */
+function getCache() {
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    return JSON.parse(cached);
+  } catch (error) {
+    console.error('캐시 읽기 오류:', error);
+    return null;
+  }
+}
+
+/**
+ * 캐시 데이터 저장
+ */
+function setCache(data) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.error('캐시 저장 오류:', error);
+  }
+}
+
+/**
+ * 캐시 초기화
+ */
+function clearCache() {
+  sessionStorage.removeItem(CACHE_KEY);
+}
 
 /**
  * 캐시 유효성 확인
  */
 function isCacheValid(cacheKey, dateRange = null) {
-  const cached = dataCache[cacheKey];
+  const cache = getCache();
+  if (!cache || !cache[cacheKey]) return false;
+  
+  const cached = cache[cacheKey];
   if (!cached.data || !cached.timestamp) return false;
+  
   const now = Date.now();
-  const isTimeValid = (now - cached.timestamp) < dataCache.TTL;
+  const isTimeValid = (now - cached.timestamp) < CACHE_TTL;
   
   // 날짜 범위가 있는 캐시는 날짜도 비교
   if (dateRange && cached.dateRange) {
     const isSameDateRange = 
       cached.dateRange.start === dateRange.start && 
       cached.dateRange.end === dateRange.end;
+    
+    if (isTimeValid && isSameDateRange) {
+      console.log(`✅ ${cacheKey} 캐시 사용 (날짜: ${dateRange.start}~${dateRange.end})`);
+    }
+    
     return isTimeValid && isSameDateRange;
   }
   
+  if (isTimeValid) {
+    console.log(`✅ ${cacheKey} 캐시 사용`);
+  }
+  
   return isTimeValid;
+}
+
+/**
+ * 캐시에 데이터 저장
+ */
+function saveCacheData(cacheKey, data, dateRange = null) {
+  const cache = getCache() || {};
+  cache[cacheKey] = {
+    data: data,
+    timestamp: Date.now(),
+    dateRange: dateRange
+  };
+  setCache(cache);
+}
+
+/**
+ * 캐시에서 데이터 가져오기
+ */
+function getCacheData(cacheKey) {
+  const cache = getCache();
+  if (!cache || !cache[cacheKey]) return null;
+  return cache[cacheKey].data;
 }
 
 /**
@@ -81,11 +143,7 @@ window.refreshWorkerCache = async function() {
   }
   
   // 모든 캐시 무효화
-  Object.keys(dataCache).forEach(key => {
-    if (key !== 'TTL') {
-      dataCache[key] = { data: null, timestamp: null, dateRange: null };
-    }
-  });
+  clearCache();
   
   // 데이터 다시 로드
   const userInfo = window.currentUserInfo;
@@ -173,29 +231,23 @@ window.loadWorkerSettlement = async function() {
 async function loadAllData(workerName, startDate = null, endDate = null) {
   console.log('🔍 데이터 로드 시작, 작업자:', workerName);
   
-  // 🔥 날짜 범위 기본값: 최근 3개월 (기존 동작 유지!)
+  // 🔥 날짜 범위 기본값: 오늘! (3개월 → 오늘로 변경!)
   let useDefaultRange = false;
   if (!startDate || !endDate) {
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const year = threeMonthsAgo.getFullYear();
-    const month = String(threeMonthsAgo.getMonth() + 1).padStart(2, '0');
-    const day = String(threeMonthsAgo.getDate()).padStart(2, '0');
-    startDate = `${year}-${month}-${day}`;
-    
     const now = new Date();
-    endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    startDate = todayStr;
+    endDate = todayStr;
     useDefaultRange = true;
   }
   
-  console.log('📅 조회 날짜 범위:', startDate, '~', endDate, useDefaultRange ? '(기본 3개월)' : '(사용자 지정)');
+  console.log('📅 조회 날짜 범위:', startDate, '~', endDate, useDefaultRange ? '(기본: 오늘)' : '(사용자 지정)');
   
   const dateRange = { start: startDate, end: endDate };
   
   // 🔥 1. 완료 작업 로드 (캐시 우선, 날짜 범위 고려!)
   if (isCacheValid('tasks', dateRange)) {
-    console.log('✅ 작업 캐시 사용 (Firebase 읽기 0회)');
-    const allTasks = dataCache.tasks.data;
+    const allTasks = getCacheData('tasks');
     
     // 본인 작업만 필터링
     allWorkerTasks = allTasks.filter(task => {
@@ -231,9 +283,7 @@ async function loadAllData(workerName, startDate = null, endDate = null) {
     console.log('📦 전체 완료 작업 수 (' + startDate + ' ~ ' + endDate + '):', allTasks.length);
     
     // 캐시 저장 (날짜 범위 포함!)
-    dataCache.tasks.data = allTasks;
-    dataCache.tasks.timestamp = Date.now();
-    dataCache.tasks.dateRange = dateRange;
+    saveCacheData('tasks', allTasks, dateRange);
     
     // 본인 작업만 필터링
     allWorkerTasks = allTasks.filter(task => {
@@ -247,8 +297,7 @@ async function loadAllData(workerName, startDate = null, endDate = null) {
   
   // 🔥 2. 출고 부품 로드 (캐시 우선, 날짜 범위 고려!)
   if (isCacheValid('outbound', dateRange)) {
-    console.log('✅ 출고 캐시 사용 (Firebase 읽기 0회)');
-    allOutboundParts = dataCache.outbound.data;
+    allOutboundParts = getCacheData('outbound');
     console.log('📦 출고 부품 수 (캐시):', allOutboundParts.length);
   } else {
     // 🔥 선택한 날짜 범위만 조회!
@@ -276,9 +325,7 @@ async function loadAllData(workerName, startDate = null, endDate = null) {
     console.log('📦 출고 부품 수 (' + startDate + ' ~ ' + endDate + '):', allOutboundParts.length);
     
     // 캐시 저장 (날짜 범위 포함!)
-    dataCache.outbound.data = allOutboundParts;
-    dataCache.outbound.timestamp = Date.now();
-    dataCache.outbound.dateRange = dateRange;
+    saveCacheData('outbound', allOutboundParts, dateRange);
     
     // 출고 부품 샘플 출력 (처음 3개)
     if (allOutboundParts.length > 0) {
@@ -291,8 +338,7 @@ async function loadAllData(workerName, startDate = null, endDate = null) {
   
   // 🔥 3. 부품 목록 로드 (캐시 우선)
   if (isCacheValid('parts')) {
-    console.log('✅ 부품 목록 캐시 사용 (Firebase 읽기 0회)');
-    PARTS_LIST = dataCache.parts.data;
+    PARTS_LIST = getCacheData('parts');
     console.log('🔧 부품 목록 수 (캐시):', PARTS_LIST.length);
   } else {
     const partsRef = collection(db, 'parts');
@@ -309,14 +355,12 @@ async function loadAllData(workerName, startDate = null, endDate = null) {
     console.log('🔧 부품 목록 수:', PARTS_LIST.length);
     
     // 캐시 저장
-    dataCache.parts.data = PARTS_LIST;
-    dataCache.parts.timestamp = Date.now();
+    saveCacheData('parts', PARTS_LIST);
   }
   
   // 🔥 4. 사용자 정보 로드 (캐시 우선)
   if (isCacheValid('users')) {
-    console.log('✅ 사용자 캐시 사용 (Firebase 읽기 0회)');
-    allUsers = dataCache.users.data;
+    allUsers = getCacheData('users');
     console.log('👥 사용자 수 (캐시):', allUsers.length);
   } else {
     const usersRef = collection(db, 'users');
@@ -333,8 +377,7 @@ async function loadAllData(workerName, startDate = null, endDate = null) {
     console.log('👥 사용자 수:', allUsers.length);
     
     // 캐시 저장
-    dataCache.users.data = allUsers;
-    dataCache.users.timestamp = Date.now();
+    saveCacheData('users', allUsers);
   }
   
   console.log('✅ 데이터 로드 완료!');
