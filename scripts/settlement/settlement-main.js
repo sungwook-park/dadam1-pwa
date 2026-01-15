@@ -40,10 +40,17 @@ export async function loadSettlement() {
   try {
     console.log('🚀 새로운 정산 시스템 시작...');
     
-    // 🔥 캐시 활용: forceReload = false
-    // 첫 로드: Firebase 조회 (503 reads)
-    // 이후 30분간: 캐시 사용 (0 reads) ✅
-    const data = await loadAllSettlementData(null, null, false);
+    // 오늘 날짜로 데이터 로드
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayDate = `${year}-${month}-${day}`;
+    
+    console.log(`📅 기본 조회 날짜: ${todayDate} (오늘)`);
+    
+    // 모든 데이터 로드 (오늘만!)
+    const data = await loadAllSettlementData(todayDate, todayDate);
     globalData.tasks = data.tasks;
     globalData.users = data.users;
     globalData.outboundParts = data.outboundParts;
@@ -154,21 +161,8 @@ async function loadDailySettlement() {
     globalData.priceMap
   );
   
-  // 🔥 이번 달 누적 정산 계산
-  const monthRange = getCurrentMonthRange();
-  const monthTasks = filterByDateRange(globalData.tasks, monthRange.startStr, monthRange.endStr);
-  const monthResult = calculateNewDaySettlement(
-    monthTasks,
-    globalData.users,
-    globalData.outboundParts,
-    globalData.priceMap
-  );
-  
-  console.log(`📅 이번 달 누적 (${monthRange.startStr} ~ ${monthRange.endStr}):`, monthResult.finalDistribution);
-  
   // 🔥 디버깅을 위해 전역 변수에 저장
   window.settlementResult = result;
-  window.monthSettlementResult = monthResult;
   window.todayTasks = todayTasks;
   window.globalData = globalData;
   
@@ -181,9 +175,7 @@ async function loadDailySettlement() {
     result, 
     todayTasks, 
     todayStr, 
-    todayStr,
-    monthResult.finalDistribution, // 월 누적 추가
-    monthRange
+    todayStr
   );
 }
 
@@ -244,42 +236,62 @@ export async function filterDailyByDateRange() {
     return;
   }
   
-  const filteredTasks = filterByDateRange(globalData.tasks, startDate, endDate);
-  
-  const result = calculateNewDaySettlement(
-    filteredTasks,
-    globalData.users,
-    globalData.outboundParts,
-    globalData.priceMap
-  );
-  
-  // 🔥 디버깅을 위해 전역 변수에 저장
-  window.settlementResult = result;
-  window.todayTasks = filteredTasks;
-  
-  console.log('📊 정산 결과 (날짜 범위):', result);
-  console.log('  → 임원 매출:', result.executiveRevenue.toLocaleString());
-  console.log('  → 도급기사 매출:', result.contractRevenue.toLocaleString());
-  
-  // 🔥 이번 달 누적 정산 계산
-  const monthRange = getCurrentMonthRange();
-  const monthTasks = filterByDateRange(globalData.tasks, monthRange.startStr, monthRange.endStr);
-  const monthResult = calculateNewDaySettlement(
-    monthTasks,
-    globalData.users,
-    globalData.outboundParts,
-    globalData.priceMap
-  );
-  
   const contentDiv = document.getElementById('settlement-content');
-  contentDiv.innerHTML = getDailySettlementHTML(
-    result, 
-    filteredTasks, 
-    startDate, 
-    endDate,
-    monthResult.finalDistribution,
-    monthRange
-  );
+  contentDiv.innerHTML = '<div class="loading-message">데이터를 불러오는 중...</div>';
+  
+  try {
+    // 🔥 Firebase에서 해당 날짜 범위 데이터 새로 로드!
+    console.log(`📅 날짜 필터: ${startDate} ~ ${endDate}`);
+    const data = await loadAllSettlementData(startDate, endDate);
+    
+    // globalData 업데이트
+    globalData.tasks = data.tasks;
+    globalData.outboundParts = data.outboundParts;
+    globalData.companyFunds = data.companyFunds;
+    globalData.loadedAt = data.loadedAt;
+    
+    console.log(`✅ 새로운 데이터 로드 완료: 작업 ${data.tasks.length}개`);
+    
+    // 필터링된 작업으로 정산 계산
+    const filteredTasks = filterByDateRange(globalData.tasks, startDate, endDate);
+    
+    const result = calculateNewDaySettlement(
+      filteredTasks,
+      globalData.users,
+      globalData.outboundParts,
+      globalData.priceMap
+    );
+    
+    // 🔥 디버깅을 위해 전역 변수에 저장
+    window.settlementResult = result;
+    window.todayTasks = filteredTasks;
+    
+    console.log('📊 정산 결과 (날짜 범위):', result);
+    console.log('  → 임원 매출:', result.executiveRevenue.toLocaleString());
+    console.log('  → 도급기사 매출:', result.contractRevenue.toLocaleString());
+    
+    // 🔥 이번 달 누적 정산 계산
+    const monthRange = getCurrentMonthRange();
+    const monthTasks = filterByDateRange(globalData.tasks, monthRange.startStr, monthRange.endStr);
+    const monthResult = calculateNewDaySettlement(
+      monthTasks,
+      globalData.users,
+      globalData.outboundParts,
+      globalData.priceMap
+    );
+    
+    contentDiv.innerHTML = getDailySettlementHTML(
+      result, 
+      filteredTasks, 
+      startDate, 
+      endDate,
+      monthResult.finalDistribution,
+      monthRange
+    );
+  } catch (error) {
+    console.error('❌ 날짜 필터링 오류:', error);
+    contentDiv.innerHTML = '<div class="loading-message">데이터 로드 중 오류가 발생했습니다.</div>';
+  }
 }
 
 /**
@@ -294,16 +306,35 @@ export async function filterWorkerByDateRange() {
     return;
   }
   
-  const filteredTasks = filterByDateRange(globalData.tasks, startDate, endDate);
-  const workerStats = calculateWorkerAnalysis(
-    filteredTasks, 
-    globalData.users,
-    globalData.outboundParts,
-    globalData.priceMap
-  );
-  
   const contentDiv = document.getElementById('settlement-content');
-  contentDiv.innerHTML = getWorkerAnalysisHTML(workerStats, startDate, endDate);
+  contentDiv.innerHTML = '<div class="loading-message">데이터를 불러오는 중...</div>';
+  
+  try {
+    // 🔥 Firebase에서 해당 날짜 범위 데이터 새로 로드!
+    console.log(`📅 직원별 분석 날짜 필터: ${startDate} ~ ${endDate}`);
+    const data = await loadAllSettlementData(startDate, endDate);
+    
+    // globalData 업데이트
+    globalData.tasks = data.tasks;
+    globalData.outboundParts = data.outboundParts;
+    globalData.companyFunds = data.companyFunds;
+    globalData.loadedAt = data.loadedAt;
+    
+    console.log(`✅ 새로운 데이터 로드 완료: 작업 ${data.tasks.length}개`);
+    
+    const filteredTasks = filterByDateRange(globalData.tasks, startDate, endDate);
+    const workerStats = calculateWorkerAnalysis(
+      filteredTasks, 
+      globalData.users,
+      globalData.outboundParts,
+      globalData.priceMap
+    );
+    
+    contentDiv.innerHTML = getWorkerAnalysisHTML(workerStats, startDate, endDate);
+  } catch (error) {
+    console.error('❌ 직원별 분석 필터링 오류:', error);
+    contentDiv.innerHTML = '<div class="loading-message">데이터 로드 중 오류가 발생했습니다.</div>';
+  }
 }
 
 /**
@@ -318,11 +349,30 @@ export async function filterFeeByDateRange() {
     return;
   }
   
-  const filteredTasks = filterByDateRange(globalData.tasks, startDate, endDate);
-  const feeStats = calculateFeeAnalysis(filteredTasks);
-  
   const contentDiv = document.getElementById('settlement-content');
-  contentDiv.innerHTML = getFeeAnalysisHTML(feeStats, startDate, endDate);
+  contentDiv.innerHTML = '<div class="loading-message">데이터를 불러오는 중...</div>';
+  
+  try {
+    // 🔥 Firebase에서 해당 날짜 범위 데이터 새로 로드!
+    console.log(`📅 수수료 분석 날짜 필터: ${startDate} ~ ${endDate}`);
+    const data = await loadAllSettlementData(startDate, endDate);
+    
+    // globalData 업데이트
+    globalData.tasks = data.tasks;
+    globalData.outboundParts = data.outboundParts;
+    globalData.companyFunds = data.companyFunds;
+    globalData.loadedAt = data.loadedAt;
+    
+    console.log(`✅ 새로운 데이터 로드 완료: 작업 ${data.tasks.length}개`);
+    
+    const filteredTasks = filterByDateRange(globalData.tasks, startDate, endDate);
+    const feeStats = calculateFeeAnalysis(filteredTasks);
+    
+    contentDiv.innerHTML = getFeeAnalysisHTML(feeStats, startDate, endDate);
+  } catch (error) {
+    console.error('❌ 수수료 분석 필터링 오류:', error);
+    contentDiv.innerHTML = '<div class="loading-message">데이터 로드 중 오류가 발생했습니다.</div>';
+  }
 }
 
 /**

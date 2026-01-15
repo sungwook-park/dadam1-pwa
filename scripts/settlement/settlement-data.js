@@ -1,33 +1,78 @@
 // scripts/settlement/settlement-data.js
 // Firebase 데이터 로드 모듈 (읽기량 최적화!)
 
-// 🔥 메모리 캐시 (30분 유효)
-const settlementCache = {
-  data: null,
-  timestamp: null,
-  TTL: 30 * 60 * 1000  // 30분
-};
+// 🔥 sessionStorage 캐시 (탭 전환해도 유지!)
+const CACHE_KEY = 'settlement_cache';
+const CACHE_TTL = 60 * 60 * 1000;  // 1시간
+
+/**
+ * 캐시 데이터 가져오기
+ */
+function getCache() {
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    return JSON.parse(cached);
+  } catch (error) {
+    console.error('캐시 읽기 오류:', error);
+    return null;
+  }
+}
+
+/**
+ * 캐시 데이터 저장
+ */
+function setCache(data) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.error('캐시 저장 오류:', error);
+  }
+}
+
+/**
+ * 캐시 초기화
+ */
+function clearCache() {
+  sessionStorage.removeItem(CACHE_KEY);
+}
 
 /**
  * 캐시 유효성 확인
  */
-function isCacheValid() {
-  if (!settlementCache.data || !settlementCache.timestamp) {
+function isCacheValid(dateRange = null) {
+  const cache = getCache();
+  if (!cache || !cache.timestamp) {
     return false;
   }
   
   const now = Date.now();
-  const isValid = (now - settlementCache.timestamp) < settlementCache.TTL;
+  const isTimeValid = (now - cache.timestamp) < CACHE_TTL;
   
-  if (isValid) {
+  // 날짜 범위가 있으면 날짜도 비교
+  if (dateRange && cache.dateRange) {
+    const isSameDateRange = 
+      cache.dateRange.startDate === dateRange.startDate && 
+      cache.dateRange.endDate === dateRange.endDate;
+    
+    if (isTimeValid && isSameDateRange) {
+      console.log(`✅ 정산 데이터 캐시 사용 (${dateRange.startDate} ~ ${dateRange.endDate})`);
+      const remaining = Math.floor((CACHE_TTL - (now - cache.timestamp)) / 1000 / 60);
+      console.log(`   캐시 유효 시간: ${remaining}분 남음`);
+    }
+    
+    return isTimeValid && isSameDateRange;
+  }
+  
+  if (isTimeValid) {
     console.log('✅ 정산 데이터 캐시 사용 (Firebase 읽기 0회)');
-    const remaining = Math.floor((settlementCache.TTL - (now - settlementCache.timestamp)) / 1000 / 60);
+    const remaining = Math.floor((CACHE_TTL - (now - cache.timestamp)) / 1000 / 60);
     console.log(`   캐시 유효 시간: ${remaining}분 남음`);
   } else {
     console.log('⏰ 정산 데이터 캐시 만료 (재조회 필요)');
   }
   
-  return isValid;
+  return isTimeValid;
 }
 
 /**
@@ -110,9 +155,10 @@ export async function loadUsers() {
     }
 
     // 🔥 캐시에서 users 확인 (자주 바뀌지 않는 데이터)
-    if (settlementCache.data && settlementCache.data.users) {
+    const cache = getCache();
+    if (cache && cache.data && cache.data.users) {
       console.log('✅ 직원 정보 캐시 사용');
-      return settlementCache.data.users;
+      return cache.data.users;
     }
 
     const usersSnapshot = await getDocs(collection(db, "users"));
@@ -144,11 +190,12 @@ export async function loadUsers() {
     console.log(`   - 임원: ${activeUsers.filter(u => u.type === 'executive').length}명`);
     console.log(`   - 도급기사: ${activeUsers.filter(u => u.type === 'contract_worker').length}명`);
 
-    // 캐시 저장 (users는 전체 캐시와 별도로 저장)
-    if (!settlementCache.data) {
-      settlementCache.data = {};
+    // 캐시에 저장 (기존 캐시와 병합)
+    const existingCache = getCache();
+    if (existingCache && existingCache.data) {
+      existingCache.data.users = activeUsers;
+      setCache(existingCache);
     }
-    settlementCache.data.users = activeUsers;
 
     return activeUsers;
   } catch (error) {
@@ -282,21 +329,23 @@ export async function loadCompanyFunds(startDate = null, endDate = null) {
 export async function loadAllSettlementData(startDate = null, endDate = null, forceReload = false) {
   console.log('📊 정산 데이터 전체 로드 시작...');
   
-  // 🔥 캐시 확인 (강제 새로고침 아닐 때만)
-  if (!forceReload && isCacheValid()) {
-    console.log('✅ 캐시된 데이터 반환 (Firebase 읽기 0회)');
-    return settlementCache.data;
-  }
-  
   try {
-    // 날짜 기본값 설정
+    // 🔥 날짜 기본값: 오늘! (2개월 → 오늘로 변경!)
     if (!startDate || !endDate) {
       const now = new Date();
-      const twoMonthsAgo = new Date(now);
-      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-      
-      endDate = formatDateOnly(now);
-      startDate = formatDateOnly(twoMonthsAgo);
+      const todayStr = formatDateOnly(now);
+      startDate = todayStr;
+      endDate = todayStr;
+      console.log(`📅 날짜 미지정 → 기본값 사용: ${startDate} (오늘)`);
+    }
+    
+    const dateRange = { startDate, endDate };
+    
+    // 🔥 캐시 확인 (강제 새로고침 아닐 때만)
+    if (!forceReload && isCacheValid(dateRange)) {
+      const cache = getCache();
+      console.log('✅ 캐시된 데이터 반환 (Firebase 읽기 0회)');
+      return cache.data;
     }
     
     console.log(`📅 조회 기간: ${startDate} ~ ${endDate}`);
@@ -317,9 +366,13 @@ export async function loadAllSettlementData(startDate = null, endDate = null, fo
       dateRange: { startDate, endDate }
     };
     
-    // 🔥 캐시 저장
-    settlementCache.data = data;
-    settlementCache.timestamp = Date.now();
+    // 🔥 sessionStorage 캐시 저장!
+    const cacheData = {
+      data: data,
+      timestamp: Date.now(),
+      dateRange: { startDate, endDate }
+    };
+    setCache(cacheData);
     
     console.log('✅ 모든 데이터 로드 완료!');
     console.log('📊 로드된 데이터:', {
@@ -340,8 +393,7 @@ export async function loadAllSettlementData(startDate = null, endDate = null, fo
  * 캐시 수동 초기화 (새로고침용)
  */
 export function clearSettlementCache() {
-  settlementCache.data = null;
-  settlementCache.timestamp = null;
+  clearCache();
   console.log('🗑️ 정산 데이터 캐시 초기화 완료');
 }
 
@@ -349,22 +401,21 @@ export function clearSettlementCache() {
  * 캐시 상태 확인
  */
 export function getCacheStatus() {
-  if (!settlementCache.data || !settlementCache.timestamp) {
+  const cache = getCache();
+  
+  if (!cache || !cache.timestamp) {
     return { cached: false, age: 0 };
   }
   
   const now = Date.now();
-  const age = Math.floor((now - settlementCache.timestamp) / 1000 / 60);
-  const remaining = Math.floor((settlementCache.TTL - (now - settlementCache.timestamp)) / 1000 / 60);
+  const age = Math.floor((now - cache.timestamp) / 1000 / 60);
+  const remaining = Math.floor((CACHE_TTL - (now - cache.timestamp)) / 1000 / 60);
   
   return {
     cached: true,
     age: age,
     remaining: remaining,
-    valid: isCacheValid()
+    valid: isCacheValid(),
+    dateRange: cache.dateRange
   };
 }
-
-// 🔍 전역 접근용 (디버그/테스트)
-window.getCacheStatus = getCacheStatus;
-window.clearSettlementCache = clearSettlementCache;
