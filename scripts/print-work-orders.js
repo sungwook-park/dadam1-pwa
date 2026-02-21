@@ -304,7 +304,7 @@ function getWorkOrderPrintHTML() {
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         min-height: 400px;
         margin-bottom: 25px;
-        overflow: visible;
+        overflow: hidden;
       }
       
       .preview-placeholder {
@@ -333,7 +333,7 @@ function getWorkOrderPrintHTML() {
         border: 1px solid #e6e6e6;
         border-radius: 8px;
         margin-bottom: 20px;
-        overflow: visible;
+        overflow: hidden;
         background: white;
       }
       
@@ -562,9 +562,6 @@ function getWorkOrderPrintHTML() {
           box-shadow: none !important;
           border-radius: 0 !important;
           width: 100% !important;
-          overflow: visible !important;
-          height: auto !important;
-          max-height: none !important;
         }
         
         /* 작업자 카드 */
@@ -613,10 +610,11 @@ function getWorkOrderPrintHTML() {
           border-bottom: 2px solid #000 !important;
           padding: 3mm 5mm !important;
           min-height: 8mm !important;
+          max-height: 8mm !important;
           display: block !important;
           text-align: center !important;
           line-height: 8mm !important;
-          overflow: visible !important;
+          overflow: hidden !important;
           white-space: nowrap !important;
         }
 
@@ -1112,9 +1110,6 @@ function printAllWorkers() {
         left: 0 !important;
         width: 100% !important;
         background: white !important;
-        overflow: visible !important;
-        height: auto !important;
-        max-height: none !important;
       }
     }
   `;
@@ -1205,9 +1200,6 @@ function printSelectedWorkers() {
         left: 0 !important;
         width: 100% !important;
         background: white !important;
-        overflow: visible !important;
-        height: auto !important;
-        max-height: none !important;
       }
     }
   `;
