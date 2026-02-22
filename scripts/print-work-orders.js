@@ -1058,86 +1058,214 @@ function formatFee(fee) {
   }
 }
 
+// ★ 새 창 인쇄 공통 함수 (브라우저 업데이트와 무관하게 안정적)
+function openPrintWindow(workerCards, separatePages) {
+  // 선택된 카드들의 HTML 복제
+  let cardsHTML = '';
+  workerCards.forEach((card, index) => {
+    const clone = card.cloneNode(true);
+    // 체크박스 컨트롤 제거
+    const controls = clone.querySelector('.worker-controls');
+    if (controls) controls.remove();
+    
+    // 페이지 분리 설정
+    if (separatePages && index < workerCards.length - 1) {
+      clone.style.pageBreakAfter = 'always';
+    }
+    
+    cardsHTML += clone.outerHTML;
+  });
+  
+  // 새 창 열기
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (!printWindow) {
+    alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.');
+    return;
+  }
+  
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>작업지시서 인쇄</title>
+      <style>
+        @page {
+          size: A4;
+          margin: 10mm;
+        }
+        
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
+          background: white;
+          color: #000;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        .worker-card {
+          border: 3px solid #000;
+          margin: 0 0 5mm 0;
+          padding: 0;
+          background: white;
+          width: 100%;
+          page-break-inside: avoid;
+        }
+        
+        .worker-header {
+          background: #f5f5f5;
+          border-bottom: 2px solid #000;
+          padding: 3mm 5mm;
+          text-align: center;
+          line-height: 8mm;
+          white-space: nowrap;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        .worker-info {
+          display: inline;
+        }
+        
+        .worker-name {
+          font-size: 14px;
+          font-weight: bold;
+          display: inline;
+          vertical-align: middle;
+        }
+        
+        .task-count-badge {
+          background: #000;
+          color: white;
+          padding: 1mm 2mm;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          display: inline;
+          vertical-align: middle;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        .worker-tasks-list {
+          padding: 3mm;
+        }
+        
+        .task-item {
+          margin-bottom: 1.5mm;
+          font-size: 18px;
+          line-height: 1.2;
+          page-break-inside: avoid;
+          border: 1px solid #333;
+          border-radius: 4px;
+          padding: 1.5mm;
+          background: white;
+          min-height: 18mm;
+          font-weight: bold;
+        }
+        
+        .task-item.team-work {
+          border-left: 6px solid #ff4444;
+        }
+        
+        .task-time-client {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 1mm;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          color: #000;
+        }
+        
+        .client-highlight {
+          background: yellow;
+          font-weight: bold;
+          padding: 1mm 2mm;
+          border-radius: 2px;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        .task-details {
+          font-size: 18px;
+          margin-bottom: 1mm;
+          color: #000;
+          line-height: 1.2;
+          font-weight: bold;
+        }
+        
+        .task-addresses {
+          font-size: 18px;
+          margin: 0.5mm 0;
+          padding-left: 2mm;
+          color: #000;
+          line-height: 1.2;
+          font-weight: bold;
+        }
+        
+        .task-note {
+          font-size: 18px;
+          background: #f8f8f8;
+          border: 1px solid #666;
+          padding: 1mm;
+          margin-top: 1mm;
+          border-left: 2px solid #000;
+          line-height: 1.2;
+          font-weight: bold;
+          color: #000;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        
+        .team-members {
+          font-size: 16px;
+          color: #000;
+          background: white;
+          padding: 1mm 2mm;
+          margin-top: 1mm;
+          border-left: 5px solid #ff4444;
+          font-weight: bold;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      </style>
+    </head>
+    <body>
+      ${cardsHTML}
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+            window.onafterprint = function() { window.close(); };
+            // 폴백: 5초 후 자동 닫기
+            setTimeout(function() { window.close(); }, 5000);
+          }, 300);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
 // 전체 작업자 인쇄
 function printAllWorkers() {
   const separatePages = document.getElementById('separate-pages').checked;
+  const workerCards = Array.from(document.querySelectorAll('.worker-card'));
   
-  // 인쇄 전용 스타일 시트 추가
-  const printStyle = document.createElement('style');
-  printStyle.id = 'print-only-styles';
-  printStyle.innerHTML = `
-    @media print {
-      @page {
-        size: A4;
-        margin: 10mm;
-      }
-      
-      /* 모든 요소 숨기기 */
-      body * {
-        visibility: hidden !important;
-      }
-      
-      /* 작업지시서 컨테이너만 보이기 */
-      .tasks-preview-container,
-      .tasks-preview-container * {
-        visibility: visible !important;
-      }
-      
-      /* 불필요한 요소 완전 제거 */
-      .worker-controls {
-        display: none !important;
-      }
-      
-      /* 거래처명만 노란색 배경 */
-      .client-highlight {
-        background: yellow !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        font-weight: bold !important;
-        padding: 1mm 2mm !important;
-        border-radius: 2px !important;
-      }
-      
-      /* 모든 글씨 진하게 */
-      .task-item,
-      .task-item * {
-        font-weight: bold !important;
-      }
-      
-      .tasks-preview-container {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        background: white !important;
-      }
-    }
-  `;
-  document.head.appendChild(printStyle);
-  
-  if (separatePages) {
-    // 모든 작업자 페이지 분리하여 인쇄
-    document.querySelectorAll('.worker-card').forEach(card => {
-      card.style.pageBreakAfter = 'always';
-    });
-    
-    // 마지막 카드는 페이지 분리 해제
-    const lastCard = document.querySelector('.worker-card:last-child');
-    if (lastCard) {
-      lastCard.style.pageBreakAfter = 'auto';
-    }
+  if (workerCards.length === 0) {
+    alert('인쇄할 작업이 없습니다.');
+    return;
   }
   
-  // 인쇄 실행
-  window.print();
-  
-  // 인쇄 후 스타일 제거
-  setTimeout(() => {
-    const styleElement = document.getElementById('print-only-styles');
-    if (styleElement) {
-      styleElement.remove();
-    }
-  }, 1000);
+  openPrintWindow(workerCards, separatePages);
 }
 
 // 선택된 작업자만 인쇄
@@ -1152,95 +1280,18 @@ function printSelectedWorkers() {
   const selectedWorkerNames = Array.from(checkedWorkers).map(cb => cb.value);
   const separatePages = document.getElementById('separate-pages').checked;
   
-  // 인쇄 전용 스타일 시트 추가
-  const printStyle = document.createElement('style');
-  printStyle.id = 'print-only-styles';
-  printStyle.innerHTML = `
-    @media print {
-      @page {
-        size: A4;
-        margin: 10mm;
-      }
-      
-      /* 모든 요소 숨기기 */
-      body * {
-        visibility: hidden !important;
-      }
-      
-      /* 작업지시서 컨테이너만 보이기 */
-      .tasks-preview-container,
-      .tasks-preview-container * {
-        visibility: visible !important;
-      }
-      
-      /* 불필요한 요소 완전 제거 */
-      .worker-controls {
-        display: none !important;
-      }
-      
-      /* 거래처명만 노란색 배경 */
-      .client-highlight {
-        background: yellow !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        font-weight: bold !important;
-        padding: 1mm 2mm !important;
-        border-radius: 2px !important;
-      }
-      
-      /* 모든 글씨 진하게 */
-      .task-item,
-      .task-item * {
-        font-weight: bold !important;
-      }
-      
-      .tasks-preview-container {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        background: white !important;
-      }
-    }
-  `;
-  document.head.appendChild(printStyle);
-  
-  // 선택되지 않은 작업자 카드 숨기기
-  document.querySelectorAll('.worker-card').forEach(card => {
+  // 선택된 작업자의 카드만 필터링
+  const workerCards = Array.from(document.querySelectorAll('.worker-card')).filter(card => {
     const workerName = card.querySelector('.worker-name').textContent.replace('👤 ', '').trim();
-    if (selectedWorkerNames.includes(workerName)) {
-      card.style.display = 'block';
-      if (separatePages) {
-        card.style.pageBreakAfter = 'always';
-      }
-    } else {
-      card.style.display = 'none';
-    }
+    return selectedWorkerNames.includes(workerName);
   });
   
-  // 마지막 선택된 카드는 페이지 분리 해제
-  if (separatePages) {
-    const visibleCards = Array.from(document.querySelectorAll('.worker-card')).filter(c => c.style.display !== 'none');
-    if (visibleCards.length > 0) {
-      visibleCards[visibleCards.length - 1].style.pageBreakAfter = 'auto';
-    }
+  if (workerCards.length === 0) {
+    alert('선택된 작업자의 작업이 없습니다.');
+    return;
   }
   
-  // 인쇄 실행
-  window.print();
-  
-  // 인쇄 후 모든 카드 다시 표시 및 스타일 제거
-  setTimeout(() => {
-    document.querySelectorAll('.worker-card').forEach(card => {
-      card.style.display = 'block';
-      card.style.pageBreakAfter = '';
-    });
-    
-    const styleElement = document.getElementById('print-only-styles');
-    if (styleElement) {
-      styleElement.remove();
-    }
-  }, 1000);
+  openPrintWindow(workerCards, separatePages);
 }
 
 // 전역 함수 등록
