@@ -40,51 +40,6 @@
       });
     }
   </script>
-
-  <!-- 클립보드 붙여넣기 보정 (Chrome 업데이트 호환) -->
-  <script>
-    (function() {
-      'use strict';
-      
-      document.addEventListener('paste', function(e) {
-        var target = e.target;
-        
-        // input, textarea에서만 동작
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') return;
-        if (target.type === 'checkbox' || target.type === 'radio') return;
-        
-        // clipboardData에서 텍스트 가져오기
-        var pastedText = '';
-        if (e.clipboardData && e.clipboardData.getData) {
-          pastedText = e.clipboardData.getData('text/plain');
-        }
-        
-        if (!pastedText) return;
-        
-        // 기본 붙여넣기 동작 차단
-        e.preventDefault();
-        
-        // 선택 영역이 있으면 해당 부분만 교체, 없으면 커서 위치에 삽입
-        var start = target.selectionStart;
-        var end = target.selectionEnd;
-        var currentValue = target.value;
-        
-        target.value = currentValue.substring(0, start) + pastedText + currentValue.substring(end);
-        
-        // 커서 위치를 붙여넣은 텍스트 뒤로 이동
-        var newCursorPos = start + pastedText.length;
-        target.selectionStart = newCursorPos;
-        target.selectionEnd = newCursorPos;
-        
-        // input 이벤트 수동 발생 (수수료 계산 등 연동 위해)
-        target.dispatchEvent(new Event('input', { bubbles: true }));
-        target.dispatchEvent(new Event('change', { bubbles: true }));
-        
-      }, true); // capture: true로 가장 먼저 실행
-      
-      console.log('✅ 클립보드 붙여넣기 보정 활성화');
-    })();
-  </script>
 </head>
 <body class="animate-fade-in">
   <!-- 헤더 바 -->
